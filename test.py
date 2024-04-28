@@ -29,7 +29,7 @@ def next_candle_start_time(timeframe):
     next_candle_time = next_candle_time.replace(second=0, microsecond=0)
     
     # Convert to Unix timestamp in milliseconds
-    next_candle_timestamp = int(next_candle_time.timestamp() * 1000)
+    next_candle_timestamp = int(next_candle_time.timestamp())
     
     return next_candle_timestamp
 
