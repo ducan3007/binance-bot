@@ -1,33 +1,50 @@
+import time
 import pandas as pd
-import numpy as np
 from ta.volatility import AverageTrueRange
 from binance.spot import Spot
-from datetime import datetime, timezone, timedelta
 from enum import Enum
-import time
+from datetime import datetime
+from io import StringIO
+import requests
+import json
 
-client = Spot()
+binance_spot = Spot()
 
 DIRECTION = 1
 
 
 class CEConfig(Enum):
-    SIZE = 250
+    SIZE = 100
     LENGTH = 1
     MULT = 2
     USE_CLOSE = True
+    SUB_SIZE = 2
 
 
-class Token(str, Enum):
+class TradePair(str, Enum):
     SOL_USDT = "SOLUSDT"
     BTC_USDT = "BTCUSDT"
     ETH_USDT = "ETHUSDT"
     NEAR_USDT = "NEARUSDT"
     JTO_USDT = "JTOUSDT"
     TAO_USDT = "TAOUSDT"
+    BONK_USDT = "BONKUSDT"
+    DOGE_USDT = "DOGEUSDT"
 
 
-class TIME_FRAME(str, Enum):
+class Coin(str, Enum):
+    SOLUSDT = "SOL"
+    BTCUSDT = "BTC"
+    ETHUSDT = "ETH"
+    NEARUSDT = "NEAR"
+    JTOUSDT = "JTO"
+    TAOUSDT = "TAO"
+    BONKUSDT = "BONK"
+    DOGEUSDT = "DOGE"
+
+
+class TIME_FRAME_STR(str, Enum):
+    M1 = "1m"
     M5 = "5m"
     M15 = "15m"
     H1 = "1h"
@@ -39,14 +56,18 @@ class TIME_FRAME_MS(int, Enum):
     H1 = 60 * 60
 
 
+TOKEN = TradePair.DOGE_USDT
+TIME_FRAME = TIME_FRAME_STR.M1
+
+
 class KlineHelper:
-    def _append_data(self, data, kline):
+    def _append_klines(self, data, kline):
         data["Open"].append(float(kline[1]))
         data["High"].append(float(kline[2]))
         data["Low"].append(float(kline[3]))
         data["Close"].append(float(kline[4]))
-        # data["Time"].append(datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S"))
-        data["Time"].append(int(kline[0]) / 1000)
+        data["Time"].append(datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S"))
+        # data["Time"].append(int(kline[0]) / 1000)
         data["ATR"].append(None)
         data["LongStop"].append(None)
         data["ShortStop"].append(None)
@@ -54,21 +75,31 @@ class KlineHelper:
         data["ShortStopPrev"].append(None)
         data["Direction"].append(None)
 
-    def _pop_tail_data(data):
+    def _pop_tail_data(self, data):
         for key in data:
             data[key].pop()
 
-    def _pop_top_data(data):
+    def _pop_top_data(self, data):
         for key in data:
             data[key].pop(0)
 
+    def _append_data(self, data1, data2):
+        for key in data1:
+            data1[key].extend(data2[key])
+
     def update_data(self, data, klines):
         for kline in klines:
-            self._append_data(data, kline)
+            self._append_klines(data, kline)
 
-    def export_csv(self, data):
+    def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[["Time", "Direction", "LongStop", "ShortStop"]].to_csv("atr2.csv", index=False)
+        output = StringIO()
+        dfdata[["Time", "Direction", "Close", "LongStop", "ShortStop"]].to_csv(
+            output, index=False, float_format="%.8f", sep=" "
+        )
+        csv_string = output.getvalue()
+        with open(filename, "w") as f:
+            f.write(csv_string)
 
 
 class ChandlierExit:
@@ -89,7 +120,7 @@ class ChandlierExit:
             if data["LongStop"][i] and data["LongStopPrev"][i] and data["ShortStop"][i] and data["ShortStopPrev"][i]:
                 continue
             else:
-                print("Calculating Chandelier Exit", data["Time"][i])
+                pass
 
             longStop = (
                 max(data["Close"][max(0, i - self.length + 1) : i + 1])
@@ -137,59 +168,115 @@ class ChandlierExit:
             data["Direction"][i] = dir
 
 
+def send_telegram_message(body):
+    URL = "http://localhost:8000/sendMessage"
+    headers = {"Content-Type": "application/json"}
+    requests.post(URL, headers=headers, data=json.dumps(body))
+
+
 def main(data):
-    (SIZE, LENGTH, MULT, USE_CLOSE) = (
+    (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
         CEConfig.LENGTH.value,
         CEConfig.MULT.value,
         CEConfig.USE_CLOSE.value,
+        CEConfig.SUB_SIZE.value,
     )
-    print(f"Starting BOT: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
-    klines = client.klines(
-        Token.SOL_USDT,
-        TIME_FRAME.M5,
-        limit=SIZE,
-    )
-    kline = KlineHelper()
+    print(f"Starting {TOKEN}: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
+    kline_helper = KlineHelper()
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
-    kline.update_data(
-        data,
-        klines,
-    )
-    dfdata = pd.DataFrame(data)
-    dfresult = chandelier_exit.calculate_atr(df=dfdata)
-    data["ATR"] = dfresult["ATR"]
+
+    # Get 500 Klines
+    klines = binance_spot.klines(TOKEN, TIME_FRAME, limit=SIZE)
+    kline_helper.update_data(data, klines)
+    df_data = pd.DataFrame(data)
+
+    # Calculate ATR
+    df_result = chandelier_exit.calculate_atr(df=df_data)
+
+    # Update ATR to data
+    data["ATR"] = df_result["ATR"].values.tolist()
+
+    # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
-    kline.export_csv(data)
-    current_time_sec = data["Time"][SIZE - 1]
-    print(f"Current Time: {current_time_sec}")
 
+    kline_helper.export_csv(data)
+
+    # Save the last time, [700, 1000, 1300]
+    timestamp = data["Time"][SIZE - 1]
+
+    time.sleep(1)
+
+    chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
+    counter = 0
     while True:
-        klines = client.klines(
-            Token.SOL_USDT,
-            TIME_FRAME.M5,
-            limit=2,
-        )
-        data_chunk = kline.update_data(data, klines)
-        if data_chunk["Time"][0] == current_time_sec:
-            dfdata = pd.DataFrame(data)
-            dfresult = chandelier_exit.calculate_atr(df=dfdata)
-            data["ATR"] = dfresult["ATR"]
-            chandelier_exit.calculate_chandelier_exit(data=data)
-            kline.export_csv(data)
-            pop_data(data)
-            time.sleep(6)
+        counter += 1
+        data_temp_dict = {
+            "Open": [],
+            "High": [],
+            "Low": [],
+            "Close": [],
+            "Time": [],
+            "ATR": [],
+            "LongStop": [],
+            "ShortStop": [],
+            "LongStopPrev": [],
+            "ShortStopPrev": [],
+            "Direction": [],
+        }
 
-        time.sleep(6)
+        two_latest_klines = binance_spot.klines(TOKEN, TIME_FRAME, limit=2)
+        kline_helper.update_data(data_temp_dict, two_latest_klines)
 
+        print(f"Time: {counter} {data_temp_dict['Time'][0]}, {data_temp_dict['Time'][1]}")
 
-def pop_data(data):
-    for key in data:
-        data[key].pop()
+        if timestamp == data_temp_dict["Time"][1]:  # [1000, 1300]
+            df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
+            data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
+
+            # Remove 2 last data
+            kline_helper._pop_tail_data(data)
+            kline_helper._pop_tail_data(data)
+
+            # Append new data
+            kline_helper._append_data(data, data_temp_dict)
+
+            # Calculate Chandelier Exit for Data
+            chandelier_exit.calculate_chandelier_exit(data)
+            kline_helper.export_csv(data)
+        elif timestamp == data_temp_dict["Time"][0]:  # [700, 1000]
+            timestamp = data_temp_dict["Time"][1]
+            kline_helper._pop_top_data(data)
+            df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
+            data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
+
+            # Remove 1 last data
+            kline_helper._pop_tail_data(data)
+
+            # Append new data
+            kline_helper._append_data(data, data_temp_dict)
+
+            # Calculate Chandelier Exit for Data
+            chandelier_exit.calculate_chandelier_exit(data)
+            kline_helper.export_csv(data)
+        else:
+            Exception("Time not match !!!")
+            break;
+
+        if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
+            body = {
+                "signal": "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY",
+                "symbol": Coin[TOKEN.value].value,
+                "time_frame": TIME_FRAME,
+                "price": data["Close"][SIZE - 1],
+            }
+            send_telegram_message(body)
+
+        time.sleep(10)
 
 
 if __name__ == "__main__":
-    data_5m = {
+    data = {
         "Open": [],
         "High": [],
         "Low": [],
@@ -202,11 +289,4 @@ if __name__ == "__main__":
         "ShortStopPrev": [],
         "Direction": [],
     }
-    main(data_5m)
-    df_result = pd.DataFrame(data_5m)
-    print(
-        df_result.tail(1)[
-            ["Time", "ATR", "Close", "Direction", "LongStop", "ShortStop", "LongStopPrev", "ShortStopPrev"]
-        ]
-    )
-    print("Done")
+    main(data)
