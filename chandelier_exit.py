@@ -1,6 +1,6 @@
 import time
 import pandas as pd
-from ta.volatility import AverageTrueRange
+from lib.atr import AverageTrueRange
 from binance.spot import Spot
 from enum import Enum
 from datetime import datetime
@@ -62,7 +62,7 @@ class KlineHelper:
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[["Time1", "Direction", "Close", "LongStop", "ShortStop"]].to_csv(
+        dfdata[["Time1", "Direction", "ATR", "Close", "LongStop", "ShortStop"]].to_csv(
             filename, index=False, float_format="%.15f", sep=" "
         )
 
@@ -170,6 +170,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     timestamp = data["Time"][SIZE - 1]
     hasSentSignal = False
 
+    kline_helper.export_csv(data, filename=f"atr2_{TOKEN}.csv")
+
     time.sleep(1)
 
     counter = 0
@@ -177,10 +179,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Remove 150 data
-    for i in range(170):
-        kline_helper._pop_top_data(data)
-    chandelier_exit.size = SIZE - 170
-    SIZE = SIZE - 170
+    # for i in range(170):
+    #     kline_helper._pop_top_data(data)
+    # chandelier_exit.size = SIZE - 170
+    # SIZE = SIZE - 170
 
     while True:
         counter += 1
@@ -206,6 +208,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
 
             # Calculate Chandelier Exit for Data
             chandelier_exit.calculate_chandelier_exit(data)
+            kline_helper.export_csv(data, filename=f"atr2_{TOKEN}.csv")
 
         elif timestamp == data_temp_dict["Time"][0]:  # [700, 1000]
             timestamp = data_temp_dict["Time"][1]
@@ -226,6 +229,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
 
             # Calculate Chandelier Exit for Data
             chandelier_exit.calculate_chandelier_exit(data)
+            kline_helper.export_csv(data, filename=f"atr2_{TOKEN}.csv")
 
         else:
             Exception("Time not match !!!")
@@ -299,8 +303,8 @@ if __name__ == "__main__":
     # data = init_data()
     # main(data, TOKEN, TIME_FRAME, PAIR)
 
-    tokens = ["DOGE", "ETHFI", "SOL", "PEPE", "INJ", "AVAX", "SUI", "W", "WIF", "BTC", "ETH", "TAO"]
-    # tokens = ["BONK", "JTO", "DOGE", "TRB"]
+    # tokens = ["DOGE", "ETHFI", "SOL", "PEPE", "INJ", "AVAX", "SUI", "W", "WIF", "BTC", "ETH", "TAO"]
+    tokens = ["BONK", "JTO", "DOGE", "TRB"]
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
 
     processes = []
