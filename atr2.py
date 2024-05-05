@@ -4,43 +4,19 @@ from ta.volatility import AverageTrueRange
 from binance.spot import Spot
 from enum import Enum
 from datetime import datetime
-from io import StringIO
 import requests
 import json
+import argparse
 
-binance_spot = Spot()
-
-DIRECTION = 1
+Epsilon = 1e-9
 
 
 class CEConfig(Enum):
-    SIZE = 100
+    SIZE = 200
     LENGTH = 1
     MULT = 2
     USE_CLOSE = True
     SUB_SIZE = 2
-
-
-class TradePair(str, Enum):
-    SOL_USDT = "SOLUSDT"
-    BTC_USDT = "BTCUSDT"
-    ETH_USDT = "ETHUSDT"
-    NEAR_USDT = "NEARUSDT"
-    JTO_USDT = "JTOUSDT"
-    TAO_USDT = "TAOUSDT"
-    BONK_USDT = "BONKUSDT"
-    DOGE_USDT = "DOGEUSDT"
-
-
-class Coin(str, Enum):
-    SOLUSDT = "SOL"
-    BTCUSDT = "BTC"
-    ETHUSDT = "ETH"
-    NEARUSDT = "NEAR"
-    JTOUSDT = "JTO"
-    TAOUSDT = "TAO"
-    BONKUSDT = "BONK"
-    DOGEUSDT = "DOGE"
 
 
 class TIME_FRAME_STR(str, Enum):
@@ -50,14 +26,7 @@ class TIME_FRAME_STR(str, Enum):
     H1 = "1h"
 
 
-class TIME_FRAME_MS(int, Enum):
-    M5 = 5 * 60
-    M15 = 15 * 60
-    H1 = 60 * 60
-
-
-TOKEN = TradePair.DOGE_USDT
-TIME_FRAME = TIME_FRAME_STR.M1
+# DIRECTION = 1
 
 
 class KlineHelper:
@@ -66,8 +35,8 @@ class KlineHelper:
         data["High"].append(float(kline[2]))
         data["Low"].append(float(kline[3]))
         data["Close"].append(float(kline[4]))
-        data["Time"].append(datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S"))
-        # data["Time"].append(int(kline[0]) / 1000)
+        data["Time1"].append(datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S"))
+        data["Time"].append(int(kline[0]) / 1000)
         data["ATR"].append(None)
         data["LongStop"].append(None)
         data["ShortStop"].append(None)
@@ -93,21 +62,18 @@ class KlineHelper:
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        output = StringIO()
-        dfdata[["Time", "Direction", "Close", "LongStop", "ShortStop"]].to_csv(
-            output, index=False, float_format="%.8f", sep=" "
+        dfdata[["Time1", "Direction", "Close", "LongStop", "ShortStop"]].to_csv(
+            filename, index=False, float_format="%.15f", sep=" "
         )
-        csv_string = output.getvalue()
-        with open(filename, "w") as f:
-            f.write(csv_string)
 
 
 class ChandlierExit:
-    def __init__(self, size, multiplier=2, length=1, use_close=True):
+    def __init__(self, size, multiplier=2.0, length=1, use_close=True):
         self.size = size
         self.length = length
         self.use_close = use_close
         self.multiplier = multiplier
+        self.direction = 1
 
     def calculate_atr(self, df):
         atr_calculator = AverageTrueRange(df["High"], df["Low"], df["Close"], window=self.length)
@@ -115,13 +81,13 @@ class ChandlierExit:
         return df
 
     def calculate_chandelier_exit(self, data):
-        global DIRECTION
         for i in range(self.size):
             if data["LongStop"][i] and data["LongStopPrev"][i] and data["ShortStop"][i] and data["ShortStopPrev"][i]:
                 continue
             else:
                 pass
 
+            # Calculate Long Stop
             longStop = (
                 max(data["Close"][max(0, i - self.length + 1) : i + 1])
                 if self.use_close
@@ -130,7 +96,7 @@ class ChandlierExit:
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
 
-            if data["Close"][i - 1] > longStopPrev:
+            if data["Close"][i - 1] - longStopPrev > Epsilon:
                 longStop = max(longStop, longStopPrev)
             else:
                 longStop = longStop
@@ -138,6 +104,7 @@ class ChandlierExit:
             data["LongStop"][i] = longStop
             data["LongStopPrev"][i] = longStopPrev
 
+            # Calculate Short Stop
             shortStop = (
                 min(data["Close"][max(0, i - self.length + 1) : i + 1])
                 if self.use_close
@@ -146,7 +113,7 @@ class ChandlierExit:
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
 
-            if data["Close"][i - 1] < shortStopPrev:
+            if data["Close"][i - 1] - shortStopPrev < -Epsilon:
                 shortStop = min(shortStop, shortStopPrev)
             else:
                 shortStop = shortStop
@@ -154,17 +121,14 @@ class ChandlierExit:
             data["ShortStop"][i] = shortStop
             data["ShortStopPrev"][i] = shortStopPrev
 
-            dir = 1
+            dir = self.direction
 
-            if data["Close"][i] > data["ShortStopPrev"][i]:
-                DIRECTION = 1
+            if data["Close"][i] - data["ShortStopPrev"][i] > Epsilon:
                 dir = 1
-            elif data["Close"][i] < data["LongStopPrev"][i]:
-                DIRECTION = -1
+            elif data["Close"][i] - data["LongStopPrev"][i] < -Epsilon:
                 dir = -1
-            else:
-                dir = DIRECTION
 
+            self.direction = dir
             data["Direction"][i] = dir
 
 
@@ -174,7 +138,7 @@ def send_telegram_message(body):
     requests.post(URL, headers=headers, data=json.dumps(body))
 
 
-def main(data):
+def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
         CEConfig.LENGTH.value,
@@ -182,13 +146,14 @@ def main(data):
         CEConfig.USE_CLOSE.value,
         CEConfig.SUB_SIZE.value,
     )
-    print(f"Starting {TOKEN}: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
+    print(f"Starting {PAIR}: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
     kline_helper = KlineHelper()
+    binance_spot = Spot()
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = binance_spot.klines(TOKEN, TIME_FRAME, limit=SIZE)
+    klines = binance_spot.klines(PAIR, TIME_FRAME, limit=SIZE)
     kline_helper.update_data(data, klines)
     df_data = pd.DataFrame(data)
 
@@ -201,29 +166,36 @@ def main(data):
     # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
 
-    kline_helper.export_csv(data)
-
     # Save the last time, [700, 1000, 1300]
     timestamp = data["Time"][SIZE - 1]
     hasSentSignal = False
 
     time.sleep(1)
 
-    chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
     counter = 0
+    _token = TOKEN.ljust(8)
+    chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
+
+    # Remove 150 data
+    for i in range(170):
+        kline_helper._pop_top_data(data)
+    chandelier_exit.size = SIZE - 170
+    SIZE = SIZE - 170
 
     while True:
         counter += 1
         data_temp_dict = init_data()
-
-        two_latest_klines = binance_spot.klines(TOKEN, TIME_FRAME, limit=2)
+        two_latest_klines = binance_spot.klines(PAIR, TIME_FRAME, limit=2)
         kline_helper.update_data(data_temp_dict, two_latest_klines)
 
-        print(f"Time: {counter} {data_temp_dict['Time'][0]}, {data_temp_dict['Time'][1]}")
+        print(f"Time: {counter} {_token} {data_temp_dict['Time1'][0]}, {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:  # [1000, 1300]
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
             data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
+
+            # Save 3rd last direction
+            chandelier_exit.direction = data["Direction"][SIZE - 3]
 
             # Remove 2 last data
             kline_helper._pop_tail_data(data)
@@ -243,6 +215,9 @@ def main(data):
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
             data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
 
+            # Save 2nd last direction
+            chandelier_exit.direction = data["Direction"][SIZE - 2]
+
             # Remove 1 last data
             kline_helper._pop_tail_data(data)
 
@@ -256,17 +231,21 @@ def main(data):
             Exception("Time not match !!!")
             break
 
-        if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2] and not hasSentSignal:
-            body = {
-                "signal": "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY",
-                "symbol": Coin[TOKEN.value].value,
-                "time_frame": TIME_FRAME,
-                "price": data["Close"][SIZE - 1],
-            }
-            send_telegram_message(body)
-            hasSentSignal = True
+        if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
+            if not hasSentSignal:
+                signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
+                body = {
+                    "signal": signal,
+                    "symbol": f"${TOKEN}",
+                    "time_frame": TIME_FRAME,
+                    "time": data["Time1"][SIZE - 1][11:],
+                    "price": data["Close"][SIZE - 1],
+                }
+                send_telegram_message(body)
+                hasSentSignal = True
+                print(f"Signal sent:", body)
 
-        time.sleep(10)
+        time.sleep(TIME_SLEEP)
 
 
 def init_data():
@@ -275,6 +254,7 @@ def init_data():
         "High",
         "Low",
         "Close",
+        "Time1",
         "Time",
         "ATR",
         "LongStop",
@@ -288,12 +268,43 @@ def init_data():
     return data
 
 
-if __name__ == "__main__":
-    data = init_data()
+import multiprocessing
 
+
+def run_strategy(token, time_frame, pair, TIME_SLEEP):
     while True:
         try:
-            main(data)
+            print("STARTING CE BOT")
+            data = init_data()
+            main(data, token, time_frame, pair, TIME_SLEEP)
         except Exception as e:
-            print(f"Error: {e}", "Restarting after 10 seconds...")
-            time.sleep(10)
+            print(f"Error: {e}")
+            time.sleep(5)
+
+
+if __name__ == "__main__":
+    # Set up argparse to handle command-line arguments
+    parser = argparse.ArgumentParser(description="Process trading pair and timeframe.")
+    parser.add_argument("--pair", type=str, help='Trading pair, e.g., "SOLUSDT"', default="DOGEUSDT")
+    parser.add_argument("--timeframe", type=str, help='Time frame, e.g., "1m"', default="1m")
+    parser.add_argument("--sleep", type=str, help='Time sleep, e.g., "15"', default="10")
+
+    # Parse arguments
+    args = parser.parse_args()
+    PAIR = args.pair
+    TOKEN = PAIR[:-4]
+    TIME_FRAME = args.timeframe
+    TIME_SLEEP = int(args.sleep)
+
+    # data = init_data()
+    # main(data, TOKEN, TIME_FRAME, PAIR)
+
+    tokens = ["DOGE", "ETHFI", "SOL", "PEPE", "INJ", "AVAX", "SUI", "W", "WIF", "BTC", "ETH", "TAO"]
+    # tokens = ["BONK", "JTO", "DOGE", "TRB"]
+    strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
+
+    processes = []
+    for token, time_frame, pair in strategies:
+        process = multiprocessing.Process(target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP))
+        processes.append(process)
+        process.start()

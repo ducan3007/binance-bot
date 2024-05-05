@@ -59,7 +59,7 @@ data1 = {
 }
 
 data2 = {
-   # only have 2 itmes in array
+    # only have 2 itmes in array
     "Open": [1, 2],
     "High": [4, 5],
     "Low": [7, 8],
@@ -73,5 +73,37 @@ data2 = {
     "Direction": [31, 32],
 }
 
-_append_data(data1, data2)
-print(data1)
+
+class Message:
+    def __init__(self, symbol, signal, price):
+        self.symbol = symbol
+        self.signal = signal
+        self.price = price
+
+
+# Mock-up dictionary for signal icons
+Signals = {"buy": "🔴", "sell": "🟢"}
+
+
+def construct_message(message: Message):
+    # Define the desired length for alignment
+    max_length = 6  # Adjust this value based on your maximum expected token length
+    # Align the symbol and format the message
+    aligned_symbol = message.symbol.ljust(max_length)
+    return f"{aligned_symbol} {Signals[message.signal]}\n\nPrice: {message.price}"
+
+
+# Example usage
+message1 = Message("TAO", "buy", 100)
+message2 = Message("W", "sell", 200)
+message3 = Message("TOKEN", "buy", 300)
+
+print(construct_message(message1))
+print(construct_message(message2))
+print(construct_message(message3))
+
+
+float = 0.0084697
+print(f"{float:.8f}")
+print(float)
+print(0.00002702)
