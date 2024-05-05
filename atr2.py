@@ -183,6 +183,7 @@ def main(data):
         CEConfig.SUB_SIZE.value,
     )
     print(f"Starting {TOKEN}: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
+
     kline_helper = KlineHelper()
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
@@ -204,26 +205,16 @@ def main(data):
 
     # Save the last time, [700, 1000, 1300]
     timestamp = data["Time"][SIZE - 1]
+    hasSentSignal = False
 
     time.sleep(1)
 
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
     counter = 0
+
     while True:
         counter += 1
-        data_temp_dict = {
-            "Open": [],
-            "High": [],
-            "Low": [],
-            "Close": [],
-            "Time": [],
-            "ATR": [],
-            "LongStop": [],
-            "ShortStop": [],
-            "LongStopPrev": [],
-            "ShortStopPrev": [],
-            "Direction": [],
-        }
+        data_temp_dict = init_data()
 
         two_latest_klines = binance_spot.klines(TOKEN, TIME_FRAME, limit=2)
         kline_helper.update_data(data_temp_dict, two_latest_klines)
@@ -243,9 +234,11 @@ def main(data):
 
             # Calculate Chandelier Exit for Data
             chandelier_exit.calculate_chandelier_exit(data)
-            kline_helper.export_csv(data)
+
         elif timestamp == data_temp_dict["Time"][0]:  # [700, 1000]
             timestamp = data_temp_dict["Time"][1]
+            hasSentSignal = False
+
             kline_helper._pop_top_data(data)
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
             data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
@@ -258,12 +251,12 @@ def main(data):
 
             # Calculate Chandelier Exit for Data
             chandelier_exit.calculate_chandelier_exit(data)
-            kline_helper.export_csv(data)
+
         else:
             Exception("Time not match !!!")
-            break;
+            break
 
-        if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
+        if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2] and not hasSentSignal:
             body = {
                 "signal": "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY",
                 "symbol": Coin[TOKEN.value].value,
@@ -271,22 +264,36 @@ def main(data):
                 "price": data["Close"][SIZE - 1],
             }
             send_telegram_message(body)
+            hasSentSignal = True
 
         time.sleep(10)
 
 
+def init_data():
+    keys = [
+        "Open",
+        "High",
+        "Low",
+        "Close",
+        "Time",
+        "ATR",
+        "LongStop",
+        "ShortStop",
+        "LongStopPrev",
+        "ShortStopPrev",
+        "Direction",
+    ]
+
+    data = {key: [] for key in keys}
+    return data
+
+
 if __name__ == "__main__":
-    data = {
-        "Open": [],
-        "High": [],
-        "Low": [],
-        "Close": [],
-        "Time": [],
-        "ATR": [],
-        "LongStop": [],
-        "ShortStop": [],
-        "LongStopPrev": [],
-        "ShortStopPrev": [],
-        "Direction": [],
-    }
-    main(data)
+    data = init_data()
+
+    while True:
+        try:
+            main(data)
+        except Exception as e:
+            print(f"Error: {e}", "Restarting after 10 seconds...")
+            time.sleep(10)
