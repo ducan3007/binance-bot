@@ -1,6 +1,6 @@
 import time
 import pandas as pd
-from lib.atr import AverageTrueRange
+from ta.volatility import AverageTrueRange
 from binance.spot import Spot
 from enum import Enum
 from datetime import datetime
@@ -26,23 +26,56 @@ class TIME_FRAME_STR(str, Enum):
     H1 = "1h"
 
 
-# DIRECTION = 1
+TIME_FRAME_MS = {
+    "1m": 60,
+    "5m": 5 * 60,
+    "15m": 15 * 60,
+    "1h": 60 * 60,
+}
 
 
 class KlineHelper:
-    def _append_klines(self, data, kline):
-        data["Open"].append(float(kline[1]))
-        data["High"].append(float(kline[2]))
-        data["Low"].append(float(kline[3]))
-        data["Close"].append(float(kline[4]))
-        data["Time1"].append(datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S"))
-        data["Time"].append(int(kline[0]) / 1000)
+    def _append_heikin_ashi(self, data, kline, prev_item=None):
+        open_p = float(kline[1])
+        high_p = float(kline[2])
+        low_p = float(kline[3])
+        close_p = float(kline[4])
+        time1 = datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        time = int(kline[0]) / 1000
+
+        if len(data["Close"]) > 0:  # Check isnt the first candle
+            heikin_ashi_open = (data["Open"][-1] + data["Close"][-1]) / 2
+            heikin_ashi_close = (open_p + high_p + low_p + close_p) / 4
+            heikin_ashi_high = max(high_p, heikin_ashi_open, heikin_ashi_close)
+            heikin_ashi_low = min(low_p, heikin_ashi_open, heikin_ashi_close)
+        else:
+            if prev_item:
+                heikin_ashi_open = (prev_item["Open"] + prev_item["Close"]) / 2
+                heikin_ashi_close = (open_p + high_p + low_p + close_p) / 4
+                heikin_ashi_high = max(high_p, heikin_ashi_open, heikin_ashi_close)
+                heikin_ashi_low = min(low_p, heikin_ashi_open, heikin_ashi_close)
+            else:
+                heikin_ashi_open = open_p
+                heikin_ashi_close = close_p
+                heikin_ashi_high = high_p
+                heikin_ashi_low = low_p
+
+        data["Open"].append(heikin_ashi_open)
+        data["High"].append(heikin_ashi_high)
+        data["Low"].append(heikin_ashi_low)
+        data["Close"].append(heikin_ashi_close)
+        data["Time1"].append(time1)
+        data["Time"].append(time)
         data["ATR"].append(None)
         data["LongStop"].append(None)
         data["ShortStop"].append(None)
         data["LongStopPrev"].append(None)
         data["ShortStopPrev"].append(None)
         data["Direction"].append(None)
+
+    def get_heikin_ashi(self, data, klines, prev_item=None):
+        for kline in klines:
+            self._append_heikin_ashi(data, kline, prev_item)
 
     def _pop_tail_data(self, data):
         for key in data:
@@ -56,13 +89,9 @@ class KlineHelper:
         for key in data1:
             data1[key].extend(data2[key])
 
-    def update_data(self, data, klines):
-        for kline in klines:
-            self._append_klines(data, kline)
-
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[["Time1", "Direction", "ATR", "Close", "LongStop", "ShortStop"]].to_csv(
+        dfdata[["Time1", "Direction", "ATR", "Open", "High", "Low", "Close", "LongStop", "ShortStop"]].to_csv(
             filename, index=False, float_format="%.15f", sep=" "
         )
 
@@ -89,9 +118,7 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -106,9 +133,7 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -154,7 +179,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
 
     # Get 500 Klines
     klines = binance_spot.klines(PAIR, TIME_FRAME, limit=SIZE)
-    kline_helper.update_data(data, klines)
+    kline_helper.get_heikin_ashi(data, klines)
     df_data = pd.DataFrame(data)
 
     # Calculate ATR
@@ -166,33 +191,42 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
 
-    # Save the last time, [700, 1000, 1300]
+    # Save the last time
     timestamp = data["Time"][SIZE - 1]
-    hasSentSignal = False
-
-    kline_helper.export_csv(data, filename=f"atr2_{TOKEN}.csv")
-
-    time.sleep(1)
 
     counter = 0
+    hasSentSignal = False
     _token = TOKEN.ljust(8)
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Remove 150 data
-    # for i in range(170):
-    #     kline_helper._pop_top_data(data)
-    # chandelier_exit.size = SIZE - 170
-    # SIZE = SIZE - 170
+    for i in range(170):
+        kline_helper._pop_top_data(data)
+    chandelier_exit.size = SIZE - 170
+    SIZE = SIZE - 170
 
+    # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+
+    time.sleep(1)
     while True:
         counter += 1
         data_temp_dict = init_data()
         two_latest_klines = binance_spot.klines(PAIR, TIME_FRAME, limit=2)
-        kline_helper.update_data(data_temp_dict, two_latest_klines)
+
+        kline_helper.get_heikin_ashi(
+            data_temp_dict,
+            two_latest_klines,
+            prev_item={
+                "Open": data["Open"][SIZE - 3],
+                "Close": data["Close"][SIZE - 3],
+                "High": data["High"][SIZE - 3],
+                "Low": data["Low"][SIZE - 3],
+            },
+        )
 
         print(f"Time: {counter} {_token} {data_temp_dict['Time1'][0]}, {data_temp_dict['Time1'][1]}")
 
-        if timestamp == data_temp_dict["Time"][1]:  # [1000, 1300]
+        if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
             data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
 
@@ -208,13 +242,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
 
             # Calculate Chandelier Exit for Data
             chandelier_exit.calculate_chandelier_exit(data)
-            kline_helper.export_csv(data, filename=f"atr2_{TOKEN}.csv")
 
-        elif timestamp == data_temp_dict["Time"][0]:  # [700, 1000]
+            # Save to CSV
+            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+
+        elif timestamp == data_temp_dict["Time"][0]:
             timestamp = data_temp_dict["Time"][1]
             hasSentSignal = False
 
             kline_helper._pop_top_data(data)
+
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
             data_temp_dict["ATR"] = df_temp["ATR"].values.tolist()
 
@@ -229,7 +266,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
 
             # Calculate Chandelier Exit for Data
             chandelier_exit.calculate_chandelier_exit(data)
-            kline_helper.export_csv(data, filename=f"atr2_{TOKEN}.csv")
+
+            # Save to CSV
+            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
             Exception("Time not match !!!")
@@ -248,7 +287,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
                 send_telegram_message(body)
                 hasSentSignal = True
                 print(f"Signal sent:", body)
-
         time.sleep(TIME_SLEEP)
 
 
@@ -289,22 +327,40 @@ def run_strategy(token, time_frame, pair, TIME_SLEEP):
 if __name__ == "__main__":
     # Set up argparse to handle command-line arguments
     parser = argparse.ArgumentParser(description="Process trading pair and timeframe.")
-    parser.add_argument("--pair", type=str, help='Trading pair, e.g., "SOLUSDT"', default="DOGEUSDT")
     parser.add_argument("--timeframe", type=str, help='Time frame, e.g., "1m"', default="1m")
     parser.add_argument("--sleep", type=str, help='Time sleep, e.g., "15"', default="10")
 
     # Parse arguments
     args = parser.parse_args()
-    PAIR = args.pair
-    TOKEN = PAIR[:-4]
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
 
-    # data = init_data()
-    # main(data, TOKEN, TIME_FRAME, PAIR)
-
-    # tokens = ["DOGE", "ETHFI", "SOL", "PEPE", "INJ", "AVAX", "SUI", "W", "WIF", "BTC", "ETH", "TAO"]
-    tokens = ["BONK", "JTO", "DOGE", "TRB"]
+    tokens = [
+        "ARB",
+        "ETHFI",
+        "SOL",
+        "PEPE",
+        "TRB",
+        "BONK",
+        "NFP",
+        "JTO",
+        "INJ",
+        "AVAX",
+        "ORDI",
+        "BTC",
+        "TRB",
+        "NEAR",
+        "WIF",
+        "FLOKI",
+        "TNSR",
+        "ENA",
+        "WLD",
+        "RUNE",
+        "LINK",
+        "FRONT",
+        "ARKM",
+        "PEOPLE",
+    ]
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
 
     processes = []
