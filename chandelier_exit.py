@@ -118,7 +118,9 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1])
+                if self.use_close
+                else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -133,7 +135,9 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1])
+                if self.use_close
+                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -335,32 +339,10 @@ if __name__ == "__main__":
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
 
-    tokens = [
-        "ARB",
-        "ETHFI",
-        "SOL",
-        "PEPE",
-        "TRB",
-        "BONK",
-        "NFP",
-        "JTO",
-        "INJ",
-        "AVAX",
-        "ORDI",
-        "BTC",
-        "TRB",
-        "NEAR",
-        "WIF",
-        "FLOKI",
-        "TNSR",
-        "ENA",
-        "WLD",
-        "RUNE",
-        "LINK",
-        "FRONT",
-        "ARKM",
-        "PEOPLE",
-    ]
+    # Reading the tokens from the file
+    with open("tokens.txt", "r") as file:
+        tokens = [line.strip() for line in file]
+
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
 
     processes = []
