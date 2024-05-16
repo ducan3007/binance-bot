@@ -75,35 +75,47 @@ data2 = {
 
 
 class Message:
-    def __init__(self, symbol, signal, price):
+    def __init__(self, symbol, signal, price, change):
         self.symbol = symbol
         self.signal = signal
+        self.time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.price = price
+        self.change = change
 
 
-# Mock-up dictionary for signal icons
-Signals = {"buy": "🔴", "sell": "🟢"}
+Signals = {
+    "BUY": "🟢🟢🟢",
+    "SELL": "🔻🔻🔻",
+}
+
+
+def format_float_dynamic(value):
+    """'
+    if price > $1, then format to 6 decimal places
+    """
+    if value >= 1:
+        value = round(value, 6)
+    s = f"{value:.10f}"
+    s = s.rstrip("0").rstrip(".")
+    decimals = len(s.split(".")[-1]) if "." in s else 0
+    formatted_value = f"{value:.{decimals}f}"
+    return formatted_value
 
 
 def construct_message(message: Message):
-    # Define the desired length for alignment
-    max_length = 6  # Adjust this value based on your maximum expected token length
-    # Align the symbol and format the message
-    aligned_symbol = message.symbol.ljust(max_length)
-    return f"{aligned_symbol} {Signals[message.signal]}\n\nPrice: {message.price}"
+    price = format_float_dynamic(message.price)
+    return f"\n{message.symbol}\n{Signals[message.signal]} {message.change}\n\n{price}$\n{message.time}"
 
+
+open = 100.11
+close = 10.48
+per = (close - open) / open * 100
+
+per = per > 0 and f"+{per:.2f}%" or f"{per:.2f}%"
 
 # Example usage
-message1 = Message("TAO", "buy", 100)
-message2 = Message("W", "sell", 200)
-message3 = Message("TOKEN", "buy", 300)
 
-print(construct_message(message1))
-print(construct_message(message2))
+message3 = Message("TOKEN", "BUY", 300, per)
+
+
 print(construct_message(message3))
-
-
-float = 0.0084697
-print(f"{float:.8f}")
-print(float)
-print(0.00002702)

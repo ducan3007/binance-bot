@@ -72,6 +72,8 @@ class KlineHelper:
         data["LongStopPrev"].append(None)
         data["ShortStopPrev"].append(None)
         data["Direction"].append(None)
+        data["Open_p"].append(open_p)
+        data["Close_p"].append(close_p)
 
     def get_heikin_ashi(self, data, klines, prev_item=None):
         for kline in klines:
@@ -281,12 +283,17 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
         if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
+                prev_open_price = data["Open"][SIZE - 2]
+                prev_close_price = data["Close"][SIZE - 2]
+                per = (prev_close_price - prev_open_price) / prev_open_price * 100
+                per = per > 0 and f"+{per:.2f}%" or f"{per:.2f}%"
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
                     "time_frame": TIME_FRAME,
                     "time": data["Time1"][SIZE - 1][11:],
                     "price": data["Close"][SIZE - 1],
+                    "change": per,
                 }
                 send_telegram_message(body)
                 hasSentSignal = True

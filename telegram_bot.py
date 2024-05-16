@@ -22,6 +22,7 @@ class Message(BaseModel):
     time_frame: TimeFrame
     time: str
     price: float
+    change: str
 
 
 def send_telegram_message(message, token, chat_id):
@@ -47,4 +48,4 @@ def format_float_dynamic(value):
 
 def construct_message(message: Message):
     price = format_float_dynamic(message.price)
-    return f"\n{message.symbol}\n{Signals[message.signal]}\nPrice - {price} $\nTime - {message.time}"
+    return f"\n{message.symbol}\n{Signals[message.signal]}\nPrice   {price} ({message.change})\nTime   {message.time}"
