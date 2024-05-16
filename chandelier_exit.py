@@ -93,7 +93,7 @@ class KlineHelper:
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[["Time1", "Direction", "ATR", "Open", "High", "Low", "Close", "LongStop", "ShortStop"]].to_csv(
+        dfdata[["Time1", "Open_p", "Close_p"]].to_csv(
             filename, index=False, float_format="%.15f", sep=" "
         )
 
@@ -211,7 +211,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     chandelier_exit.size = SIZE - 170
     SIZE = SIZE - 170
 
-    # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+    kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
     time.sleep(1)
     while True:
@@ -250,7 +250,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         elif timestamp == data_temp_dict["Time"][0]:
             timestamp = data_temp_dict["Time"][1]
@@ -274,7 +274,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
             Exception("Time not match !!!")
@@ -283,10 +283,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
         if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                prev_open_price = data["Open"][SIZE - 2]
-                prev_close_price = data["Close"][SIZE - 2]
+                prev_open_price = data["Open_p"][SIZE - 2]
+                prev_close_price = data["Close_p"][SIZE - 2]
                 per = (prev_close_price - prev_open_price) / prev_open_price * 100
-                per = per > 0 and f"+{per:.2f}%" or f"{per:.2f}%"
+                per = per > 0 and f"+{per:.4f}%" or f"{per:.4f}%"
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
@@ -315,6 +315,8 @@ def init_data():
         "LongStopPrev",
         "ShortStopPrev",
         "Direction",
+        "Open_p",
+        "Close_p",
     ]
 
     data = {key: [] for key in keys}

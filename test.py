@@ -107,11 +107,11 @@ def construct_message(message: Message):
     return f"\n{message.symbol}\n{Signals[message.signal]} {message.change}\n\n{price}$\n{message.time}"
 
 
-open = 100.11
-close = 10.48
-per = (close - open) / open * 100
+open = 0.15466
+close = 0.15566
+per = (close - open) / open * 100.0
 
-per = per > 0 and f"+{per:.2f}%" or f"{per:.2f}%"
+per = per > 0 and f"+{per:.4f}%" or f"{per:.4f}%"
 
 # Example usage
 
