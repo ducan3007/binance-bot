@@ -211,7 +211,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     chandelier_exit.size = SIZE - 170
     SIZE = SIZE - 170
 
-    kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+    # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
     time.sleep(1)
     while True:
@@ -250,7 +250,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         elif timestamp == data_temp_dict["Time"][0]:
             timestamp = data_temp_dict["Time"][1]
@@ -274,7 +274,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
             Exception("Time not match !!!")
