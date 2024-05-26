@@ -291,7 +291,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
                     "signal": signal,
                     "symbol": f"${TOKEN}",
                     "time_frame": TIME_FRAME,
-                    "time": data["Time1"][SIZE - 1][11:],
+                    "time": data["Time1"][SIZE - 2][11:],
                     "price": data["Close"][SIZE - 1],
                     "change": per,
                 }
