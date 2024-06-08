@@ -12,8 +12,11 @@ Signals = {
 
 class TimeFrame(str, Enum):
     m1 = "1m"
+    m3 = "3m"
     m5 = "5m"
     m15 = "15m"
+    h1 = "1h"
+    h4 = "4h"
 
 
 class Message(BaseModel):

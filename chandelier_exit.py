@@ -93,9 +93,7 @@ class KlineHelper:
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[["Time1", "Open_p", "Close_p"]].to_csv(
-            filename, index=False, float_format="%.15f", sep=" "
-        )
+        dfdata[["Time1", "Open_p", "Close_p"]].to_csv(filename, index=False, float_format="%.15f", sep=" ")
 
 
 class ChandlierExit:
@@ -343,13 +341,18 @@ if __name__ == "__main__":
     parser.add_argument("--timeframe", type=str, help='Time frame, e.g., "1m"', default="1m")
     parser.add_argument("--sleep", type=str, help='Time sleep, e.g., "15"', default="10")
 
-    # Parse arguments
     args = parser.parse_args()
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
 
-    # Reading the tokens from the file
-    with open("tokens.txt", "r") as file:
+    files = {
+        "1m": "tokens.1m.txt",
+        "3m": "tokens.3m.txt",
+        "15m": "tokens.txt",
+        "4h": "tokens.txt",
+    }
+
+    with open(files[TIME_FRAME], "r") as file:
         tokens = [line.strip() for line in file]
 
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
