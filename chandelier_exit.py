@@ -345,10 +345,13 @@ if __name__ == "__main__":
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
 
+    # Each .txt file for each time frame
     files = {
         "1m": "tokens.1m.txt",
-        "3m": "tokens.3m.txt",
+        "3m": "tokens.txt",
+        "5m": "tokens.txt",
         "15m": "tokens.txt",
+        "1h": "tokens.txt",
         "4h": "tokens.txt",
     }
 
