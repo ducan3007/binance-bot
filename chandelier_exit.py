@@ -8,7 +8,7 @@ import requests
 import json
 import argparse
 
-Epsilon = 1e-9
+EPSILON = 1e-9
 
 
 class CEConfig(Enum):
@@ -125,7 +125,7 @@ class ChandlierExit:
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
 
-            if data["Close"][i - 1] - longStopPrev > Epsilon:
+            if data["Close"][i - 1] - longStopPrev > EPSILON:
                 longStop = max(longStop, longStopPrev)
             else:
                 longStop = longStop
@@ -142,7 +142,7 @@ class ChandlierExit:
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
 
-            if data["Close"][i - 1] - shortStopPrev < -Epsilon:
+            if data["Close"][i - 1] - shortStopPrev < -EPSILON:
                 shortStop = min(shortStop, shortStopPrev)
             else:
                 shortStop = shortStop
@@ -152,9 +152,9 @@ class ChandlierExit:
 
             dir = self.direction
 
-            if data["Close"][i] - data["ShortStopPrev"][i] > Epsilon:
+            if data["Close"][i] - data["ShortStopPrev"][i] > EPSILON:
                 dir = 1
-            elif data["Close"][i] - data["LongStopPrev"][i] < -Epsilon:
+            elif data["Close"][i] - data["LongStopPrev"][i] < -EPSILON:
                 dir = -1
 
             self.direction = dir
