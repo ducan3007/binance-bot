@@ -40,4 +40,7 @@ def post_send_message(message: Message):
     signal = construct_message(message)
     chat_id = BOT[message.time_frame]["chat_id"]
     token = BOT[message.time_frame]["token"]
-    send_telegram_message(signal, token=token, chat_id=chat_id)
+    res = send_telegram_message(signal, token=token, chat_id=chat_id)
+    if res:
+        return {"status": "success"}
+    return {"status": "failed"}

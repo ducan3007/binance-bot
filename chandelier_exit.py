@@ -93,7 +93,7 @@ class KlineHelper:
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[["Time1", "Open_p", "Close_p"]].to_csv(filename, index=False, float_format="%.15f", sep=" ")
+        dfdata[["Time1", "Direction", "Open_p", "Close_p"]].to_csv(filename, index=False, float_format="%.15f", sep=" ")
 
 
 class ChandlierExit:
@@ -164,7 +164,10 @@ class ChandlierExit:
 def send_telegram_message(body):
     URL = "http://localhost:8000/sendMessage"
     headers = {"Content-Type": "application/json"}
-    requests.post(URL, headers=headers, data=json.dumps(body))
+    res = requests.post(URL, headers=headers, data=json.dumps(body))
+    if res.json()["status"] == "success":
+        return True
+    return False
 
 
 def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
@@ -293,8 +296,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
                     "price": data["Close"][SIZE - 1],
                     "change": per,
                 }
-                send_telegram_message(body)
-                hasSentSignal = True
+                res = send_telegram_message(body)
+                if res:
+                    hasSentSignal = True
                 print(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
 

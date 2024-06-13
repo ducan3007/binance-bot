@@ -34,6 +34,10 @@ def send_telegram_message(message, token, chat_id):
     response = requests.post(url, data=payload)
     logger.info(message)
     logger.info(response.json())
+    if response.json()["ok"]:
+        return True
+    else:
+        logger.error("Failed to send message", message)
 
 
 def format_float_dynamic(value):
