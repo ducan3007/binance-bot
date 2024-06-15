@@ -37,7 +37,7 @@ def send_telegram_message(message, token, chat_id):
     if response.json()["ok"]:
         return True
     else:
-        logger.error("Failed to send message", message)
+        logger.info("Failed to send message", message)
 
 
 def format_float_dynamic(value):
