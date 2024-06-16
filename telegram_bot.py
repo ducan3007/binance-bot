@@ -34,7 +34,7 @@ def send_telegram_message(message, token, chat_id):
     response = requests.post(url, data=payload)
     logger.info(message)
     logger.info(response.json())
-    if response.json()["ok"]:
+    if response.json()["ok"] == True:
         return True
     else:
         logger.info("Failed to send message", message)
