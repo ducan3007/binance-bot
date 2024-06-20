@@ -167,7 +167,8 @@ def send_telegram_message(body):
     res = requests.post(URL, headers=headers, data=json.dumps(body))
     if res.json()["status"] == "success":
         return True
-    return False
+    else:
+        return False
 
 
 def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
@@ -296,10 +297,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
                     "price": data["Close"][SIZE - 1],
                     "change": per,
                 }
-                res = send_telegram_message(body)
-                if res:
+                ok = send_telegram_message(body)
+                if ok:
                     hasSentSignal = True
-                print(f"Signal sent:", body)
+                    print(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
 
 

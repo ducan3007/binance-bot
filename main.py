@@ -43,4 +43,5 @@ def post_send_message(message: Message):
     res = send_telegram_message(signal, token=token, chat_id=chat_id)
     if res:
         return {"status": "success"}
-    return {"status": "failed"}
+    else:
+        return {"status": "failed"}
