@@ -28,17 +28,17 @@ class Message(BaseModel):
     change: str
 
 
-def send_telegram_message(message: Message, token, chat_id):
+def send_telegram_message(message, token, chat_id):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": message}
     response = requests.post(url, data=payload)
     logger.info(message)
     logger.info(response.json())
     if response.json()["ok"] == True:
-        logger.info(f"Message sent successfully to {chat_id}, {message.symbol}, time_frame: {message.time_frame}")
+        logger.info(f"Message sent successfully ${message}")
         return True
     else:
-        logger.info(f"Failed to send message to {chat_id}, {message.symbol}, time_frame: {message.time_frame}")
+        logger.info(f"Failed to send message ${message}")
         return False
 
 
