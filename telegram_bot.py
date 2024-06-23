@@ -35,10 +35,10 @@ def send_telegram_message(signal, token, chat_id, message: Message):
     logger.info(signal)
     logger.info(response.json())
     if response.json()["ok"] == True:
-        logger.info(f"Message sent successfully: ${message.symbol} {message.signal} {message.time_frame}")
+        logger.info(f"Message sent successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         return True
     else:
-        logger.info(f"Failed to send message: ${message.symbol} {message.signal} {message.time_frame}")
+        logger.info(f"Failed to send message: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         return False
 
 
