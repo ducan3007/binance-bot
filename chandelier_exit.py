@@ -357,6 +357,7 @@ if __name__ == "__main__":
         "5m": "tokens.txt",
         "15m": "tokens.txt",
         "1h": "tokens.txt",
+        "2h": "tokens.txt",
         "4h": "tokens.txt",
     }
 
