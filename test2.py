@@ -1,6 +1,28 @@
-import time
+import os
 
-current_time_seconds = time.time()
-print(current_time_seconds)
-1715150520.0
-1715151230.7801306
+PIN_MESSAGE_PATH = "pinned_messages.txt"
+
+
+def get_message_id(symbol, time_frame):
+    # Check if the file exists
+    if not os.path.exists(PIN_MESSAGE_PATH):
+        return None
+
+    # Read the records from the file
+    with open(PIN_MESSAGE_PATH, "r") as file:
+        for line in file:
+            parts = line.strip().split()
+            if len(parts) == 3:
+                existing_symbol, existing_message_id, existing_time_frame = parts
+                if existing_symbol == symbol and existing_time_frame == time_frame:
+                    return existing_message_id
+    return None
+
+
+symbol = "AAPL"
+time_frame = "5m"
+message_id = get_message_id(symbol, time_frame)
+if message_id:
+    print(f"Message ID: {message_id}")
+else:
+    print("Message ID not found")

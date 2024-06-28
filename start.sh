@@ -1,3 +1,4 @@
 #!/bin/bash
 export $(sed 's/#.*//g' .env | xargs)
-fastapi dev main.py
+
+fastapi run main.py --host=localhost

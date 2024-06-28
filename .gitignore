@@ -5,3 +5,4 @@ __pycache__/
 *.csv
 
 */.csv
+pinned_messages.txt

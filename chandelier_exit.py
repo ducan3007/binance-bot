@@ -164,7 +164,7 @@ class ChandlierExit:
 def send_telegram_message(body):
     URL = "http://localhost:8000/sendMessage"
     headers = {"Content-Type": "application/json"}
-    res = requests.post(URL, headers=headers, data=json.dumps(body))
+    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
     if res.json()["status"] == "success":
         return True
     else:
