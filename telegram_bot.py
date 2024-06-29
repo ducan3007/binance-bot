@@ -79,7 +79,7 @@ def send_telegram_message(signal, token, chat_id, message: Message):
     if response.json()["ok"] == True:
         logger.info(f"Message sent successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         message_id = response.json()["result"]["message_id"]
-        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [TimeFrame.h2, TimeFrame.h4, TimeFrame.m1]:
+        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [TimeFrame.h2, TimeFrame.m15]:
             last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
             if last_pinned_message_id:
                 pin_unpin_telegram_message(
