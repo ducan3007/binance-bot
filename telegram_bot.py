@@ -97,7 +97,7 @@ def send_telegram_message(signal, token, chat_id, message: Message):
                     message.symbol,
                     message.signal,
                     message.time_frame,
-                    type="unpinChatMessage",
+                    action="unpinChatMessage",
                 )
             return pin_unpin_telegram_message(
                 token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
@@ -117,9 +117,9 @@ def pin_unpin_telegram_message(
     signal,
     time_frame,
     max_retries=5,
-    type="pinChatMessage",
+    action="pinChatMessage",
 ):
-    url = f"https://api.telegram.org/bot{token}/{type}"
+    url = f"https://api.telegram.org/bot{token}/{action}"
     payload = {"chat_id": chat_id, "message_id": message_id}
     retry_count = 0
     delay = 5  # Initial delay in seconds
@@ -129,18 +129,18 @@ def pin_unpin_telegram_message(
         response = requests.post(url, data=payload)
         logger.info(response.json())
         if response.json()["ok"]:
-            logger.info(f"{type} successfully: {symbol} {signal} {time_frame}")
-            if type == "pinChatMessage":
+            logger.info(f"{action} successfully: {symbol} {signal} {time_frame}")
+            if action == "pinChatMessage":
                 last_pinned_message_to_file(message_id, symbol, time_frame)
             return True
         else:
-            logger.info(f"Failed to {type} message: {symbol} {signal} {time_frame}")
+            logger.info(f"Failed to {action} message: {symbol} {signal} {time_frame}")
             retry_count += 1
             sleep_time = min(delay * (2**retry_count), max_delay)
             logger.info(f"Retrying in {sleep_time} seconds...")
             time.sleep(sleep_time)
 
-    logger.info(f"Failed to {type} message after {max_retries} retries: {symbol} {signal} {time_frame}")
+    logger.info(f"Failed to {action} message after {max_retries} retries: {symbol} {signal} {time_frame}")
     return False
 
 
