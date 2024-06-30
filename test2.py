@@ -20,7 +20,7 @@ def get_message_id(symbol, time_frame):
 
 
 symbol = "AAPL"
-time_frame = "5m"
+time_frame = "1h"
 message_id = get_message_id(symbol, time_frame)
 if message_id:
     print(f"Message ID: {message_id}")
