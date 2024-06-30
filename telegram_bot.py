@@ -80,7 +80,7 @@ def get_message_id(symbol, time_frame):
 
 def send_telegram_message(signal, token, chat_id, message: Message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": signal}
+    payload = {"chat_id": chat_id, "text": signal, "parse_mode": "HTML"}
     response = requests.post(url, data=payload)
     logger.info(signal)
     logger.info(response.json())
@@ -159,4 +159,4 @@ def format_float_dynamic(value):
 
 def construct_message(message: Message):
     price = format_float_dynamic(message.price)
-    return f"\n{message.symbol}\n{Signals[message.signal]}\nPrice   {price} ({message.change})\nTime   {message.time}"
+    return f"\n{message.symbol}\n{Signals[message.signal]}\n${price}  {message.change}\n<b><code>{message.time}</code></b>"

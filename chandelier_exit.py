@@ -40,7 +40,7 @@ class KlineHelper:
         high_p = float(kline[2])
         low_p = float(kline[3])
         close_p = float(kline[4])
-        time1 = datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M:%S")
+        time1 = datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M")
         time = int(kline[0]) / 1000
 
         if len(data["Close"]) > 0:  # Check isnt the first candle
