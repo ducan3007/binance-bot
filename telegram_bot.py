@@ -159,4 +159,4 @@ def format_float_dynamic(value):
 
 def construct_message(message: Message):
     price = format_float_dynamic(message.price)
-    return f"\n{message.symbol}\n{Signals[message.signal]}\n${price}  ({message.change})\n<b><code>{message.time}</code></b>"
+    return f"\n<b>{message.symbol}</b>\n{Signals[message.signal]}\n ${price}  ({message.change})\n<b><code>{message.time}</code></b>"
