@@ -24,13 +24,18 @@ class TimeFrame(str, Enum):
     h4 = "4h"
 
 
-class Message(BaseModel):
+class MessageType1(BaseModel):
     signal: str  # BUY or SELL
     symbol: str
     time_frame: TimeFrame
     time: str
     price: float
     change: str
+
+
+class MessageType2(BaseModel):
+    message: str
+    time_frame: TimeFrame
 
 
 def last_pinned_message_to_file(message_id, symbol, time_frame):
@@ -63,11 +68,9 @@ def last_pinned_message_to_file(message_id, symbol, time_frame):
 
 
 def get_message_id(symbol, time_frame):
-    # Check if the file exists
     if not os.path.exists(PIN_MESSAGE_PATH):
         return None
 
-    # Read the records from the file
     with open(PIN_MESSAGE_PATH, "r") as file:
         for line in file:
             parts = line.strip().split()
@@ -78,12 +81,7 @@ def get_message_id(symbol, time_frame):
     return None
 
 
-def send_telegram_message(signal, token, chat_id, message: Message):
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": signal, "parse_mode": "HTML"}
-    response = requests.post(url, data=payload)
-    logger.info(signal)
-    logger.info(response.json())
+def handle_message_type1(response, token, chat_id, message: MessageType1):
     if response.json()["ok"] == True:
         logger.info(f"Message sent successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         message_id = response.json()["result"]["message_id"]
@@ -157,6 +155,19 @@ def format_float_dynamic(value):
     return formatted_value
 
 
-def construct_message(message: Message):
+def construct_message(message: MessageType1):
     price = format_float_dynamic(message.price)
     return f"\n<b>{message.symbol}</b>\n{Signals[message.signal]}\n ${price}  ({message.change})\n<b><code>{message.time}</code></b>"
+
+
+def send_telegram_message(signal, token, chat_id, message=None):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": signal, "parse_mode": "HTML"}
+    response = requests.post(url, data=payload)
+    logger.info(signal)
+    logger.info(response.json())
+    if isinstance(message, MessageType1):
+        return handle_message_type1(response, token, chat_id, message)
+    return {
+        "status": response.json()["ok"],
+    }

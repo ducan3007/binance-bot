@@ -1,6 +1,11 @@
 import os
 from fastapi import FastAPI
-from telegram_bot import send_telegram_message, construct_message, Message
+from telegram_bot import (
+    send_telegram_message,
+    construct_message,
+    MessageType1,
+    MessageType2,
+)
 from logger import logger
 
 CHAT_ID_1M = os.environ.get("CHAT_ID_1M")
@@ -39,18 +44,30 @@ app = FastAPI()
 
 
 @app.post("/sendMessage")
-def post_send_message(message: Message):
-    logger.info(f"Received message: {message}")
-    signal = construct_message(message)
-    chat_id = BOT[message.time_frame]["chat_id"]
-    token = BOT[message.time_frame]["token"]
+def post_send_message(body: MessageType1):
+    logger.info(f"Received message: {body}")
+    signal = construct_message(body)
+    chat_id = BOT[body.time_frame]["chat_id"]
+    token = BOT[body.time_frame]["token"]
     res = send_telegram_message(
         signal,
         token=token,
         chat_id=chat_id,
-        message=message,
+        message=body,
     )
     if res:
         return {"status": "success"}
     else:
         return {"status": "failed"}
+
+
+@app.post("/send24hrPriceChange")
+def post_send_24h_price_change(body: MessageType2):
+    logger.info("Received request to send 24h price change")
+    chat_id = BOT[body.time_frame]["chat_id"]
+    token = BOT[body.time_frame]["token"]
+    return send_telegram_message(
+        body.message,
+        token=token,
+        chat_id=chat_id,
+    )

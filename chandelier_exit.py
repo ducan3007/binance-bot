@@ -352,7 +352,7 @@ if __name__ == "__main__":
 
     # Each .txt file for each time frame
     files = {
-        "1m": "tokens.1m.txt",
+        "1m": "tokens.txt",
         "3m": "tokens.txt",
         "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
