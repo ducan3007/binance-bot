@@ -3,7 +3,7 @@ import time
 from tabulate import tabulate
 from logger import logger
 
-N = 20
+N = 50
 
 
 def format_table(data):
@@ -60,15 +60,18 @@ def get_top_gainers_and_losers(data):
 
     gainers_idx = 0
     losers_idx = 0
-
+    counter = 0
     # Collect top gainers
     while len(top_gainers) < N and gainers_idx < len(sorted_data):
         candidate = sorted_data[gainers_idx]
         if candidate["symbol"] not in gainers_checked:
             gainers_checked.add(candidate["symbol"])
             if check_symbol_trade_status(candidate["symbol"]):
+                counter += 1
                 top_gainers.append(candidate)
         gainers_idx += 1
+        if float(candidate["priceChangePercent"]) < 1.0:
+            break
 
     # Collect top losers
     sorted_losers_data = sorted(data, key=lambda x: float(x["priceChangePercent"]))
@@ -77,9 +80,13 @@ def get_top_gainers_and_losers(data):
         if candidate["symbol"] not in losers_checked:
             losers_checked.add(candidate["symbol"])
             if check_symbol_trade_status(candidate["symbol"]):
+                counter += 1
                 top_losers.append(candidate)
         losers_idx += 1
+        if float(candidate["priceChangePercent"]) > -1.0:
+            break
 
+    logger.info(f"Total pairs checked: {counter}")
     return top_gainers, top_losers
 
 
@@ -109,7 +116,7 @@ if __name__ == "__main__":
     table = format_table(message)
     date = time.strftime("%Y-%m-%d", time.localtime())
     message = (
-        f"#DAILY_REPORT {date}\n\nBinance Future Top Gainers & Losers 📊\n\n<pre language='javascript'>{table}</pre>"
+        f"#DAILY_REPORT {date}\n\nBinance Future Top 50 Gainers & Losers 📊\n\n<pre language='javascript'>{table}</pre>"
     )
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(

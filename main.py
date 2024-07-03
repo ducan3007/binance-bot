@@ -49,16 +49,12 @@ def post_send_message(body: MessageType1):
     signal = construct_message(body)
     chat_id = BOT[body.time_frame]["chat_id"]
     token = BOT[body.time_frame]["token"]
-    res = send_telegram_message(
+    return send_telegram_message(
         signal,
         token=token,
         chat_id=chat_id,
         message=body,
     )
-    if res:
-        return {"status": "success"}
-    else:
-        return {"status": "failed"}
 
 
 @app.post("/send24hrPriceChange")
@@ -66,8 +62,4 @@ def post_send_24h_price_change(body: MessageType2):
     logger.info("Received request to send 24h price change")
     chat_id = BOT[body.time_frame]["chat_id"]
     token = BOT[body.time_frame]["token"]
-    return send_telegram_message(
-        body.message,
-        token=token,
-        chat_id=chat_id,
-    )
+    return send_telegram_message(body.message, token=token, chat_id=chat_id, message=body)

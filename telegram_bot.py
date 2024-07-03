@@ -107,6 +107,31 @@ def handle_message_type1(response, token, chat_id, message: MessageType1):
         return False
 
 
+def handle_message_type2(response, token, chat_id, message: MessageType2):
+    symbol = "$DAILY_REPORT"
+    signal = "Binace Future Top Gainers & Losers"
+    date = time.strftime("%Y-%m-%d", time.localtime())
+    if response.json()["ok"] == True:
+        logger.info(f"Message sent successfully: {symbol} {signal} {message.time_frame} {date}")
+        message_id = response.json()["result"]["message_id"]
+        last_pinned_message_id = get_message_id("$DAILY_REPORT", message.time_frame.value)
+        if last_pinned_message_id:
+            pin_unpin_telegram_message(
+                token,
+                chat_id,
+                last_pinned_message_id,
+                symbol,
+                signal,
+                message.time_frame,
+                action="unpinChatMessage",
+            )
+        return pin_unpin_telegram_message(token, chat_id, message_id, symbol, signal, message.time_frame.value)
+
+    else:
+        logger.info(f"Failed to send message: {symbol} {signal} {message.time_frame} {date}")
+        return False
+
+
 def pin_unpin_telegram_message(
     token,
     chat_id,
@@ -167,7 +192,15 @@ def send_telegram_message(signal, token, chat_id, message=None):
     logger.info(signal)
     logger.info(response.json())
     if isinstance(message, MessageType1):
-        return handle_message_type1(response, token, chat_id, message)
+        status = handle_message_type1(response, token, chat_id, message)
+        return {
+            "status": "success" if status else "failed",
+        }
+    elif isinstance(message, MessageType2):
+        status = handle_message_type2(response, token, chat_id, message)
+        return {
+            "status": status,
+        }
     return {
         "status": response.json()["ok"],
     }
