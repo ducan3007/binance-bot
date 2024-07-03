@@ -26,7 +26,7 @@ def format_table(data):
             ]
         )
 
-    return tabulate(table_data, headers=["GAINERS", "", "LOSERS", ""], tablefmt="simple")
+    return tabulate(table_data, headers=["GAINERS", "24h%", "LOSERS", "24h%"], tablefmt="simple")
 
 
 def get_24h_price_change():
