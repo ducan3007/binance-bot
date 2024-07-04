@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from telegram_bot import (
     send_telegram_message,
     construct_message,
@@ -42,6 +42,12 @@ BOT = {
 
 app = FastAPI()
 
+# log the IP address of the incoming request
+@app.get("/health-check")
+def health_check(request: Request):
+    ip = request.client.host
+    logger.info(f"Health check from {ip}")
+    return {"status": "ok"}
 
 @app.post("/sendMessage")
 def post_send_message(body: MessageType1):
