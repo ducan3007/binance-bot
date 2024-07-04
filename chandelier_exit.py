@@ -10,6 +10,11 @@ import argparse
 
 EPSILON = 1e-9
 
+NON_SPOT_PAIRS = {
+    "TONUSDT": "TONUSDT",
+    "ONDOUSDT": "ONDOUSDT",
+}
+
 
 class CEConfig(Enum):
     SIZE = 200
@@ -171,6 +176,19 @@ def send_telegram_message(body):
         return False
 
 
+def fetch_klines_non_spot(PAIR, TIME_FRAME, limit):
+    URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
+    headers = {"Content-Type": "application/json"}
+    res = requests.get(URL, headers=headers, timeout=None)
+    return res.json()
+
+
+def fetch_klines(binance_spot: Spot, PAIR, TIME_FRAME, limit):
+    if PAIR in NON_SPOT_PAIRS:
+        return fetch_klines_non_spot(PAIR, TIME_FRAME, limit)
+    return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
+
+
 def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
@@ -186,7 +204,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = binance_spot.klines(PAIR, TIME_FRAME, limit=SIZE)
+    klines = fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
     kline_helper.get_heikin_ashi(data, klines)
     df_data = pd.DataFrame(data)
 
@@ -219,7 +237,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     while True:
         counter += 1
         data_temp_dict = init_data()
-        two_latest_klines = binance_spot.klines(PAIR, TIME_FRAME, limit=2)
+        two_latest_klines = fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
 
         kline_helper.get_heikin_ashi(
             data_temp_dict,
