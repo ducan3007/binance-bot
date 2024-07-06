@@ -68,10 +68,10 @@ def get_top_gainers_and_losers(data):
             gainers_checked.add(candidate["symbol"])
             if check_symbol_trade_status(candidate["symbol"]):
                 counter += 1
+                if float(candidate["priceChangePercent"]) < 1.0:
+                    break
                 top_gainers.append(candidate)
         gainers_idx += 1
-        if float(candidate["priceChangePercent"]) < 1.0:
-            break
 
     # Collect top losers
     sorted_losers_data = sorted(data, key=lambda x: float(x["priceChangePercent"]))
@@ -81,10 +81,10 @@ def get_top_gainers_and_losers(data):
             losers_checked.add(candidate["symbol"])
             if check_symbol_trade_status(candidate["symbol"]):
                 counter += 1
+                if float(candidate["priceChangePercent"]) > -1.0:
+                    break
                 top_losers.append(candidate)
         losers_idx += 1
-        if float(candidate["priceChangePercent"]) > -1.0:
-            break
 
     logger.info(f"Total pairs checked: {counter}")
     return top_gainers, top_losers
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,
-        json={"message": message, "time_frame": "2h"},
+        json={"message": message, "time_frame": "1m"},
         headers={"Content-Type": "application/json"},
     )
     print(response.json())
