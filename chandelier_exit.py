@@ -303,9 +303,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
         if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                prev_open_price = data["Open_p"][SIZE - 2]
                 prev_close_price = data["Close_p"][SIZE - 2]
-                per = (prev_close_price - prev_open_price) / prev_open_price * 100
+                prev_prev_close_price = data["Close_p"][SIZE - 3]
+                per = (prev_close_price - prev_prev_close_price) / prev_close_price * 100
                 per = per > 0 and f"+{per:.3f}%" or f"{per:.3f}%"
                 body = {
                     "signal": signal,
