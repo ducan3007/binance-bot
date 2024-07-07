@@ -121,7 +121,7 @@ if __name__ == "__main__":
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,
-        json={"message": message, "time_frame": "1m"},
+        json={"message": message, "time_frame": "2h"},
         headers={"Content-Type": "application/json"},
     )
     print(response.json())
