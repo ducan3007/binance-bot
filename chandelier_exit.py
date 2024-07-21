@@ -148,9 +148,7 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -165,9 +163,7 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -202,6 +198,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE):
 
     if not MODE:
         MODE = "heikin_ashi"
+
+    if MODE == "normal":
+        MULT = 1.80
 
     print(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
