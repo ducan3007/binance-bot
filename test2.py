@@ -1,28 +1,60 @@
-import os
+import pandas as pd
 
-PIN_MESSAGE_PATH = "pinned_messages.txt"
+# Path to your CSV file
+csv_path = "BTC_ce.csv"
 
-
-def get_message_id(symbol, time_frame):
-    # Check if the file exists
-    if not os.path.exists(PIN_MESSAGE_PATH):
-        return None
-
-    # Read the records from the file
-    with open(PIN_MESSAGE_PATH, "r") as file:
-        for line in file:
-            parts = line.strip().split()
-            if len(parts) == 3:
-                existing_symbol, existing_message_id, existing_time_frame = parts
-                if existing_symbol == symbol and existing_time_frame == time_frame:
-                    return existing_message_id
-    return None
+# Load the data from CSV
+data = pd.read_csv(csv_path)
 
 
-symbol = "AAPL"
-time_frame = "1h"
-message_id = get_message_id(symbol, time_frame)
-if message_id:
-    print(f"Message ID: {message_id}")
-else:
-    print("Message ID not found")
+# Initialize parameters
+initial_capital = 1000
+current_capital = initial_capital
+leverage = 5
+fee_rate = 0.0025
+position_open = False
+position_type = None  # 'long' or 'short'
+open_price = 0
+
+# Iterate over the rows of the dataset to apply the trading strategy
+for index, row in data.iterrows():
+    if index == 0:
+        continue  # Skip the first row as there's no previous data to compare with
+
+    previous_row = data.iloc[index - 1]
+
+    # Check for direction change and open/close positions
+    if previous_row["direction"] == -1 and row["direction"] == 1:
+        # Close short and open long position
+        if position_open and position_type == "short":
+            # Calculate profit from the short position
+            profit = (previous_row["real_price_open"] - row["real_price_close"]) / previous_row["real_price_open"]
+            current_capital += current_capital * profit * leverage
+            current_capital -= current_capital * fee_rate  # Apply transaction fee
+
+        # Open new long position
+        position_type = "long"
+        open_price = row["real_price_open"]
+
+    elif previous_row["direction"] == 1 and row["direction"] == -1:
+        # Close long and open short position
+        if position_open and position_type == "long":
+            # Calculate profit from the long position
+            profit = (row["real_price_close"] - open_price) / open_price
+            current_capital += current_capital * profit * leverage
+            current_capital -= current_capital * fee_rate  # Apply transaction fee
+
+        # Open new short position
+        position_type = "short"
+        open_price = row["real_price_open"]
+
+    position_open = True
+
+# Calculate final results
+final_capital = current_capital
+percentage_gain = ((final_capital - initial_capital) / initial_capital) * 100
+
+# Output results
+print(f"Initial Capital: ${initial_capital}")
+print(f"Final Capital: ${final_capital:.2f}")
+print(f"Percentage Gain: {percentage_gain:.2f}%")

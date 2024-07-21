@@ -96,6 +96,17 @@ class KlineHelper:
         for key in data1:
             data1[key].extend(data2[key])
 
+    def fetch_klines_non_spot(self, PAIR, TIME_FRAME, limit):
+        URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
+        headers = {"Content-Type": "application/json"}
+        res = requests.get(URL, headers=headers, timeout=None)
+        return res.json()
+
+    def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit):
+        if PAIR in NON_SPOT_PAIRS:
+            return self.fetch_klines_non_spot(PAIR, TIME_FRAME, limit)
+        return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
+
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
         dfdata[["Time1", "Direction", "Open_p", "Close_p"]].to_csv(filename, index=False, float_format="%.15f", sep=" ")
@@ -123,9 +134,7 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -140,9 +149,7 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -166,29 +173,6 @@ class ChandlierExit:
             data["Direction"][i] = dir
 
 
-def send_telegram_message(body):
-    URL = "http://localhost:8000/sendMessage"
-    headers = {"Content-Type": "application/json"}
-    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
-    if res.json()["status"] == "success":
-        return True
-    else:
-        return False
-
-
-def fetch_klines_non_spot(PAIR, TIME_FRAME, limit):
-    URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
-    headers = {"Content-Type": "application/json"}
-    res = requests.get(URL, headers=headers, timeout=None)
-    return res.json()
-
-
-def fetch_klines(binance_spot: Spot, PAIR, TIME_FRAME, limit):
-    if PAIR in NON_SPOT_PAIRS:
-        return fetch_klines_non_spot(PAIR, TIME_FRAME, limit)
-    return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
-
-
 def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
@@ -204,7 +188,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
+    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
     kline_helper.get_heikin_ashi(data, klines)
     df_data = pd.DataFrame(data)
 
@@ -221,7 +205,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     timestamp = data["Time"][SIZE - 1]
 
     counter = 0
-    hasSentSignal = False
+    is_signal_sent = False
+    last_signal_sent = None
+
     _token = TOKEN.ljust(8)
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
@@ -237,7 +223,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     while True:
         counter += 1
         data_temp_dict = init_data()
-        two_latest_klines = fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
+        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
 
         kline_helper.get_heikin_ashi(
             data_temp_dict,
@@ -274,7 +260,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
 
         elif timestamp == data_temp_dict["Time"][0]:
             timestamp = data_temp_dict["Time"][1]
-            hasSentSignal = False
+            is_signal_sent = False
 
             kline_helper._pop_top_data(data)
 
@@ -300,13 +286,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
             Exception("Time not match !!!")
             break
 
-        if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
-            if not hasSentSignal:
+        signal_status = check_signal(data, SIZE, TIME_FRAME)
+
+        if signal_status:
+            if not is_signal_sent:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                prev_close_price = data["Close_p"][SIZE - 2]
-                prev_prev_close_price = data["Close_p"][SIZE - 3]
-                per = (prev_close_price - prev_prev_close_price) / prev_close_price * 100
-                per = per > 0 and f"+{per:.3f}%" or f"{per:.3f}%"
+                per = calculate_change(data, SIZE)
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
@@ -317,9 +302,31 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
                 }
                 ok = send_telegram_message(body)
                 if ok:
-                    hasSentSignal = True
-                    print(f"Signal sent:", body)
+                    is_signal_sent = True
+                    last_signal_sent = f"{TOKEN}_{TIME_FRAME}"
+                    print(f"Signal sent:", last_signal_sent)
         time.sleep(TIME_SLEEP)
+
+
+def send_telegram_message(body):
+    URL = "http://localhost:8000/sendMessage"
+    headers = {"Content-Type": "application/json"}
+    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
+    if res.json()["status"] == "success":
+        return True
+    else:
+        return False
+    
+def calculate_change(data, SIZE):
+    prev_close_price = data["Close_p"][SIZE - 2]
+    prev_prev_close_price = data["Close_p"][SIZE - 3]
+    per = (prev_close_price - prev_prev_close_price) / prev_close_price * 100
+    per = per > 0 and f"+{per:.3f}%" or f"{per:.3f}%"
+    return per
+
+def check_signal(data, SIZE, time_frame):
+    if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
+        return True
 
 
 def init_data():
