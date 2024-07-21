@@ -24,22 +24,33 @@ class CEConfig(Enum):
     SUB_SIZE = 2
 
 
-class TIME_FRAME_STR(str, Enum):
-    M1 = "1m"
-    M5 = "5m"
-    M15 = "15m"
-    H1 = "1h"
-
-
-TIME_FRAME_MS = {
-    "1m": 60,
-    "5m": 5 * 60,
-    "15m": 15 * 60,
-    "1h": 60 * 60,
-}
-
-
 class KlineHelper:
+    def __init__(self, mode):
+        self.mode = mode
+
+    def _append_kline(self, data, kline):
+        open_p = float(kline[1])
+        high_p = float(kline[2])
+        low_p = float(kline[3])
+        close_p = float(kline[4])
+        time1 = datetime.fromtimestamp(int(kline[0]) / 1000).strftime("%Y-%m-%d %H:%M")
+        time = int(kline[0]) / 1000
+
+        data["Open"].append(open_p)
+        data["High"].append(high_p)
+        data["Low"].append(low_p)
+        data["Close"].append(close_p)
+        data["Time1"].append(time1)
+        data["Time"].append(time)
+        data["ATR"].append(None)
+        data["LongStop"].append(None)
+        data["ShortStop"].append(None)
+        data["LongStopPrev"].append(None)
+        data["ShortStopPrev"].append(None)
+        data["Direction"].append(None)
+        data["Open_p"].append(open_p)
+        data["Close_p"].append(close_p)
+
     def _append_heikin_ashi(self, data, kline, prev_item=None):
         open_p = float(kline[1])
         high_p = float(kline[2])
@@ -82,7 +93,10 @@ class KlineHelper:
 
     def get_heikin_ashi(self, data, klines, prev_item=None):
         for kline in klines:
-            self._append_heikin_ashi(data, kline, prev_item)
+            if self.mode == "heikin_ashi":
+                self._append_heikin_ashi(data, kline, prev_item)
+            else:
+                self._append_kline(data, kline)
 
     def _pop_tail_data(self, data):
         for key in data:
@@ -95,6 +109,17 @@ class KlineHelper:
     def _append_data(self, data1, data2):
         for key in data1:
             data1[key].extend(data2[key])
+
+    def fetch_klines_non_spot(self, PAIR, TIME_FRAME, limit):
+        URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
+        headers = {"Content-Type": "application/json"}
+        res = requests.get(URL, headers=headers, timeout=None)
+        return res.json()
+
+    def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit):
+        if PAIR in NON_SPOT_PAIRS:
+            return self.fetch_klines_non_spot(PAIR, TIME_FRAME, limit)
+        return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
@@ -166,30 +191,7 @@ class ChandlierExit:
             data["Direction"][i] = dir
 
 
-def send_telegram_message(body):
-    URL = "http://localhost:8000/sendMessage"
-    headers = {"Content-Type": "application/json"}
-    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
-    if res.json()["status"] == "success":
-        return True
-    else:
-        return False
-
-
-def fetch_klines_non_spot(PAIR, TIME_FRAME, limit):
-    URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
-    headers = {"Content-Type": "application/json"}
-    res = requests.get(URL, headers=headers, timeout=None)
-    return res.json()
-
-
-def fetch_klines(binance_spot: Spot, PAIR, TIME_FRAME, limit):
-    if PAIR in NON_SPOT_PAIRS:
-        return fetch_klines_non_spot(PAIR, TIME_FRAME, limit)
-    return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
-
-
-def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
+def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
         CEConfig.LENGTH.value,
@@ -197,14 +199,18 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
         CEConfig.USE_CLOSE.value,
         CEConfig.SUB_SIZE.value,
     )
-    print(f"Starting {PAIR}: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
-    kline_helper = KlineHelper()
+    if not MODE:
+        MODE = "heikin_ashi"
+
+    print(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
+
+    kline_helper = KlineHelper(mode=MODE)
     binance_spot = Spot()
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
+    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
     kline_helper.get_heikin_ashi(data, klines)
     df_data = pd.DataFrame(data)
 
@@ -237,7 +243,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
     while True:
         counter += 1
         data_temp_dict = init_data()
-        two_latest_klines = fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
+        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
 
         kline_helper.get_heikin_ashi(
             data_temp_dict,
@@ -315,11 +321,23 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP):
                     "price": data["Close"][SIZE - 1],
                     "change": per,
                 }
+                if MODE == "normal":
+                    body["time_frame"] = f"{TIME_FRAME}_normal"
                 ok = send_telegram_message(body)
                 if ok:
                     hasSentSignal = True
                     print(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
+
+
+def send_telegram_message(body):
+    URL = "http://localhost:8000/sendMessage"
+    headers = {"Content-Type": "application/json"}
+    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
+    if res.json()["status"] == "success":
+        return True
+    else:
+        return False
 
 
 def init_data():
@@ -347,12 +365,12 @@ def init_data():
 import multiprocessing
 
 
-def run_strategy(token, time_frame, pair, TIME_SLEEP):
+def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE):
     while True:
         try:
             print("STARTING CE BOT")
             data = init_data()
-            main(data, token, time_frame, pair, TIME_SLEEP)
+            main(data, token, time_frame, pair, TIME_SLEEP, MODE)
         except Exception as e:
             print(f"Error: {e}")
             time.sleep(5)
@@ -363,8 +381,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process trading pair and timeframe.")
     parser.add_argument("--timeframe", type=str, help='Time frame, e.g., "1m"', default="1m")
     parser.add_argument("--sleep", type=str, help='Time sleep, e.g., "15"', default="10")
+    parser.add_argument("--mode", type=str, help='Chart mode, e.g., "heikin_ashi/normal"', default="")
 
     args = parser.parse_args()
+    MODE = args.mode
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
 
@@ -374,18 +394,19 @@ if __name__ == "__main__":
         "3m": "tokens.txt",
         "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
+        "15mnormal": "tokens.15m.normal.txt",
         "1h": "tokens.txt",
         "2h": "tokens.txt",
         "4h": "tokens.txt",
     }
 
-    with open(files[TIME_FRAME], "r") as file:
+    with open(files[f"{TIME_FRAME}{MODE}"], "r") as file:
         tokens = [line.strip() for line in file]
 
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
 
     processes = []
     for token, time_frame, pair in strategies:
-        process = multiprocessing.Process(target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP))
+        process = multiprocessing.Process(target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP, MODE))
         processes.append(process)
         process.start()
