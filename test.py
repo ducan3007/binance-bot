@@ -9,7 +9,7 @@ tp = 99
 
 
 time_frame = "15m"
-enable_log = True
+enable_log = False
 
 
 def check_time(time1):
@@ -46,6 +46,7 @@ def run_trading_strategy(token, time_frame):
     for i in range(2, len(data)):
         item = data.iloc[i]
         current_direction = item["direction"]
+        current_close = item["real_price_close"]
 
         previous_item = data.iloc[i - 1]
         previous_direction = previous_item["direction"]

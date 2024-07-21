@@ -21,14 +21,15 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
+START_DATE = "2024-06-01"
+END_DATE = "2024-07-16"
 
 class CEConfig(Enum):
     SIZE = 200
     LENGTH = 1
-    MULT = 2.0
+    MULT = 1.8
     USE_CLOSE = True
     SUB_SIZE = 2
-    MODE = "HA"
 
 
 class TIME_FRAME_STR(str, Enum):
@@ -149,7 +150,7 @@ class KlineHelper:
 
 
 class ChandlierExit:
-    def __init__(self, size, multiplier=3.0, length=1, use_close=True):
+    def __init__(self, size, multiplier=2.0, length=1, use_close=True):
         self.size = size
         self.length = length
         self.use_close = use_close
@@ -282,13 +283,12 @@ def get_milliseconds(time_frame):
 
 
 def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
-    (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE, MODE) = (
+    (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
         CEConfig.LENGTH.value,
         CEConfig.MULT.value,
         CEConfig.USE_CLOSE.value,
         CEConfig.SUB_SIZE.value,
-        CEConfig.MODE.value,
     )
     print(f"Starting {PAIR}: SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
@@ -300,8 +300,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
         binance_spot,
         PAIR,
         TIME_FRAME,
-        start_date_str=f"2024-04-01",
-        end_date_str=f"2024-07-16",
+        start_date_str=START_DATE,
+        end_date_str=END_DATE,
     )
     kline_helper.get_kline_data(data, klines)
     df_data = pd.DataFrame(data)
@@ -317,7 +317,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
     # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
 
-    kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{MODE}.csv")
+    kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}.csv")
 
 
 def init_data():
