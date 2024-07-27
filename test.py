@@ -9,7 +9,7 @@ tp = 99
 
 
 time_frame = "15m"
-enable_log = False
+enable_log = True
 
 
 def check_time(time1):
@@ -251,6 +251,13 @@ def run_trading_strategy(token, time_frame):
                 ],
             )
         )
+    daily_win_rate = 0
+
+    for daily_result in daily_results_list:
+        if daily_result["gain_loss"] > 0:
+            daily_win_rate += 1
+
+    daily_win_rate = f"{(daily_win_rate / len(daily_results_list) * 100):.2f} ({daily_win_rate}/{len(daily_results_list)})"
 
     return {
         "token": token,
@@ -258,6 +265,7 @@ def run_trading_strategy(token, time_frame):
         "final_capital": final_capital,
         "percentage_gain": percentage_gain,
         "win_rate": win / (win + loss) * 100,
+        "daily_win_rate": daily_win_rate,
         "max_win": max_win * 100,
         "max_loss": max_loss * 100,
         "lowest_capital": lowest_capital,
@@ -288,6 +296,7 @@ for token in tokens:
             formatted_final_capital,
             formatted_percentage_gain,
             formatted_win_rate,
+            data["daily_win_rate"],
             formatted_max_win,
             formatted_max_loss,
             formatted_lowest_capital,
@@ -309,6 +318,7 @@ print(
             "Final Capital",
             "Percentage Gain",
             "Win Rate",
+            "Daily Win Rate",
             "Max Win %",
             "Max Loss %",
             "Lowest Capital",

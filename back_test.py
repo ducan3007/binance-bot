@@ -16,13 +16,15 @@ NON_SPOT_PAIRS = {
     "TONUSDT": "TONUSDT",
     "ONDOUSDT": "ONDOUSDT",
     "1000PEPEUSDT": "1000PEPEUSDT",
+    "1000BONKUSDT": "1000BONKUSDT",
 }
 
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-06-01"
-END_DATE = "2024-07-16"
+START_DATE = "2024-07-01"
+END_DATE = "2024-07-26"
+MODE="KLINE"
 
 class CEConfig(Enum):
     SIZE = 200
@@ -131,7 +133,10 @@ class KlineHelper:
 
     def get_kline_data(self, data, klines, prev_item=None):
         for kline in klines:
-            self._append_kline(data, kline)
+            if MODE == "KLINE":
+                self._append_kline(data, kline)
+            else:
+                self._append_heikin_ashi(data, kline)
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
