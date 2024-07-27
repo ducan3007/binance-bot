@@ -22,9 +22,11 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-07-01"
+START_DATE = "2024-06-26"
 END_DATE = "2024-07-26"
-MODE="KLINE"
+MODE = "KLINE"
+EXCHANGE = "future"
+
 
 class CEConfig(Enum):
     SIZE = 200
@@ -223,6 +225,8 @@ def fetch_klines_non_spot(PAIR, TIME_FRAME, startTimeMs, endTimeMs, limit):
 
 
 def fetch_klines(binance_spot: Spot, PAIR, TIME_FRAME, startTimeMs, endTimeMs, limit):
+    if EXCHANGE == "future":
+        return fetch_klines_non_spot(PAIR, TIME_FRAME, limit=limit, startTimeMs=startTimeMs, endTimeMs=endTimeMs)
     if PAIR in NON_SPOT_PAIRS:
         return fetch_klines_non_spot(PAIR, TIME_FRAME, startTimeMs, endTimeMs, limit)
     return binance_spot.klines(PAIR, TIME_FRAME, limit=limit, startTime=startTimeMs, endTime=endTimeMs)

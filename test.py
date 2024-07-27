@@ -257,7 +257,7 @@ def run_trading_strategy(token, time_frame):
         if daily_result["gain_loss"] > 0:
             daily_win_rate += 1
 
-    daily_win_rate = f"{(daily_win_rate / len(daily_results_list) * 100):.2f} ({daily_win_rate}/{len(daily_results_list)})"
+    daily_win_rate = f"{(daily_win_rate / len(daily_results_list) * 100):.2f}% ({daily_win_rate}/{len(daily_results_list)}) days"
 
     return {
         "token": token,
@@ -265,6 +265,8 @@ def run_trading_strategy(token, time_frame):
         "final_capital": final_capital,
         "percentage_gain": percentage_gain,
         "win_rate": win / (win + loss) * 100,
+        "total_win": win,
+        "total_loss": loss,
         "daily_win_rate": daily_win_rate,
         "max_win": max_win * 100,
         "max_loss": max_loss * 100,
@@ -284,7 +286,7 @@ for token in tokens:
     formatted_initial_capital = f"${float(data['initial_capital']):,.2f}"
     formatted_final_capital = f"{float(data['final_capital']):,.2f}"
     formatted_percentage_gain = f"{float(data['percentage_gain']):,.2f}%"
-    formatted_win_rate = f"{float(data['win_rate']):,.2f}%"
+    formatted_win_rate = f"{float(data['win_rate']):,.2f}% ({data['total_win']}/{data['total_win'] + data['total_loss']})"
     formatted_max_win = f"{float(data['max_win']):,.2f}%"
     formatted_max_loss = f"{float(data['max_loss']):,.2f}%"
     formatted_lowest_capital = f"{float(data['lowest_capital']):,.2f}"
@@ -307,7 +309,7 @@ for token in tokens:
 # Sort table by "Final Capital" which is the third item in the sublist (index 2)
 table = sorted(table, key=lambda x: float(x[2].replace(",", "")), reverse=True)
 print(
-    f"\nTime Frame: {time_frame}\nBacktesting Results from 2024-01-04 to 2024-07-14.\nNo position open between (01:00 - 06:30 AM) \nLeverage: x{leverage}\nStop Loss: {stop_lost * 100}\nFee Rate: {fee_rate*100:.2f}%"
+    f"\n\nTime Frame: {time_frame}\nBacktesting Results from 2024-06-26 to 2024-07-26.\nNo position open between (01:00 - 06:30 AM) \nLeverage: x{leverage}\nStop Loss: {stop_lost * 100}\nFee Rate: {fee_rate*100:.2f}%"
 )
 print(
     tabulate.tabulate(
