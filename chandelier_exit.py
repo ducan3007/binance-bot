@@ -67,6 +67,14 @@ class KlineHelper:
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
 
+        if len(data["Close_p"]) > 1:
+            prev_close_price = data["Close_p"][-2]
+            change = (close_p - prev_close_price) / prev_close_price * 100
+            change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
+        else:
+            change = None
+        data["real_price_change"].append(change)
+
     def _append_heikin_ashi(self, data, kline, prev_item=None):
         open_p = float(kline[1])
         high_p = float(kline[2])
@@ -106,6 +114,14 @@ class KlineHelper:
         data["Direction"].append(None)
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
+
+        if len(data["Close_p"]) > 1:
+            prev_close_price = data["Close_p"][-2]
+            change = (close_p - prev_close_price) / prev_close_price * 100
+            change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
+        else:
+            change = None
+        data["real_price_change"].append(change)
 
     def get_heikin_ashi(self, data, klines, prev_item=None):
         for kline in klines:
@@ -281,7 +297,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             },
         )
 
-        print(f"Time: {counter} {_token} {data_temp_dict['Time1'][0]}, {data_temp_dict['Time1'][1]}")
+        print(
+            f"Time: {counter} {_token}  {data_temp_dict['real_price_change'][1]}  {data_temp_dict['Time1'][0]}  {data_temp_dict['Time1'][1]}"
+        )
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
@@ -336,19 +354,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             Pre send telegram message before candle close
             """
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
-                if not hasSentSignal and check_time_diff(timestamp, TIME_FRAME):
+                if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                    prev_close_price = data["Close_p"][SIZE - 2]
-                    prev_prev_close_price = data["Close_p"][SIZE - 3]
-                    per = (prev_close_price - prev_prev_close_price) / prev_close_price * 100
-                    per = per > 0 and f"+{per:.3f}%" or f"{per:.3f}%"
+                    change = data["real_price_change"][SIZE - 1]
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
                         "time_frame": TIME_FRAME,
                         "time": data["Time1"][SIZE - 1][11:],
                         "price": data["Close"][SIZE - 1],
-                        "change": per,
+                        "change": change,
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -359,17 +374,14 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                prev_close_price = data["Close_p"][SIZE - 2]
-                prev_prev_close_price = data["Close_p"][SIZE - 3]
-                per = (prev_close_price - prev_prev_close_price) / prev_close_price * 100
-                per = per > 0 and f"+{per:.3f}%" or f"{per:.3f}%"
+                change = data["real_price_change"][SIZE - 2]
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
                     "time_frame": TIME_FRAME,
                     "time": data["Time1"][SIZE - 1][11:],
                     "price": data["Close"][SIZE - 1],
-                    "change": per,
+                    "change": change,
                 }
                 if MODE == "normal":
                     body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -380,7 +392,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         time.sleep(TIME_SLEEP)
 
 
-def check_time_diff(timestamp, time_frame):
+def pre_send_signal(timestamp, time_frame):
     """
     Check if 80% of the time frame has passed
     """
@@ -416,6 +428,7 @@ def init_data():
         "Direction",
         "Open_p",
         "Close_p",
+        "real_price_change",
     ]
 
     data = {key: [] for key in keys}
