@@ -13,6 +13,11 @@ EPSILON = 1e-9
 NON_SPOT_PAIRS = {
     "TONUSDT": "TONUSDT",
     "ONDOUSDT": "ONDOUSDT",
+    "1000PEPEUSDT": "1000PEPEUSDT",
+    "1000BONKUSDT": "1000BONKUSDT",
+    "1000SATSUSDT": "1000SATSUSDT",
+    "1000RATSUSDT": "1000RATSUSDT",
+    "MEWUSDT": "MEWUSDT",
 }
 
 
@@ -25,8 +30,9 @@ class CEConfig(Enum):
 
 
 class KlineHelper:
-    def __init__(self, mode):
+    def __init__(self, mode, exchange):
         self.mode = mode
+        self.exchange = exchange
 
     def _append_kline(self, data, kline):
         open_p = float(kline[1])
@@ -110,16 +116,19 @@ class KlineHelper:
         for key in data1:
             data1[key].extend(data2[key])
 
-    def fetch_klines_non_spot(self, PAIR, TIME_FRAME, limit):
+    def fetch_klines_future(self, PAIR, TIME_FRAME, limit):
         URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
         headers = {"Content-Type": "application/json"}
         res = requests.get(URL, headers=headers, timeout=None)
         return res.json()
 
     def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit):
-        if PAIR in NON_SPOT_PAIRS:
-            return self.fetch_klines_non_spot(PAIR, TIME_FRAME, limit)
-        return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
+        if self.exchange == "future":
+            return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
+        else:
+            if PAIR in NON_SPOT_PAIRS:
+                return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
+            return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
@@ -148,7 +157,9 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1])
+                if self.use_close
+                else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -163,7 +174,9 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1])
+                if self.use_close
+                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -187,7 +200,7 @@ class ChandlierExit:
             data["Direction"][i] = dir
 
 
-def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE):
+def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
         CEConfig.LENGTH.value,
@@ -204,7 +217,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE):
 
     print(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
-    kline_helper = KlineHelper(mode=MODE)
+    kline_helper = KlineHelper(mode=MODE, exchange=EXCHANGE)
     binance_spot = Spot()
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
@@ -364,12 +377,12 @@ def init_data():
 import multiprocessing
 
 
-def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE):
+def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
     while True:
         try:
             print("STARTING CE BOT")
             data = init_data()
-            main(data, token, time_frame, pair, TIME_SLEEP, MODE)
+            main(data, token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
         except Exception as e:
             print(f"Error: {e}")
             time.sleep(5)
@@ -381,11 +394,14 @@ if __name__ == "__main__":
     parser.add_argument("--timeframe", type=str, help='Time frame, e.g., "1m"', default="1m")
     parser.add_argument("--sleep", type=str, help='Time sleep, e.g., "15"', default="10")
     parser.add_argument("--mode", type=str, help='Chart mode, e.g., "heikin_ashi/normal"', default="")
+    parser.add_argument("--exchange", type=str, help='Exchange, e.g., "future/spot"', default="spot")
 
     args = parser.parse_args()
+
     MODE = args.mode
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
+    EXCHANGE = args.exchange
 
     # Each .txt file for each time frame
     files = {
@@ -406,6 +422,8 @@ if __name__ == "__main__":
 
     processes = []
     for token, time_frame, pair in strategies:
-        process = multiprocessing.Process(target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP, MODE))
+        process = multiprocessing.Process(
+            target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
+        )
         processes.append(process)
         process.start()
