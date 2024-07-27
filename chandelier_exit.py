@@ -1,6 +1,6 @@
 import time
 import pandas as pd
-from ta.volatility import AverageTrueRange
+from lib.volatility import AverageTrueRange
 from binance.spot import Spot
 from enum import Enum
 from datetime import datetime
@@ -15,9 +15,15 @@ NON_SPOT_PAIRS = {
     "ONDOUSDT": "ONDOUSDT",
     "1000PEPEUSDT": "1000PEPEUSDT",
     "1000BONKUSDT": "1000BONKUSDT",
-    "1000SATSUSDT": "1000SATSUSDT",
     "1000RATSUSDT": "1000RATSUSDT",
     "MEWUSDT": "MEWUSDT",
+}
+
+TOKEN_SHORTCUT = {
+    "1000PEPE": "PEPE",
+    "1000BONK": "BONK",
+    "1000RATS": "RATS",
+    "1000SATS": "SATS",
 }
 
 
@@ -242,6 +248,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     hasSentSignal = False
     _token = TOKEN.ljust(8)
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
+
+    if TOKEN in TOKEN_SHORTCUT:
+        TOKEN = TOKEN_SHORTCUT[TOKEN]
 
     # Remove 150 data
     for i in range(170):
