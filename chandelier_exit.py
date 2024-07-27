@@ -26,6 +26,10 @@ TOKEN_SHORTCUT = {
     "1000SATS": "SATS",
 }
 
+TIME_FRAME_MS = {
+    "15m": 15 * 60,
+}
+
 
 class CEConfig(Enum):
     SIZE = 200
@@ -327,7 +331,32 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             Exception("Time not match !!!")
             break
 
-        if data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
+        if TIME_FRAME == "15m" and MODE == "normal":
+            """
+            Pre send telegram message before candle close
+            """
+            if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
+                if not hasSentSignal and check_time_diff(timestamp, TIME_FRAME):
+                    signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
+                    prev_close_price = data["Close_p"][SIZE - 2]
+                    prev_prev_close_price = data["Close_p"][SIZE - 3]
+                    per = (prev_close_price - prev_prev_close_price) / prev_close_price * 100
+                    per = per > 0 and f"+{per:.3f}%" or f"{per:.3f}%"
+                    body = {
+                        "signal": signal,
+                        "symbol": f"${TOKEN}",
+                        "time_frame": TIME_FRAME,
+                        "time": data["Time1"][SIZE - 1][11:],
+                        "price": data["Close"][SIZE - 1],
+                        "change": per,
+                    }
+                    if MODE == "normal":
+                        body["time_frame"] = f"{TIME_FRAME}_normal"
+                    ok = send_telegram_message(body)
+                    if ok:
+                        hasSentSignal = True
+                        print(f"Signal sent:", body)
+        elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                 prev_close_price = data["Close_p"][SIZE - 2]
@@ -349,6 +378,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     hasSentSignal = True
                     print(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
+
+
+def check_time_diff(timestamp, time_frame):
+    """
+    Check if 80% of the time frame has passed
+    """
+    if time_frame in TIME_FRAME_MS:
+        ts = int(time.time())
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.8
+    return False
 
 
 def send_telegram_message(body):
