@@ -342,11 +342,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     close_p = data["Close_p"][SIZE - 1]
                     prev_close_price = data["Close_p"][SIZE - 2]
                     per = cal_change(close_p, prev_close_price)
+                    _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
                         "time_frame": TIME_FRAME,
-                        "time": data["Time1"][SIZE - 1][11:],
+                        "time": _time,
                         "price": data["Close"][SIZE - 1],
                         "change": per,
                     }
@@ -360,8 +361,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                 pre_close_price = data["Close_p"][SIZE - 2]
-                pre_prev_close_price = data["Close_p"][SIZE - 3]
-                per = cal_change(pre_close_price, pre_prev_close_price)
+                pre_pre_close_price = data["Close_p"][SIZE - 3]
+                per = cal_change(pre_close_price, pre_pre_close_price)
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
