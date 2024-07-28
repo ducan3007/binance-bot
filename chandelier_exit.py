@@ -67,14 +67,6 @@ class KlineHelper:
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
 
-        # if len(data["Close_p"]) > 1:
-        #     prev_close_price = data["Close_p"][-2]
-        #     change = (close_p - prev_close_price) / prev_close_price * 100
-        #     change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
-        # else:
-        #     change = None
-        # data["real_price_change"].append(change)
-
     def _append_heikin_ashi(self, data, kline, prev_item=None):
         open_p = float(kline[1])
         high_p = float(kline[2])
@@ -114,14 +106,6 @@ class KlineHelper:
         data["Direction"].append(None)
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
-
-        # if len(data["Close_p"]) > 1:
-        #     prev_close_price = data["Close_p"][-2]
-        #     change = (close_p - prev_close_price) / prev_close_price * 100
-        #     change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
-        # else:
-        #     change = None
-        # data["real_price_change"].append(change)
 
     def get_heikin_ashi(self, data, klines, prev_item=None):
         for kline in klines:
@@ -278,7 +262,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     chandelier_exit.size = SIZE - 170
     SIZE = SIZE - 170
 
-    kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+    # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
     time.sleep(1)
     while True:
@@ -318,7 +302,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         elif timestamp == data_temp_dict["Time"][0]:
             timestamp = data_temp_dict["Time"][1]
@@ -342,7 +326,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
             Exception("Time not match !!!")
