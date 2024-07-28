@@ -24,6 +24,7 @@ TOKEN_SHORTCUT = {
     "1000BONK": "BONK",
     "1000RATS": "RATS",
     "1000SATS": "SATS",
+    "1000FLOKI": "FLOKI"
 }
 
 TIME_FRAME_MS = {
