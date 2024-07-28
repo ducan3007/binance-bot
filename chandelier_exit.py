@@ -67,13 +67,13 @@ class KlineHelper:
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
 
-        if len(data["Close_p"]) > 1:
-            prev_close_price = data["Close_p"][-2]
-            change = (close_p - prev_close_price) / prev_close_price * 100
-            change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
-        else:
-            change = None
-        data["real_price_change"].append(change)
+        # if len(data["Close_p"]) > 1:
+        #     prev_close_price = data["Close_p"][-2]
+        #     change = (close_p - prev_close_price) / prev_close_price * 100
+        #     change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
+        # else:
+        #     change = None
+        # data["real_price_change"].append(change)
 
     def _append_heikin_ashi(self, data, kline, prev_item=None):
         open_p = float(kline[1])
@@ -115,13 +115,13 @@ class KlineHelper:
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
 
-        if len(data["Close_p"]) > 1:
-            prev_close_price = data["Close_p"][-2]
-            change = (close_p - prev_close_price) / prev_close_price * 100
-            change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
-        else:
-            change = None
-        data["real_price_change"].append(change)
+        # if len(data["Close_p"]) > 1:
+        #     prev_close_price = data["Close_p"][-2]
+        #     change = (close_p - prev_close_price) / prev_close_price * 100
+        #     change = change > 0 and f"+{change:.2f}%" or f"{change:.2f}%"
+        # else:
+        #     change = None
+        # data["real_price_change"].append(change)
 
     def get_heikin_ashi(self, data, klines, prev_item=None):
         for kline in klines:
@@ -278,7 +278,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     chandelier_exit.size = SIZE - 170
     SIZE = SIZE - 170
 
-    # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+    kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
     time.sleep(1)
     while True:
@@ -297,9 +297,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             },
         )
 
-        print(
-            f"Time: {counter} {_token}  {data_temp_dict['real_price_change'][1]}  {data_temp_dict['Time1'][0]}  {data_temp_dict['Time1'][1]}"
-        )
+        _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
+        print(f"Time: {counter} {_token}  {_per}  {data_temp_dict['Time1'][0]}  {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
@@ -319,7 +318,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         elif timestamp == data_temp_dict["Time"][0]:
             timestamp = data_temp_dict["Time"][1]
@@ -343,7 +342,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             chandelier_exit.calculate_chandelier_exit(data)
 
             # Save to CSV
-            # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
+            kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
             Exception("Time not match !!!")
@@ -356,14 +355,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
                 if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                    change = data["real_price_change"][SIZE - 1]
+                    close_p = data["Close_p"][SIZE - 1]
+                    prev_close_price = data["Close_p"][SIZE - 2]
+                    per = cal_change(close_p, prev_close_price)
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
                         "time_frame": TIME_FRAME,
                         "time": data["Time1"][SIZE - 1][11:],
                         "price": data["Close"][SIZE - 1],
-                        "change": change,
+                        "change": per,
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -374,14 +375,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
-                change = data["real_price_change"][SIZE - 2]
+                pre_close_price = data["Close_p"][SIZE - 2]
+                pre_prev_close_price = data["Close_p"][SIZE - 3]
+                per = cal_change(pre_close_price, pre_prev_close_price)
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
                     "time_frame": TIME_FRAME,
                     "time": data["Time1"][SIZE - 1][11:],
                     "price": data["Close"][SIZE - 1],
-                    "change": change,
+                    "change": per,
                 }
                 if MODE == "normal":
                     body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -390,6 +393,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     hasSentSignal = True
                     print(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
+
+
+def cal_change(close, pre_close):
+    per = (close - pre_close) / pre_close * 100
+    per = per > 0 and f"+{per:.2f}%" or f"{per:.2f}%"
+    return per
 
 
 def pre_send_signal(timestamp, time_frame):
@@ -428,7 +437,6 @@ def init_data():
         "Direction",
         "Open_p",
         "Close_p",
-        "real_price_change",
     ]
 
     data = {key: [] for key in keys}
