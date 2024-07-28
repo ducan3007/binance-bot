@@ -5,7 +5,8 @@ leverage = 2
 fee_rate = 0.004
 position_fraction = 1.00
 stop_lost = -0.05
-tp = 99
+tp = 0.08
+
 
 
 time_frame = "15m"
@@ -25,7 +26,7 @@ def check_time(time1):
 def run_trading_strategy(token, time_frame):
     data = pd.read_csv(f"{token}_ce_{time_frame}.csv")
 
-    initial_capital = 1000
+    initial_capital = 4000
     capital = initial_capital
     position_open = False
     position_type = None
@@ -40,6 +41,11 @@ def run_trading_strategy(token, time_frame):
     long_opened = 0
     short_opened = 0
     daily_results = {}
+
+    highest_gain_open = 0  # To track highest gain while position is open
+    gain_1_2_percent = 0
+    gain_2_4_percent = 0
+    gain_more_than_4_percent = 0
 
     print(f"Processing token: {token}")
 
@@ -58,6 +64,15 @@ def run_trading_strategy(token, time_frame):
         current_date = item["Time1"][:10]
         if current_date not in daily_results:
             daily_results[current_date] = {"capital_start": capital, "gain_loss": 0}
+
+        # Update highest gain while position is open
+        if position_open:
+            if position_type == "long":
+                current_gain = (current_close - entry_price) / entry_price * leverage
+            elif position_type == "short":
+                current_gain = (entry_price - current_close) / entry_price * leverage
+            if current_gain > highest_gain_open:
+                highest_gain_open = current_gain
 
         # Close long position
         if position_open and position_type == "long":
@@ -91,6 +106,15 @@ def run_trading_strategy(token, time_frame):
                 if capital < lowest_capital:
                     lowest_capital = capital
 
+                # Classification of highest gain
+                if 1 <= highest_gain_open * 100 < 2:
+                    gain_1_2_percent += 1
+                elif 2 <= highest_gain_open * 100 < 4:
+                    gain_2_4_percent += 1
+                elif highest_gain_open * 100 >= 4:
+                    gain_more_than_4_percent += 1
+                highest_gain_open = 0  # Reset for the next position
+
                 if enable_log:
                     print(
                         f"{token} Close {position_type} at {i} | {previous_item['Time1']} Gain %: {gain_per*100:.2f}%. Cap: {capital:.2f}",
@@ -118,6 +142,15 @@ def run_trading_strategy(token, time_frame):
                     max_loss = gain_per
                 if capital < lowest_capital:
                     lowest_capital = capital
+
+                # Classification of highest gain
+                if 1 <= highest_gain_open * 100 < 2:
+                    gain_1_2_percent += 1
+                elif 2 <= highest_gain_open * 100 < 4:
+                    gain_2_4_percent += 1
+                elif highest_gain_open * 100 >= 4:
+                    gain_more_than_4_percent += 1
+                highest_gain_open = 0  # Reset for the next position
 
                 if enable_log:
                     print(
@@ -156,6 +189,15 @@ def run_trading_strategy(token, time_frame):
                 if capital < lowest_capital:
                     lowest_capital = capital
 
+                # Classification of highest gain
+                if 1 <= highest_gain_open * 100 < 2:
+                    gain_1_2_percent += 1
+                elif 2 <= highest_gain_open * 100 < 4:
+                    gain_2_4_percent += 1
+                elif highest_gain_open * 100 >= 4:
+                    gain_more_than_4_percent += 1
+                highest_gain_open = 0  # Reset for the next position
+
                 if enable_log:
                     print(
                         f"{token} Close {position_type} at {i} | {previous_item['Time1']} Gain %: {gain_per*100:.2f}%. Cap: {capital:.2f}",
@@ -184,6 +226,15 @@ def run_trading_strategy(token, time_frame):
                 if capital < lowest_capital:
                     lowest_capital = capital
 
+                # Classification of highest gain
+                if 1 <= highest_gain_open * 100 < 2:
+                    gain_1_2_percent += 1
+                elif 2 <= highest_gain_open * 100 < 4:
+                    gain_2_4_percent += 1
+                elif highest_gain_open * 100 >= 4:
+                    gain_more_than_4_percent += 1
+                highest_gain_open = 0  # Reset for the next position
+
                 if enable_log:
                     print(
                         f"{token} Close {position_type} at {i}  | {previous_item['Time1']} Gain %: {gain_per*100:.2f}% Cap: {capital:.2f}",
@@ -199,6 +250,7 @@ def run_trading_strategy(token, time_frame):
                 position_open = True
                 position_type = "long"
                 long_opened += 1
+                highest_gain_open = 0  # Reset for new position
                 if enable_log:
                     print(f"{token} Open long at {i} {item['Time1']}")
             elif pre_previous_direction == 1 and previous_direction == -1:
@@ -208,6 +260,7 @@ def run_trading_strategy(token, time_frame):
                 position_open = True
                 position_type = "short"
                 short_opened += 1
+                highest_gain_open = 0  # Reset for new position
                 if enable_log:
                     print(f"{token} Open short at {i} {item['Time1']}")
 
@@ -217,6 +270,9 @@ def run_trading_strategy(token, time_frame):
     print("Win: ", win)
     print("Loss: ", loss)
     print("Win Rate: ", win / (win + loss) * 100)
+    print("1% - 2%: ", gain_1_2_percent)
+    print("2% - 4%: ", gain_2_4_percent)
+    print("More than 4%: ", gain_more_than_4_percent)
 
     daily_results_list = []
     for date, results in daily_results.items():
@@ -272,6 +328,9 @@ def run_trading_strategy(token, time_frame):
         "max_loss": max_loss * 100,
         "lowest_capital": lowest_capital,
         "max_loss_streak": max_loss_streak,
+        "1-2%": f"{gain_1_2_percent/(win+loss)*100:.2f}% ({gain_1_2_percent}/{win+loss})",
+        "2-4%": f"{gain_2_4_percent/(win+loss)*100:.2f}% ({gain_2_4_percent}/{win+loss})",
+        "more_than_4%": f"{gain_more_than_4_percent/(win+loss)*100:.2f}% ({gain_more_than_4_percent}/{win+loss})",
     }
 
 
@@ -299,6 +358,9 @@ for token in tokens:
             formatted_percentage_gain,
             formatted_win_rate,
             data["daily_win_rate"],
+            data["1-2%"],
+            data["2-4%"],
+            data["more_than_4%"],
             formatted_max_win,
             formatted_max_loss,
             formatted_lowest_capital,
@@ -321,6 +383,9 @@ print(
             "Percentage Gain",
             "Win Rate",
             "Daily Win Rate",
+            "1-2%",
+            "2-4%",
+            "More than 4%",
             "Max Win %",
             "Max Loss %",
             "Lowest Capital",
