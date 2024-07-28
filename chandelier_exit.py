@@ -250,7 +250,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
     counter = 0
     hasSentSignal = False
-    _token = TOKEN.ljust(8)
+    _token = TOKEN.ljust(12)
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     if TOKEN in TOKEN_SHORTCUT:
