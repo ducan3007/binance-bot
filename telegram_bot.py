@@ -183,7 +183,9 @@ def format_float_dynamic(value):
 
 def construct_message(message: MessageType1):
     price = format_float_dynamic(message.price)
-    return f"\n<b>{message.symbol}</b>\n{Signals[message.signal]}\n ${price}  ({message.change})\n<b><code>{message.time}</code></b>"
+    # get the first character of the signal
+    sub_str = Signals[message.signal][0]
+    return f"\n<b>{message.symbol} {sub_str} {message.change}</b>\n<b>{message.time}</b>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
