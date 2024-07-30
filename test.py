@@ -5,7 +5,7 @@ leverage = 2
 fee_rate = 0.004
 position_fraction = 1.00
 stop_lost = -0.05
-tp = 0.08
+tp = 11
 
 
 
@@ -26,7 +26,7 @@ def check_time(time1):
 def run_trading_strategy(token, time_frame):
     data = pd.read_csv(f"{token}_ce_{time_frame}.csv")
 
-    initial_capital = 4000
+    initial_capital = 1000
     capital = initial_capital
     position_open = False
     position_type = None
@@ -53,6 +53,8 @@ def run_trading_strategy(token, time_frame):
         item = data.iloc[i]
         current_direction = item["direction"]
         current_close = item["real_price_close"]
+        current_high = item["High"]
+        current_low = item["Low"]
 
         previous_item = data.iloc[i - 1]
         previous_direction = previous_item["direction"]
@@ -68,9 +70,9 @@ def run_trading_strategy(token, time_frame):
         # Update highest gain while position is open
         if position_open:
             if position_type == "long":
-                current_gain = (current_close - entry_price) / entry_price * leverage
+                current_gain = (current_high - entry_price) / entry_price * leverage
             elif position_type == "short":
-                current_gain = (entry_price - current_close) / entry_price * leverage
+                current_gain = (entry_price - current_low) / entry_price * leverage
             if current_gain > highest_gain_open:
                 highest_gain_open = current_gain
 
@@ -108,10 +110,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
+                    print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
+                    print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -145,10 +150,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
+                    print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
+                    print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -191,10 +199,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
+                    print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
+                    print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -228,10 +239,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
+                    print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
+                    print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 

@@ -22,7 +22,7 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-06-20"
+START_DATE = "2024-04-01"
 END_DATE = "2024-07-27"
 MODE = "KLINE"
 EXCHANGE = "future"
@@ -147,6 +147,8 @@ class KlineHelper:
                 "Time",
                 "Time1",
                 "direction",
+                "High",
+                "Low",
                 "real_price_open",
                 "real_price_close",
                 "real_price_change",
