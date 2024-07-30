@@ -35,7 +35,7 @@ TIME_FRAME_MS = {
 class CEConfig(Enum):
     SIZE = 200
     LENGTH = 1
-    MULT = 2
+    MULT = 1.8
     USE_CLOSE = True
     SUB_SIZE = 2
 
@@ -465,6 +465,7 @@ if __name__ == "__main__":
         "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
         "15mnormal": "tokens.15m.normal.txt",
+        "5mnormal": "tokens.5m.normal.txt",
         "1h": "tokens.txt",
         "2h": "tokens.txt",
         "4h": "tokens.txt",
