@@ -183,8 +183,11 @@ def format_float_dynamic(value):
 
 
 def construct_message(message: MessageType1):
-    price = format_float_dynamic(message.price)
-    # get the first character of the signal
+    if message.symbol in ["$BTC", "$ETH"]:
+        price = format_float_dynamic(message.price)
+        price = "{:,.2f}".format(float(price))
+        sub_str = Signals[message.signal][0]
+        return f"\n<b>{message.symbol} {sub_str} {message.change} ({price})</b>\n<b>{message.time}</b>"
     sub_str = Signals[message.signal][0]
     return f"\n<b>{message.symbol} {sub_str} {message.change}</b>\n<b>{message.time}</b>"
 
