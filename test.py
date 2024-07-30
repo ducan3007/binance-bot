@@ -9,7 +9,7 @@ tp = 11
 
 
 
-time_frame = "15m"
+time_frame = "5m"
 enable_log = True
 
 
@@ -110,13 +110,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
-                    print("gain1", pre_previous_item["Time1"])
+                    # print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
-                    print("gain2", pre_previous_item["Time1"])
+                    # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -150,13 +150,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
-                    print("gain1", pre_previous_item["Time1"])
+                    # print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
-                    print("gain2", pre_previous_item["Time1"])
+                    # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -199,13 +199,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
-                    print("gain1", pre_previous_item["Time1"])
+                    # print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
-                    print("gain2", pre_previous_item["Time1"])
+                    # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -239,13 +239,13 @@ def run_trading_strategy(token, time_frame):
 
                 # Classification of highest gain
                 if 1 <= highest_gain_open * 100 < 2:
-                    print("gain1", pre_previous_item["Time1"])
+                    # print("gain1", pre_previous_item["Time1"])
                     gain_1_2_percent += 1
                 elif 2 <= highest_gain_open * 100 < 4:
-                    print("gain2", pre_previous_item["Time1"])
+                    # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
