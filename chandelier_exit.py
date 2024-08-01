@@ -383,7 +383,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
 def cal_change(close, pre_close):
     per = (close - pre_close) / pre_close * 100
-    per = per > 0 and f"+{per:.2f}%" or f"{per:.2f}%"
+    per = per >= 0 and f"+{per:.2f}%" or f"{per:.2f}%"
     return per
 
 

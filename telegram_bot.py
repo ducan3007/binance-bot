@@ -187,9 +187,9 @@ def construct_message(message: MessageType1):
         price = format_float_dynamic(message.price)
         price = "{:,.2f}".format(float(price))
         sub_str = Signals[message.signal][0]
-        return f"\n<b>{message.symbol} {sub_str} {message.change} ({price})</b>\n<b>{message.time}</b>"
+        return f"\n<b>{sub_str} {message.symbol}  {message.time}</b>\n<code>{message.change}</code> <code>{price}</code>"
     sub_str = Signals[message.signal][0]
-    return f"\n<b>{message.symbol} {sub_str} {message.change}</b>\n<b>{message.time}</b>"
+    return f"\n<b>{sub_str} {message.symbol}  {message.time}</b>\n<code>{message.change}</code>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
