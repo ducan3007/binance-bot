@@ -393,7 +393,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.92
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.925
     return False
 
 
