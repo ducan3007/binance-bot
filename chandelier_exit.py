@@ -19,13 +19,7 @@ NON_SPOT_PAIRS = {
     "MEWUSDT": "MEWUSDT",
 }
 
-TOKEN_SHORTCUT = {
-    "1000PEPE": "PEPE",
-    "1000BONK": "BONK",
-    "1000RATS": "RATS",
-    "1000SATS": "SATS",
-    "1000FLOKI": "FLOKI"
-}
+TOKEN_SHORTCUT = {"1000PEPE": "PEPE", "1000BONK": "BONK", "1000RATS": "RATS", "1000SATS": "SATS", "1000FLOKI": "FLOKI"}
 
 TIME_FRAME_MS = {
     "15m": 15 * 60,
@@ -342,7 +336,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
                     prev_close_price = data["Close_p"][SIZE - 2]
-                    per = cal_change(close_p, prev_close_price)
+                    per = _cal_change(close_p, prev_close_price)
                     _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
                     body = {
                         "signal": signal,
@@ -363,7 +357,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                 pre_close_price = data["Close_p"][SIZE - 2]
                 pre_pre_close_price = data["Close_p"][SIZE - 3]
-                per = cal_change(pre_close_price, pre_pre_close_price)
+                per = _cal_change(pre_close_price, pre_pre_close_price)
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
@@ -381,9 +375,17 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         time.sleep(TIME_SLEEP)
 
 
+def _cal_change(close, pre_close):
+    per = (close - pre_close) / pre_close * 100
+    if -1.0 < per < 1.0:
+        return ""
+    per = per >= 0 and f"(+{per:.2f}%)" or f"({per:.2f}%)"
+    return per
+
+
 def cal_change(close, pre_close):
     per = (close - pre_close) / pre_close * 100
-    per = per >= 0 and f"+{per:.2f}%" or f"{per:.2f}%"
+    per = per >= 0 and f"(+{per:.2f}%)" or f"({per:.2f}%)"
     return per
 
 
