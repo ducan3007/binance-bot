@@ -114,10 +114,39 @@ def main():
 if __name__ == "__main__":
     message = main()
     table = format_table(message)
-    date = time.strftime("%Y-%m-%d", time.localtime())
-    message = (
-        f"#DAILY_REPORT {date}\n\nBinance Future Top 50 Gainers & Losers 📊\n\n<pre language='javascript'>{table}</pre>"
-    )
+    date = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
+    down = "🔻🔻🔻"
+    up = "🟢🟢🟢"
+
+    down1 = "📉"
+    up1 = "📈"
+    losers_idx, gainers_idx = 0, 0
+
+    for gainer in message["gainers"]:
+        if gainer["priceChangePercent"] and float(gainer["priceChangePercent"]) > 0:
+            gainers_idx += 1
+
+    for loser in message["losers"]:
+        if loser["priceChangePercent"] and float(loser["priceChangePercent"]) < 0:
+            losers_idx += 1
+
+    if gainers_idx > losers_idx:
+        trend = up
+        trend1 = up1
+    elif gainers_idx < losers_idx:
+        trend = down
+        trend1 = down1
+    else:
+        if float(message["gainers"][0]["priceChangePercent"]) > float(message["losers"][0]["priceChangePercent"]):
+            trend = up
+            trend1 = up1
+        else:
+            trend = down
+            trend1 = down1
+
+    print("gain", gainers_idx)
+    print("losers", losers_idx)
+    message = f"#DAILY_REPORT {date} {trend}\n\nBinance Future\nTop 50 Gainers & Losers {trend1}\n\n<pre language='javascript'>{table}</pre>"
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,

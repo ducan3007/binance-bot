@@ -148,7 +148,7 @@ def pin_unpin_telegram_message(
     payload = {"chat_id": chat_id, "message_id": message_id}
     retry_count = 0
     delay = 5  # Initial delay in seconds
-    max_delay = 60  # Maximum delay in seconds
+    max_delay = 41  # Maximum delay in seconds
 
     while retry_count < max_retries:
         response = requests.post(url, data=payload)
