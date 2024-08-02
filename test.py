@@ -2,7 +2,7 @@ import pandas as pd
 from datetime import datetime
 
 leverage = 2
-fee_rate = 0.0035
+fee_rate = 0.004
 position_fraction = 1.00
 stop_lost = -0.05
 tp = 11
@@ -46,6 +46,7 @@ def run_trading_strategy(token, time_frame):
     }
     """
     daily_win_lost = {}
+    stop_lost_rate = 0
 
     highest_gain_open = 0  # To track highest gain while position is open
     gain_1_2_percent = 0
@@ -91,6 +92,7 @@ def run_trading_strategy(token, time_frame):
                     gain_per = tp
                 else:
                     gain_per = stop_lost
+                    stop_lost_rate += 1
 
                 gain = gain_per * (capital * position_fraction) - fee_rate * (capital * position_fraction)
                 capital += gain
@@ -181,6 +183,7 @@ def run_trading_strategy(token, time_frame):
                     gain_per = tp
                 else:
                     gain_per = stop_lost
+                    stop_lost_rate += 1
 
                 gain = gain_per * (capital * position_fraction) - fee_rate * (capital * position_fraction)
                 capital += gain
@@ -342,6 +345,7 @@ def run_trading_strategy(token, time_frame):
         "win_rate": win / (win + loss) * 100,
         "total_win": win,
         "total_loss": loss,
+        "stop_lost_rate": f"{(stop_lost_rate / (win + loss)) * 100:.2f}% ({stop_lost_rate}/{win+loss})",
         "daily_win_rate": daily_win_rate,
         "max_win": max_win * 100,
         "max_loss": max_loss * 100,
@@ -349,6 +353,7 @@ def run_trading_strategy(token, time_frame):
         "max_loss_streak": max_loss_streak,
         "1-2%": f"{gain_1_2_percent/(win+loss)*100:.2f}% ({gain_1_2_percent}/{win+loss})",
         "2-4%": f"{gain_2_4_percent/(win+loss)*100:.2f}% ({gain_2_4_percent}/{win+loss})",
+        "more than 2%": f"{(gain_more_than_4_percent + gain_2_4_percent)/(win+loss)*100:.2f}% ({gain_more_than_4_percent + gain_2_4_percent}/{win+loss})",
         "more_than_4%": f"{gain_more_than_4_percent/(win+loss)*100:.2f}% ({gain_more_than_4_percent}/{win+loss})",
     }
 
@@ -358,7 +363,8 @@ with open("tokens.15m.txt", "r") as file:
 
 import tabulate
 
-table = []
+table1 = []
+table2 = []
 for token in tokens:
     data = run_trading_strategy(token, time_frame)
     formatted_initial_capital = f"${float(data['initial_capital']):,.2f}"
@@ -369,7 +375,7 @@ for token in tokens:
     formatted_max_loss = f"{float(data['max_loss']):,.2f}%"
     formatted_lowest_capital = f"{float(data['lowest_capital']):,.2f}"
 
-    table.append(
+    table1.append(
         [
             data["token"],
             formatted_initial_capital,
@@ -377,9 +383,17 @@ for token in tokens:
             formatted_lowest_capital,
             formatted_percentage_gain,
             formatted_win_rate,
+        ]
+    )
+
+    table2.append(
+        [
+            data["token"],
+            data["stop_lost_rate"],
             data["daily_win_rate"],
             data["1-2%"],
             data["2-4%"],
+            data["more than 2%"],
             data["more_than_4%"],
             formatted_max_win,
             formatted_max_loss,
@@ -394,7 +408,7 @@ print(
 )
 print(
     tabulate.tabulate(
-        table,
+        table1,
         headers=[
             "Token",
             "Initial Capital",
@@ -402,9 +416,19 @@ print(
             "Lowest Capital",
             "Percentage Gain",
             "Win Rate",
+        ],
+    )
+)
+print(
+    tabulate.tabulate(
+        table2,
+        headers=[
+            "Token",
+            "Stop Loss Rate",
             "Daily Win Rate",
             "1-2%",
             "2-4%",
+            "More than 2%",
             "More than 4%",
             "Max Win %",
             "Max Loss %",
