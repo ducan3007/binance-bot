@@ -17,32 +17,16 @@ awaitBarConfirmation = input.bool(title="Await Bar Confirmation", defval=true, g
 
 atr = mult * ta.atr(length)
 
-
-
-
 longStop = (useClose ? ta.highest(close, length) : ta.highest(length)) - atr
-log.info(str.tostring(atr) + " | longStop[1] : " + str.tostring(longStop[1]) + " | longStop : " + str.tostring(longStop))
 longStopPrev = nz(longStop[1], longStop)
 longStop := close[1] > longStopPrev ? math.max(longStop, longStopPrev) : longStop
 
 shortStop = (useClose ? ta.lowest(close, length) : ta.lowest(length)) + atr
-log.info(str.tostring(atr) + " | shortStop[1] : " + str.tostring(shortStop[1]) + " | shortStop : " + str.tostring(shortStop))
 shortStopPrev = nz(shortStop[1], shortStop)
 shortStop := close[1] < shortStopPrev ? math.min(shortStop, shortStopPrev) : shortStop
 
-
-// label.new(bar_index, high, text="ATR: " + str.tostring(atr) + str.tostring(ta.highest(close, length)), style=label.style_label_down, color=color.blue, textcolor=color.white, size=size.normal)
-
-log.info(str.tostring(atr) + " " + str.tostring(close[1]) + " " +  str.tostring(close[2]) + " ta.highest.close: " + str.tostring(ta.highest(close, length)) + " " +  str.tostring(ta.highest(length)) )
-log.info(str.tostring(atr) + " " +  str.tostring(longStopPrev) + " " + str.tostring(longStop) + " ta.lowest.close " + str.tostring(ta.lowest(close, length)) + " " + str.tostring(ta.lowest(length)) ) 
-log.info(str.tostring(atr) + " | longStopPrev : " +  str.tostring(longStopPrev) + " | shortStopPrev: " +  str.tostring(shortStopPrev))
-log.info(str.tostring(atr) + " | longStop : " +  str.tostring(longStop) + " | shortStop:  " +  str.tostring(shortStop)) 
-
-
 var int dir = 1
 dir := close > shortStopPrev ? 1 : close < longStopPrev ? -1 : dir
-
-log.info(str.tostring(atr) + " | dir : " + str.tostring(dir) + " | close : " + str.tostring(close) + " | shortStopPrev : " + str.tostring(shortStopPrev) + " | longStopPrev : " + str.tostring(longStopPrev))
 
 var color longColor = color.green
 var color shortColor = color.red
