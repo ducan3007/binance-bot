@@ -1,3 +1,3 @@
 #!/bin/bash
 
-crontab cronjobs.txt
+sudo crontab cronjobs.txt
