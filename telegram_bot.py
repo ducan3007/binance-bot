@@ -181,20 +181,22 @@ def format_float_dynamic(value):
 
 
 def construct_message(message: MessageType1):
-    if message.time_frame in [TimeFrame.m5]:
-        sub_str = Signals[message.signal][0]
-        if message.symbol in ["$BTC", "$ETH"]:
-            price = format_float_dynamic(message.price)
-            price = "{:,.2f}".format(float(price))
-            return f"\n<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>\n<code>{price}</code>"
-        return f"\n<b>{sub_str}</b> {message.time} <b>{message.symbol}</b>  <code>{message.change}</code>"
-    else:
-        sub_str = Signals[message.signal][0]
-        if message.symbol in ["$BTC", "$ETH"]:
-            price = format_float_dynamic(message.price)
-            price = "{:,.2f}".format(float(price))
-            return f"\n<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>\n<code>{price}</code>"
-        return f"\n<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>"
+    # if message.time_frame in [TimeFrame.m5]:
+    sub_str = Signals[message.signal][0]
+    if message.symbol in ["$BTC", "$ETH"]:
+        price = format_float_dynamic(message.price)
+        price = "{:,.2f}".format(float(price))
+        return f"<b>{sub_str}</b> <b>{message.time}</b> <b>{message.symbol}</b> <code>{price}</code> <code>{message.change}</code>"
+    return f"<b>{sub_str}</b> <b>{message.time}</b> <b>{message.symbol}</b> <code>{message.change}</code>"
+
+
+# else:
+#     sub_str = Signals[message.signal][0]
+#     if message.symbol in ["$BTC", "$ETH"]:
+#         price = format_float_dynamic(message.price)
+#         price = "{:,.2f}".format(float(price))
+#         return f"<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>\n<code>{price}</code>"
+#     return f"<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
