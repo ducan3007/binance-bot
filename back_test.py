@@ -23,7 +23,7 @@ NON_SPOT_PAIRS = {
 MAX_KLINES = 1000
 
 START_DATE = "2024-04-01"
-END_DATE = "2024-07-27"
+END_DATE = "2024-08-01"
 MODE = "KLINE"
 EXCHANGE = "future"
 
@@ -328,7 +328,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
     # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
 
-    kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}.csv")
+    if MODE == "KLINE":
+        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}.csv")
+    else:
+        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_ha.csv")
 
 
 def init_data():
