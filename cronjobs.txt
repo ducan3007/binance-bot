@@ -1,2 +1,1 @@
-0 7 * * * /usr/bin/python3 /root/binance-bot/binance_24hr_tickers.py
-0 7 * * * /usr/bin/python3 /root/binance-bot/binance_24hr_tickers_v2.py
+0 7 * * * /root/binance-bot/f24hr.sh
