@@ -10,7 +10,7 @@ tp = 11
 
 time_frame = "15m"
 
-time_frame_30m = True
+time_frame_30m = False
 time_frame_15m = True
 enable_log = True
 
@@ -19,52 +19,52 @@ def check_time(time1):
     time_object = datetime.strptime(time1, "%Y-%m-%d %H:%M")
     current_time = time_object.time()
     start_time = datetime.strptime("01:15", "%H:%M").time()
-    end_time = datetime.strptime("06:30", "%H:%M").time()
+    end_time = datetime.strptime("06:00", "%H:%M").time()
     if start_time <= current_time <= end_time:
         return False
     return True
-
-# def check_direction_15m_with_15m_ha(df_15m_ha, time_15m, pre_direction, direction_15m):
-#     if df_15m_ha is None:
-#         return True
-
-#     # Find the previous, current, and next 15m_ha candle rows
-#     pre_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m - 900)]  # 900 seconds = 15 minutes
-#     current_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == time_15m]
-#     next_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m + 900)]  # 900 seconds = 15 minutes
-
-#     # Check if the direction matches
-#     if not pre_15m_ha_candle.empty and not current_15m_ha_candle.empty:
-#         if pre_15m_ha_candle.iloc[0]["direction"] == pre_direction and current_15m_ha_candle.iloc[0]["direction"] == direction_15m:
-#             print("Check Previous 15m_ha and Current 15m_ha direction match", pre_15m_ha_candle.iloc[0]["Time1"], current_15m_ha_candle.iloc[0]["Time1"])
-#             return True
-    
-#     if not current_15m_ha_candle.empty and not next_15m_ha_candle.empty:
-#         if current_15m_ha_candle.iloc[0]["direction"] == pre_direction and next_15m_ha_candle.iloc[0]["direction"] == direction_15m:
-#             print("Check Current 15m_ha and Next 15m_ha direction match", current_15m_ha_candle.iloc[0]["Time1"], next_15m_ha_candle.iloc[0]["Time1"])
-#             return True
-
-#     return False
-
 
 def check_direction_15m_with_15m_ha(df_15m_ha, time_15m, pre_direction, direction_15m):
     if df_15m_ha is None:
         return True
 
-    # Find the current and next 15m_ha candle rows
+    # Find the previous, current, and next 15m_ha candle rows
     pre_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m - 900)]  # 900 seconds = 15 minutes
     current_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == time_15m]
     next_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m + 900)]  # 900 seconds = 15 minutes
 
     # Check if the direction matches
-    if not current_15m_ha_candle.empty and direction_15m == current_15m_ha_candle.iloc[0]["direction"]:
-        print("Check Current 15m_ha direction matches", current_15m_ha_candle.iloc[0]["Time1"])
-        return True
-    elif not next_15m_ha_candle.empty and direction_15m == next_15m_ha_candle.iloc[0]["direction"]:
-        print("Check Next 15m_ha direction matches", next_15m_ha_candle.iloc[0]["Time1"])
-        return True
-    else:
-        return False
+    if not pre_15m_ha_candle.empty and not current_15m_ha_candle.empty:
+        if pre_15m_ha_candle.iloc[0]["direction"] == pre_direction and current_15m_ha_candle.iloc[0]["direction"] == direction_15m:
+            print("Check Previous 15m_ha and Current 15m_ha direction match", pre_15m_ha_candle.iloc[0]["Time1"], current_15m_ha_candle.iloc[0]["Time1"])
+            return True
+    
+    if not current_15m_ha_candle.empty and not next_15m_ha_candle.empty:
+        if current_15m_ha_candle.iloc[0]["direction"] == pre_direction and next_15m_ha_candle.iloc[0]["direction"] == direction_15m:
+            print("Check Current 15m_ha and Next 15m_ha direction match", current_15m_ha_candle.iloc[0]["Time1"], next_15m_ha_candle.iloc[0]["Time1"])
+            return True
+
+    return False
+
+
+# def check_direction_15m_with_15m_ha(df_15m_ha, time_15m, pre_direction, direction_15m):
+#     if df_15m_ha is None:
+#         return True
+
+#     # Find the current and next 15m_ha candle rows
+#     pre_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m - 900)]  # 900 seconds = 15 minutes
+#     current_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == time_15m]
+#     next_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m + 900)]  # 900 seconds = 15 minutes
+
+#     # Check if the direction matches
+#     if not current_15m_ha_candle.empty and direction_15m == current_15m_ha_candle.iloc[0]["direction"]:
+#         print("Check Current 15m_ha direction matches", current_15m_ha_candle.iloc[0]["Time1"])
+#         return True
+#     elif not next_15m_ha_candle.empty and direction_15m == next_15m_ha_candle.iloc[0]["direction"]:
+#         print("Check Next 15m_ha direction matches", next_15m_ha_candle.iloc[0]["Time1"])
+#         return True
+#     else:
+#         return False
 
 
 # def check_direction_15m_with_30m(df_30m, time_15m, pre_direction, direction_15m):
@@ -126,6 +126,11 @@ def run_trading_strategy(token, time_frame):
         df_30m = pd.read_csv(f"{token}_ce_30m.csv")
     else:
         df_30m = None
+
+    if df_30m is not None:
+        df_data = df_30m
+    else:
+        df_data = df_15m_ha
 
     initial_capital = 1000
     capital = initial_capital
@@ -225,7 +230,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    # print("gain4", pre_previous_item["Time1"])
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -265,7 +270,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    # print("gain4", pre_previous_item["Time1"])
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -315,7 +320,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    # print("gain4", pre_previous_item["Time1"])
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -355,7 +360,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    # print("gain4", pre_previous_item["Time1"])
+                    print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -370,7 +375,7 @@ def run_trading_strategy(token, time_frame):
             if pre_previous_direction == -1 and previous_direction == 1:
                 if not check_time(item["Time1"]):
                     continue
-                if not check_direction_15m_with_30m(df_30m, item["Time"], -1, 1):
+                if not check_direction_15m_with_15m_ha(df_data, item["Time"], -1, 1):
                     continue
                 entry_price = item["real_price_open"]
                 position_open = True
@@ -382,7 +387,7 @@ def run_trading_strategy(token, time_frame):
             elif pre_previous_direction == 1 and previous_direction == -1:
                 if not check_time(item["Time1"]):
                     continue
-                if not check_direction_15m_with_30m(df_30m, item["Time"], 1, -1):
+                if not check_direction_15m_with_15m_ha(df_data, item["Time"], 1, -1):
                     continue
                 entry_price = item["real_price_open"]
                 position_open = True
