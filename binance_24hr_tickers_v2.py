@@ -77,7 +77,7 @@ def main():
     return result
 
 
-if __name__ == "__main__":
+def binance_24hr_tickers_v2():
     message = main()
     table = format_table(message)
     date = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))

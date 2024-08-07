@@ -7,6 +7,8 @@ from telegram_bot import (
     MessageType2,
 )
 from logger import logger
+from binance_24hr_tickers import binance_24hr_tickers
+from binance_24hr_tickers_v2 import binance_24hr_tickers_v2
 
 CHAT_ID_1M = os.environ.get("CHAT_ID_1M")
 TOKEN_1M = os.environ.get("TOKEN_1M")
@@ -65,3 +67,13 @@ def post_send_24h_price_change(body: MessageType2):
     chat_id = BOT[body.time_frame]["chat_id"]
     token = BOT[body.time_frame]["token"]
     return send_telegram_message(body.message, token=token, chat_id=chat_id, message=body)
+
+
+@app.post("/trigger-send24hrPriceChange")
+def trigger_send_24h_price_change():
+    logger.info(f"Triggered 24h price change")
+    binance_24hr_tickers()
+    logger.info(f"message: Triggered 24h price change V2")
+    binance_24hr_tickers_v2()
+    logger.info(f"message: Triggered 24h price change")
+    return {"message": "Triggered 24h price change"}
