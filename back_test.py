@@ -22,8 +22,8 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-06-20"
-END_DATE = "2024-08-02"
+START_DATE = "2024-04-02"
+END_DATE = "2024-08-05"
 MODE = "KLINE"
 EXCHANGE = "future"
 

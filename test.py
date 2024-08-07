@@ -11,7 +11,7 @@ tp = 11
 time_frame = "15m"
 
 time_frame_30m = False
-time_frame_15m = True
+time_frame_15m = False
 enable_log = True
 
 
@@ -132,7 +132,7 @@ def run_trading_strategy(token, time_frame):
     else:
         df_data = df_15m_ha
 
-    initial_capital = 1000
+    initial_capital = 2300
     capital = initial_capital
     position_open = False
     position_type = None
@@ -230,7 +230,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -270,7 +270,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -320,7 +320,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
@@ -360,7 +360,7 @@ def run_trading_strategy(token, time_frame):
                     # print("gain2", pre_previous_item["Time1"])
                     gain_2_4_percent += 1
                 elif highest_gain_open * 100 >= 4:
-                    print("gain4", pre_previous_item["Time1"])
+                    # print("gain4", pre_previous_item["Time1"])
                     gain_more_than_4_percent += 1
                 highest_gain_open = 0  # Reset for the next position
 
