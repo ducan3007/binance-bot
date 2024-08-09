@@ -18,13 +18,13 @@ def format_table(data):
         table_data.append(
             [
                 gainer["symbol"],
-                f"+{gainer['priceChangePercent']:.2f}%" if gainer["priceChangePercent"] != "" else "",
+                f"+{gainer['priceChangePercent']:.1f}%" if gainer["priceChangePercent"] != "" else "",
                 loser["symbol"],
-                f"{loser['priceChangePercent']:.2f}%" if loser["priceChangePercent"] != "" else "",
+                f"{loser['priceChangePercent']:.1f}%" if loser["priceChangePercent"] != "" else "",
             ]
         )
 
-    return tabulate(table_data, headers=["GAINERS", "24h%", "LOSERS", "24h%"], tablefmt="simple")
+    return tabulate(table_data, tablefmt="plain")
 
 
 def get_24h_price_change(symbol):
@@ -110,7 +110,7 @@ def binance_24hr_tickers_v2():
             trend = down
             trend1 = down1
 
-    message = f"#DAILY_REPORT {date} {trend}\n\nBinance Future\nTop Gainers & Losers {trend1}\n\n<pre language='javascript'>{table}</pre>"
+    message = f"#DAILY_REPORT {date} {trend}\n\nBinance Future\nTop Gainers & Losers 24hr {trend1}\n\n<pre language='javascript'>{table}</pre>"
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,
