@@ -7,6 +7,7 @@ from datetime import datetime
 import requests
 import json
 import argparse
+from logger import logger
 
 EPSILON = 1e-9
 
@@ -17,6 +18,7 @@ NON_SPOT_PAIRS = {
     "1000BONKUSDT": "1000BONKUSDT",
     "1000RATSUSDT": "1000RATSUSDT",
     "MEWUSDT": "MEWUSDT",
+    "ZETAUSDT": "ZETAUSDT",
 }
 
 TOKEN_SHORTCUT = {"1000PEPE": "PEPE", "1000BONK": "BONK", "1000RATS": "RATS", "1000SATS": "SATS", "1000FLOKI": "FLOKI"}
@@ -245,6 +247,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
     counter = 0
     hasSentSignal = False
+    lastSentMessage = {"message_id": None, "Time": None, "Direction": None}
     _token = TOKEN.ljust(12)
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
@@ -331,6 +334,20 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             """
             Pre send telegram message before candle close
             """
+            if (
+                lastSentMessage["message_id"] is not None
+                and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
+                and lastSentMessage["Time"] == timestamp - TIME_FRAME_MS[TIME_FRAME]
+            ):
+                __time = datetime.fromtimestamp(lastSentMessage["Time"]).strftime("%Y-%m-%d %H:%M")
+                __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
+                logger.info(f"Delete invalid message: {__body}, ts = {__time}")
+                res = delete_message(__body)
+                if res:
+                    lastSentMessage["Time"] = None
+                    lastSentMessage["message_id"] = None
+                    lastSentMessage["Direction"] = None
+
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
                 if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
@@ -348,8 +365,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
-                    ok = send_telegram_message(body)
-                    if ok:
+                    res = send_telegram_message(body)
+                    if res:
+                        if res.get("message_id"):
+                            lastSentMessage["Time"] = timestamp
+                            lastSentMessage["message_id"] = res.get("message_id")
+                            lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                         hasSentSignal = True
                         print(f"Signal sent:", body)
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
@@ -368,8 +389,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 }
                 if MODE == "normal":
                     body["time_frame"] = f"{TIME_FRAME}_normal"
-                ok = send_telegram_message(body)
-                if ok:
+                res = send_telegram_message(body)
+                if res:
                     hasSentSignal = True
                     print(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
@@ -395,8 +416,18 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.96
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
     return False
+
+
+def delete_message(body):
+    URL = "http://localhost:8000/deleteMessage"
+    headers = {"Content-Type": "application/json"}
+    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
+    if res.json()["status"]:
+        return True
+    else:
+        return False
 
 
 def send_telegram_message(body):
@@ -404,7 +435,7 @@ def send_telegram_message(body):
     headers = {"Content-Type": "application/json"}
     res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
     if res.json()["status"] == "success":
-        return True
+        return res.json()
     else:
         return False
 

@@ -2,9 +2,11 @@ import os
 from fastapi import FastAPI
 from telegram_bot import (
     send_telegram_message,
+    del_message,
     construct_message,
     MessageType1,
     MessageType2,
+    MessageType3
 )
 from logger import logger
 from binance_24hr_tickers import binance_24hr_tickers
@@ -77,3 +79,12 @@ def trigger_send_24h_price_change():
     binance_24hr_tickers_v2()
     logger.info(f"message: Triggered 24h price change")
     return {"message": "Triggered 24h price change"}
+
+
+@app.post("/deleteMessage")
+def delete_message(body: MessageType3):
+    logger.info(f"Received request to delete message: {body}")
+    chat_id = BOT[body.time_frame]["chat_id"]
+    token = BOT[body.time_frame]["token"]
+    message_id = body.message_id
+    return del_message(token=token, chat_id=chat_id, message_id=message_id)

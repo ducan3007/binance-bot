@@ -40,6 +40,11 @@ class MessageType2(BaseModel):
     time_frame: TimeFrame
 
 
+class MessageType3(BaseModel):
+    time_frame: TimeFrame
+    message_id: str
+
+
 def last_pinned_message_to_file(message_id, symbol, time_frame):
     records = []
 
@@ -99,9 +104,12 @@ def handle_message_type1(response, token, chat_id, message: MessageType1):
                     message.time_frame,
                     action="unpinChatMessage",
                 )
-            return pin_unpin_telegram_message(token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value)
+            pin_unpin_telegram_message(
+                token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
+            )
+            return message_id
         else:
-            return True
+            return message_id
     else:
         logger.info(f"Failed to send message: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         return False
@@ -206,15 +214,54 @@ def send_telegram_message(signal, token, chat_id, message=None):
     logger.info(signal)
     logger.info(response.json())
     if isinstance(message, MessageType1):
-        status = handle_message_type1(response, token, chat_id, message)
+        ack = handle_message_type1(response, token, chat_id, message)
         return {
-            "status": "success" if status else "failed",
+            "status": "success" if ack else "failed",
+            "message_id": ack,
         }
     elif isinstance(message, MessageType2):
-        status = handle_message_type2(response, token, chat_id, message)
+        ack = handle_message_type2(response, token, chat_id, message)
         return {
-            "status": status,
+            "status": ack,
         }
     return {
         "status": response.json()["ok"],
+    }
+
+
+def del_message(token, chat_id, message_id):
+    url = f"https://api.telegram.org/bot{token}/deleteMessage"
+    payload = {"chat_id": chat_id, "message_id": message_id}
+    max_attempts = 4
+    attempt = 1
+
+    while attempt <= max_attempts:
+        try:
+            response = requests.post(url, data=payload)
+            response.raise_for_status()  # Raises an error for bad HTTP status codes
+            logger.info(response.json())
+            return {
+                "status": response.json()["ok"],
+            }
+        except requests.exceptions.RequestException as e:
+            if e.response.status_code == 400:
+                logger.info(f"Message not found: {message_id}")
+                return {
+                    "status": True,
+                    "message": "Message not found",
+                }
+
+            if attempt == max_attempts:
+                logger.error(f"Failed after {attempt} attempts: {e}")
+                return {
+                    "status": False,
+                }
+            else:
+                wait_time = min(2**attempt, 60)
+                print("error", e)
+                logger.warning(f"Attempt {attempt} failed: {e}. Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+                attempt += 1
+    return {
+        "status": False,
     }
