@@ -9,7 +9,7 @@ JTO
 IO
 ZRO
 ZK
-LISTA
+
 WLD
 NOT
 TIA
