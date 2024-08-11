@@ -495,10 +495,10 @@ if __name__ == "__main__":
     files = {
         "1m": "tokens.1m.txt",
         "3m": "tokens.txt",
-        "5m": "tokens.5m.txt",
-        "15m": "tokens.15m.txt",
+        "5m": "tokens.15m.normal.txt",
+        "15m": "tokens.15m.normal.txt",
         "15mnormal": "tokens.15m.normal.txt",
-        "5mnormal": "tokens.5m.normal.txt",
+        "5mnormal": "tokens.15m.normal.txt",
         "1h": "tokens.txt",
         "2h": "tokens.txt",
         "4h": "tokens.txt",
