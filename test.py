@@ -5,13 +5,13 @@ leverage = 2
 fee_rate = 0.004
 position_fraction = 1.00
 stop_lost = -0.05
-tp = 11
+tp = 0.05
 
 
 time_frame = "15m"
 
 time_frame_30m = False
-time_frame_15m = False
+time_frame_15m = True
 enable_log = True
 
 
