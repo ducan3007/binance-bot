@@ -342,7 +342,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             ):
                 __time = datetime.fromtimestamp(lastSentMessage["Time"]).strftime("%Y-%m-%d %H:%M")
                 __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
-                logger.info(f"Delete invalid message: {__body}, ts = {__time}")
+                logger.info(f"Delete invalid message: Token: {TOKEN} {__body}, ts = {__time}")
                 res = delete_message(__body)
                 if res:
                     lastSentMessage["Time"] = None
