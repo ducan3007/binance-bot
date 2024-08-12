@@ -2,10 +2,10 @@ import pandas as pd
 from datetime import datetime
 
 leverage = 2
-fee_rate = 0.004
+fee_rate = 0.0035
 position_fraction = 1.00
 stop_lost = -0.05
-tp = 0.05
+tp = 11
 
 
 time_frame = "15m"
