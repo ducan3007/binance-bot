@@ -328,7 +328,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
-            Exception("Time not match !!!")
+            logger.info(f"Time not match: {TOKEN} ts: {timestamp} 0: {data_temp_dict['Time'][0]} 1: {data_temp_dict['Time'][1]}")
+            raise Exception("Time not match !!!")
             break
 
         if TIME_FRAME == "15m" and MODE == "normal":
