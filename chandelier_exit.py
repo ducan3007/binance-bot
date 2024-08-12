@@ -125,10 +125,14 @@ class KlineHelper:
             data1[key].extend(data2[key])
 
     def fetch_klines_future(self, PAIR, TIME_FRAME, limit):
-        URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
-        headers = {"Content-Type": "application/json"}
-        res = requests.get(URL, headers=headers, timeout=None)
-        return res.json()
+        try:
+            URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
+            headers = {"Content-Type": "application/json"}
+            res = requests.get(URL, headers=headers, timeout=None)
+            return res.json()
+        except Exception as e:
+            logger.error(f"Error Fetching Future Klines: {e}")
+            raise e
 
     def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit):
         if self.exchange == "future":
@@ -328,7 +332,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         else:
-            logger.info(f"Time not match: {TOKEN} ts: {timestamp} 0: {data_temp_dict['Time'][0]} 1: {data_temp_dict['Time'][1]}")
+            logger.info(
+                f"Time not match: {TOKEN} ts: {timestamp} 0: {data_temp_dict['Time'][0]} 1: {data_temp_dict['Time'][1]}"
+            )
             raise Exception("Time not match !!!")
             break
 
