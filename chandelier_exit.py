@@ -124,19 +124,20 @@ class KlineHelper:
         for key in data1:
             data1[key].extend(data2[key])
 
-    def fetch_klines_future(self, PAIR, TIME_FRAME, limit):
+    def fetch_klines_future(self, PAIR, TIME_FRAME, limit, weight):
         try:
             URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
             headers = {"Content-Type": "application/json"}
             res = requests.get(URL, headers=headers, timeout=None)
+            weight["m1"] = int(res.headers["x-mbx-used-weight-1m"])
             return res.json()
         except Exception as e:
             logger.error(f"Error Fetching Future Klines: {e}")
             raise e
 
-    def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit):
+    def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit, weight):
         if self.exchange == "future":
-            return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
+            return self.fetch_klines_future(PAIR, TIME_FRAME, limit, weight)
         else:
             if PAIR in NON_SPOT_PAIRS:
                 return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
@@ -221,6 +222,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         CEConfig.SUB_SIZE.value,
     )
 
+    weight = {"m1": 0}
+
     if not MODE:
         MODE = "heikin_ashi"
 
@@ -234,7 +237,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
+    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE, weight)
     kline_helper.get_heikin_ashi(data, klines)
     df_data = pd.DataFrame(data)
 
@@ -271,7 +274,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     while True:
         counter += 1
         data_temp_dict = init_data()
-        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
+        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2, weight)
 
         kline_helper.get_heikin_ashi(
             data_temp_dict,
@@ -285,7 +288,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         )
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
-        print(f"Time: {counter} {_token}  {_per}  {data_temp_dict['Time1'][0]}  {data_temp_dict['Time1'][1]}")
+        print(
+            f"Time: {counter} {weight['m1']} {_token}  {_per}  {data_temp_dict['Time1'][0]}  {data_temp_dict['Time1'][1]}"
+        )
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
