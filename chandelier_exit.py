@@ -140,7 +140,7 @@ class KlineHelper:
             return self.fetch_klines_future(PAIR, TIME_FRAME, limit, weight)
         else:
             if PAIR in NON_SPOT_PAIRS:
-                return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
+                return self.fetch_klines_future(PAIR, TIME_FRAME, limit, weight)
             return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
 
     def export_csv(self, data, filename="atr2.csv"):
