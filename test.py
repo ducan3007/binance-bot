@@ -4,11 +4,11 @@ from datetime import datetime
 leverage = 2
 fee_rate = 0.0035
 position_fraction = 1.00
-stop_lost = -0.05
-tp = 11
+stop_lost = -999
+tp = 111
 
 
-time_frame = "15m"
+time_frame = "30m"
 
 time_frame_30m = False
 time_frame_15m = True
@@ -24,91 +24,25 @@ def check_time(time1):
         return False
     return True
 
-def check_direction_15m_with_15m_ha(df_15m_ha, time_15m, pre_direction, direction_15m):
-    if df_15m_ha is None:
+
+def check_direction_15m_with_15m_ha(df_ha, time, pre_direction, direction, seconds=900, tf="15m"):
+    if df_ha is None:
         return True
 
     # Find the previous, current, and next 15m_ha candle rows
-    pre_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m - 900)]  # 900 seconds = 15 minutes
-    current_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == time_15m]
-    next_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m + 900)]  # 900 seconds = 15 minutes
+    pre_ha_candle = df_ha[df_ha["Time"] == (time - seconds)]
+    current_ha_candle = df_ha[df_ha["Time"] == time]
+    next_ha_candle = df_ha[df_ha["Time"] == (time + seconds)]
 
     # Check if the direction matches
-    if not pre_15m_ha_candle.empty and not current_15m_ha_candle.empty:
-        if pre_15m_ha_candle.iloc[0]["direction"] == pre_direction and current_15m_ha_candle.iloc[0]["direction"] == direction_15m:
-            print("Check Previous 15m_ha and Current 15m_ha direction match", pre_15m_ha_candle.iloc[0]["Time1"], current_15m_ha_candle.iloc[0]["Time1"])
-            return True
-    
-    if not current_15m_ha_candle.empty and not next_15m_ha_candle.empty:
-        if current_15m_ha_candle.iloc[0]["direction"] == pre_direction and next_15m_ha_candle.iloc[0]["direction"] == direction_15m:
-            print("Check Current 15m_ha and Next 15m_ha direction match", current_15m_ha_candle.iloc[0]["Time1"], next_15m_ha_candle.iloc[0]["Time1"])
+    if not pre_ha_candle.empty and not current_ha_candle.empty:
+        if pre_ha_candle.iloc[0]["direction"] == pre_direction and current_ha_candle.iloc[0]["direction"] == direction:
+            print(f"Check Previous {tf} and Current {tf} direction match", pre_ha_candle.iloc[0]["Time1"], current_ha_candle.iloc[0]["Time1"])
             return True
 
-    return False
-
-
-# def check_direction_15m_with_15m_ha(df_15m_ha, time_15m, pre_direction, direction_15m):
-#     if df_15m_ha is None:
-#         return True
-
-#     # Find the current and next 15m_ha candle rows
-#     pre_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m - 900)]  # 900 seconds = 15 minutes
-#     current_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == time_15m]
-#     next_15m_ha_candle = df_15m_ha[df_15m_ha["Time"] == (time_15m + 900)]  # 900 seconds = 15 minutes
-
-#     # Check if the direction matches
-#     if not current_15m_ha_candle.empty and direction_15m == current_15m_ha_candle.iloc[0]["direction"]:
-#         print("Check Current 15m_ha direction matches", current_15m_ha_candle.iloc[0]["Time1"])
-#         return True
-#     elif not next_15m_ha_candle.empty and direction_15m == next_15m_ha_candle.iloc[0]["direction"]:
-#         print("Check Next 15m_ha direction matches", next_15m_ha_candle.iloc[0]["Time1"])
-#         return True
-#     else:
-#         return False
-
-
-# def check_direction_15m_with_30m(df_30m, time_15m, pre_direction, direction_15m):
-#     # return True
-#     if df_30m is None:
-#         return True
-#     # Calculate the start time of the corresponding 30m interval
-#     time_30m = time_15m // 1800 * 1800  # Floor division to find the start of the 30m interval
-
-#     # Find the current and next 30m candle rows
-#     current_30m_candle = df_30m[df_30m["Time"] == time_30m]
-#     next_30m_candle = df_30m[df_30m["Time"] == (time_30m + 1800)]
-
-#     # Check if the direction matches
-#     if not current_30m_candle.empty and direction_15m == current_30m_candle.iloc[0]["direction"]:
-#         print("Check Current 30m direction matches", current_30m_candle.iloc[0]["Time1"])
-#         return True
-#     # elif not next_30m_candle.empty and direction_15m == next_30m_candle.iloc[0]["direction"]:
-#     #     # print("Check Next 30m direction matches", next_30m_candle.iloc[0]["Time1"])
-#     #     return True
-#     else:
-#         return False
-
-def check_direction_15m_with_30m(df_30m, time_15m, pre_direction, direction_15m):
-    if df_30m is None:
-        return True
-
-    # Calculate the start time of the corresponding 30m interval
-    time_30m = time_15m // 1800 * 1800  # Floor division to find the start of the 30m interval
-
-    # Find the previous, current, and next 30m candle rows
-    pre_30m_candle = df_30m[df_30m["Time"] == (time_30m - 1800)]
-    current_30m_candle = df_30m[df_30m["Time"] == time_30m]
-    next_30m_candle = df_30m[df_30m["Time"] == (time_30m + 1800)]
-
-    # Check if the direction matches
-    if not pre_30m_candle.empty and not current_30m_candle.empty:
-        if pre_30m_candle.iloc[0]["direction"] == pre_direction and current_30m_candle.iloc[0]["direction"] == direction_15m:
-            print("Check Previous 30m and Current 30m direction match", pre_30m_candle.iloc[0]["Time1"], current_30m_candle.iloc[0]["Time1"])
-            return True
-
-    if not current_30m_candle.empty and not next_30m_candle.empty:
-        if current_30m_candle.iloc[0]["direction"] == pre_direction and next_30m_candle.iloc[0]["direction"] == direction_15m:
-            print("Check Current 30m and Next 30m direction match", current_30m_candle.iloc[0]["Time1"], next_30m_candle.iloc[0]["Time1"])
+    if not current_ha_candle.empty and not next_ha_candle.empty:
+        if current_ha_candle.iloc[0]["direction"] == pre_direction and next_ha_candle.iloc[0]["direction"] == direction:
+            print(f"Check Current {tf} and Next {tf} direction match", current_ha_candle.iloc[0]["Time1"], next_ha_candle.iloc[0]["Time1"])
             return True
 
     return False
@@ -147,6 +81,10 @@ def run_trading_strategy(token, time_frame):
     long_opened = 0
     short_opened = 0
     daily_results = {}
+    price_retrace_entry = {
+        "2024-04-02 02:30": True,
+    }
+    
     """
     {
     "2024-06-26": {"win": 5, "lost": 4},
@@ -192,7 +130,7 @@ def run_trading_strategy(token, time_frame):
         # Close long position
         if position_open and position_type == "long":
             exit_price = previous_close
-            gain_per = (exit_price - entry_price) / entry_price * leverage
+            gain_per = ((exit_price - entry_price) / entry_price) * leverage
 
             if gain_per <= stop_lost or gain_per >= tp:
                 if gain_per >= tp:
