@@ -411,8 +411,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
 def _cal_change(close, pre_close):
     per = (close - pre_close) / pre_close * 100
-    if -0.9 <= per < 0.9:
-        return ""
+    # if -0.9 <= per < 0.9:
+    #     return ""
     per = per >= 0 and f"(+{per:.2f}%)" or f"({per:.2f}%)"
     return per
 
@@ -429,7 +429,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.90
     return False
 
 
