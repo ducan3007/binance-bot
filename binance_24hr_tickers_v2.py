@@ -114,7 +114,7 @@ def binance_24hr_tickers_v2():
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,
-        json={"message": message, "time_frame": "15m_normal"},
+        json={"message": message, "time_frame": "5m_normal"},
         headers={"Content-Type": "application/json"},
     )
     print(response.json())

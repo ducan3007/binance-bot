@@ -26,6 +26,7 @@ TOKEN_SHORTCUT = {"1000PEPE": "PEPE", "1000BONK": "BONK", "1000RATS": "RATS", "1
 
 TIME_FRAME_MS = {
     "15m": 15 * 60,
+    "5m": 5 * 60,
 }
 
 
@@ -343,7 +344,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             raise Exception("Time not match !!!")
             break
 
-        if TIME_FRAME == "15m" and MODE == "normal":
+        if TIME_FRAME == "5m" and MODE == "normal":
             """
             Pre send telegram message before candle close
             """
