@@ -1,11 +1,11 @@
 import pandas as pd
 from datetime import datetime
 
-leverage = 6
-fee_rate = 0.005
+leverage = 2
+fee_rate = 0.0035
 position_fraction = 1.00
-stop_lost = -0.06
-tp = 111
+stop_lost = -0.04
+tp = 0.017
 
 
 mode = ""
