@@ -22,8 +22,8 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-04-02"
-END_DATE = "2024-08-05"
+START_DATE = "2024-01-01"
+END_DATE = "2024-08-17"
 MODE = "KLINE"
 EXCHANGE = "future"
 
@@ -383,8 +383,8 @@ if __name__ == "__main__":
 
     # Each .txt file for each time frame
     files = {
-        "1m": "tokens.1m.txt",
-        "3m": "tokens.txt",
+        "1m": "tokens.15m.txt",
+        "3m": "tokens.15m.txt",
         "5m": "tokens.15m.txt",
         "15m": "tokens.15m.txt",
         "30m": "tokens.15m.txt",

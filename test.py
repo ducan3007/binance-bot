@@ -1,17 +1,19 @@
 import pandas as pd
 from datetime import datetime
 
-leverage = 2
-fee_rate = 0.0035
+leverage = 6
+fee_rate = 0.005
 position_fraction = 1.00
-stop_lost = -999
+stop_lost = -0.06
 tp = 111
 
 
-time_frame = "30m"
+mode = ""
+time_frame = "5m"
+seconds = 300
 
-time_frame_30m = False
-time_frame_15m = True
+time_frame_ha_check = True
+
 enable_log = True
 
 
@@ -25,7 +27,7 @@ def check_time(time1):
     return True
 
 
-def check_direction_15m_with_15m_ha(df_ha, time, pre_direction, direction, seconds=900, tf="15m"):
+def check_direction_with_ha(df_ha, time, pre_direction, direction, seconds=900, tf="15m"):
     if df_ha is None:
         return True
 
@@ -49,22 +51,15 @@ def check_direction_15m_with_15m_ha(df_ha, time, pre_direction, direction, secon
 
 
 def run_trading_strategy(token, time_frame):
-    data = pd.read_csv(f"{token}_ce_{time_frame}.csv")
-
-    if time_frame_15m:
-        df_15m_ha = pd.read_csv(f"{token}_ce_15m_ha.csv")
+    if mode == "ha":
+        data = pd.read_csv(f"{token}_ce_{time_frame}_ha.csv")
     else:
-        df_15m_ha = None
+        data = pd.read_csv(f"{token}_ce_{time_frame}.csv")
 
-    if time_frame_30m:
-        df_30m = pd.read_csv(f"{token}_ce_30m.csv")
+    if time_frame_ha_check:
+        df_ha = pd.read_csv(f"{token}_ce_{time_frame}_ha.csv")
     else:
-        df_30m = None
-
-    if df_30m is not None:
-        df_data = df_30m
-    else:
-        df_data = df_15m_ha
+        df_ha = None
 
     initial_capital = 2300
     capital = initial_capital
@@ -84,7 +79,7 @@ def run_trading_strategy(token, time_frame):
     price_retrace_entry = {
         "2024-04-02 02:30": True,
     }
-    
+
     """
     {
     "2024-06-26": {"win": 5, "lost": 4},
@@ -313,7 +308,7 @@ def run_trading_strategy(token, time_frame):
             if pre_previous_direction == -1 and previous_direction == 1:
                 if not check_time(item["Time1"]):
                     continue
-                if not check_direction_15m_with_15m_ha(df_data, item["Time"], -1, 1):
+                if not check_direction_with_ha(df_ha, item["Time"], -1, 1, seconds, time_frame):
                     continue
                 entry_price = item["real_price_open"]
                 position_open = True
@@ -325,7 +320,7 @@ def run_trading_strategy(token, time_frame):
             elif pre_previous_direction == 1 and previous_direction == -1:
                 if not check_time(item["Time1"]):
                     continue
-                if not check_direction_15m_with_15m_ha(df_data, item["Time"], 1, -1):
+                if not check_direction_with_ha(df_ha, item["Time"], 1, -1, seconds, time_frame):
                     continue
                 entry_price = item["real_price_open"]
                 position_open = True
