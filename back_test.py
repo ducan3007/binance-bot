@@ -22,9 +22,9 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-01-01"
+START_DATE = "2024-04-01"
 END_DATE = "2024-08-17"
-MODE = "HA"
+MODE = "KLINE"  # KLINE or HEIKIN ASHI
 EXCHANGE = "future"
 
 

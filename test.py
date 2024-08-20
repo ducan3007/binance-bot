@@ -4,15 +4,15 @@ from datetime import datetime
 leverage = 2
 fee_rate = 0.0035
 position_fraction = 1.00
-stop_lost = -0.04
-tp = 0.017
+stop_lost = -0.06
+tp = 999
 
 
 mode = ""
-time_frame = "5m"
-seconds = 300
+time_frame = "30m"
+seconds = 60 * 30 * 1
 
-time_frame_ha_check = True
+time_frame_ha_check = False
 
 enable_log = True
 
