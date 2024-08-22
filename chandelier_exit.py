@@ -345,7 +345,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             raise Exception("Time not match !!!")
             break
 
-        if TIME_FRAME == "30m":
+        if TIME_FRAME == "30m" or TIME_FRAME == "15m":
             """
             Pre send telegram message before candle close
             """
@@ -431,7 +431,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.85
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.9
     return False
 
 
