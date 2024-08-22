@@ -27,6 +27,7 @@ TOKEN_SHORTCUT = {"1000PEPE": "PEPE", "1000BONK": "BONK", "1000RATS": "RATS", "1
 TIME_FRAME_MS = {
     "15m": 15 * 60,
     "5m": 5 * 60,
+    "30m": 30 * 60,
 }
 
 
@@ -290,7 +291,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
         print(
-            f"Time: {counter} {weight['m1']} {_token}  {_per}  {data_temp_dict['Time1'][0]}  {data_temp_dict['Time1'][1]}"
+            f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}"
         )
 
         if timestamp == data_temp_dict["Time"][1]:
@@ -344,7 +345,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             raise Exception("Time not match !!!")
             break
 
-        if TIME_FRAME == "5m" and MODE == "normal":
+        if TIME_FRAME == "30m":
             """
             Pre send telegram message before candle close
             """
@@ -430,7 +431,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.90
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.85
     return False
 
 
@@ -513,6 +514,8 @@ if __name__ == "__main__":
         "15m": "tokens.txt",
         "15mnormal": "tokens.15m.normal.txt",
         "5mnormal": "tokens.15m.normal.txt",
+        "30mnormal": "tokens.30m.txt",
+        "30m": "tokens.30m.txt",
         "1h": "tokens.txt",
         "2h": "tokens.txt",
         "4h": "tokens.txt",

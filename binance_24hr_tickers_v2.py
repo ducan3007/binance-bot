@@ -57,7 +57,7 @@ def get_top_gainers_and_losers(tokens):
 def main():
     start = time.time()
 
-    with open(f"tokens.15m.normal.txt", "r") as file:
+    with open(f"tokens.30m.txt", "r") as file:
         tokens = [f"{line.strip()}USDT" for line in file]
 
     top_gainers, top_losers = get_top_gainers_and_losers(tokens)
@@ -114,7 +114,7 @@ def binance_24hr_tickers_v2():
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,
-        json={"message": message, "time_frame": "5m_normal"},
+        json={"message": message, "time_frame": "30m_normal"},
         headers={"Content-Type": "application/json"},
     )
     print(response.json())

@@ -19,6 +19,8 @@ class TimeFrame(str, Enum):
     m3 = "3m"
     m5 = "5m"
     m15 = "15m"
+    m30 = "30m"
+    m30_normal = "30m_normal"
     m15_normal = "15m_normal"
     m5_normal = "5m_normal"
     h1 = "1h"
@@ -92,7 +94,7 @@ def handle_message_type1(response, token, chat_id, message: MessageType1):
     if response.json()["ok"] == True:
         logger.info(f"Message sent successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         message_id = response.json()["result"]["message_id"]
-        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [TimeFrame.h2, TimeFrame.m15, TimeFrame.m5_normal]:
+        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [TimeFrame.h4, TimeFrame.m30, TimeFrame.m30_normal]:
             last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
             if last_pinned_message_id:
                 pin_unpin_telegram_message(
