@@ -7,3 +7,6 @@ __pycache__/
 */.csv
 pinned_messages.txt
 *.log
+
+ta-lib
+ta-lib-python

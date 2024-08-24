@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import requests
 import json
 import argparse
+from zlma import calculate_zlsma, fetch_zlsma
 
 EPSILON = 1e-9
 
@@ -22,10 +23,13 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-06-25"
-END_DATE = "2024-08-18"
-MODE = "KLINE"  # KLINE or HEIKIN ASHI
+START_DATE = "2024-04-01"
+END_DATE = "2024-08-23"
+MODE = "HA"  # KLINE or HEIKIN ASHI
 EXCHANGE = "future"
+
+ZLSMA_LENGTH = 32
+ZLSMA_OFFSET = 0
 
 
 class CEConfig(Enum):
@@ -142,20 +146,7 @@ class KlineHelper:
 
     def export_csv(self, data, filename="atr2.csv"):
         dfdata = pd.DataFrame(data)
-        dfdata[
-            [
-                "Time",
-                "Time1",
-                "direction",
-                "High",
-                "Low",
-                "real_price_open",
-                "real_price_close",
-                "real_price_change",
-                "LongStop",
-                "ShortStop",
-            ]
-        ].to_csv(filename)
+        dfdata.to_csv(filename)
 
 
 class ChandlierExit:
@@ -180,7 +171,9 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1])
+                if self.use_close
+                else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -195,7 +188,9 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1])
+                if self.use_close
+                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -328,6 +323,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
     # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
 
+    calculate_zlsma(data, length=ZLSMA_LENGTH, offset=ZLSMA_OFFSET)
+
     if MODE == "KLINE":
         kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}.csv")
     else:
@@ -375,11 +372,13 @@ if __name__ == "__main__":
     parser.add_argument("--timeframe", type=str, help='Time frame, e.g., "1m"', default="1m")
     parser.add_argument("--month", type=str, help="Month to backtest", default=1)
     parser.add_argument("--year", type=str, help="Year to backtest", default=2024)
+    parser.add_argument("--mode", type=str, help="Year to backtest", default="KLINE")
 
     args = parser.parse_args()
     TIME_FRAME = args.timeframe
     MONTH = int(args.month)
     YEAR = int(args.year)
+    MODE = args.mode
 
     # Each .txt file for each time frame
     files = {

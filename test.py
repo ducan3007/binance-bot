@@ -1,20 +1,45 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 leverage = 2
 fee_rate = 0.0035
 position_fraction = 1.00
 stop_lost = -0.06
-tp = 0.06
+tp = 99
 
 
 mode = ""
-time_frame = "30m"
-seconds = 60 * 30 * 1
 
 time_frame_ha_check = False
 
+is_zlma_check = True
+
 enable_log = True
+
+time_frame = "30m"
+
+time_frame_seconds_map = {
+    "5m": 60 * 5,
+    "15m": 60 * 15,
+    "30m": 60 * 30,
+    "1h": 60 * 60,
+    "2h": 60 * 60 * 2,
+    "4h": 60 * 60 * 4,
+}
+
+seconds = time_frame_seconds_map[time_frame]
+
+start_date = "2024-04-01 00:00"
+start_date_dt = datetime.strptime(start_date, "%Y-%m-%d %H:%M")
+
+x = 32
+y = 92
+length = 32
+
+start_back_test_time_dt = start_date_dt + timedelta(seconds=seconds * (y + (length - x) * 2))
+start_back_test_time = int(start_back_test_time_dt.timestamp())
+
+print("start_back_test_time", start_back_test_time)
 
 
 def check_time(time1):
@@ -39,12 +64,20 @@ def check_direction_with_ha(df_ha, time, pre_direction, direction, seconds=900, 
     # Check if the direction matches
     if not pre_ha_candle.empty and not current_ha_candle.empty:
         if pre_ha_candle.iloc[0]["direction"] == pre_direction and current_ha_candle.iloc[0]["direction"] == direction:
-            print(f"Check Previous {tf} and Current {tf} direction match", pre_ha_candle.iloc[0]["Time1"], current_ha_candle.iloc[0]["Time1"])
+            print(
+                f"Check Previous {tf} and Current {tf} direction match",
+                pre_ha_candle.iloc[0]["Time1"],
+                current_ha_candle.iloc[0]["Time1"],
+            )
             return True
 
     if not current_ha_candle.empty and not next_ha_candle.empty:
         if current_ha_candle.iloc[0]["direction"] == pre_direction and next_ha_candle.iloc[0]["direction"] == direction:
-            print(f"Check Current {tf} and Next {tf} direction match", current_ha_candle.iloc[0]["Time1"], next_ha_candle.iloc[0]["Time1"])
+            print(
+                f"Check Current {tf} and Next {tf} direction match",
+                current_ha_candle.iloc[0]["Time1"],
+                next_ha_candle.iloc[0]["Time1"],
+            )
             return True
 
     return False
@@ -102,6 +135,11 @@ def run_trading_strategy(token, time_frame):
 
     for i in range(2, len(data)):
         item = data.iloc[i]
+        current_time = item["Time"]
+
+        if is_zlma_check and current_time < start_back_test_time:
+            continue
+
         current_direction = item["direction"]
         current_close = item["real_price_close"]
         current_high = item["High"]
@@ -126,10 +164,10 @@ def run_trading_strategy(token, time_frame):
             elif position_type == "short":
                 current_gain = (entry_price - current_low) / entry_price * leverage
                 current_lost = (entry_price - current_high) / entry_price * leverage
-                
+
             if current_gain > highest_gain_open:
                 highest_gain_open = current_gain
-                
+
             if current_lost < highest_loss_open:
                 highest_loss_open = current_gain
 
@@ -363,8 +401,12 @@ def run_trading_strategy(token, time_frame):
             if pre_previous_direction == -1 and previous_direction == 1:
                 if not check_time(item["Time1"]):
                     continue
-                if not check_direction_with_ha(df_ha, item["Time"], -1, 1, seconds, time_frame):
+                if time_frame_ha_check and not check_direction_with_ha(df_ha, item["Time"], -1, 1, seconds, time_frame):
                     continue
+
+                if is_zlma_check and not ((previous_item["Open"] > previous_item["ZLSMA"]) or (item["Open"] > previous_item["ZLSMA"])):
+                    continue
+
                 entry_price = item["real_price_open"]
                 position_open = True
                 position_type = "long"
@@ -375,8 +417,12 @@ def run_trading_strategy(token, time_frame):
             elif pre_previous_direction == 1 and previous_direction == -1:
                 if not check_time(item["Time1"]):
                     continue
-                if not check_direction_with_ha(df_ha, item["Time"], 1, -1, seconds, time_frame):
+                if time_frame_ha_check and not check_direction_with_ha(df_ha, item["Time"], 1, -1, seconds, time_frame):
                     continue
+
+                if is_zlma_check and not (previous_item["Open"] < previous_item["ZLSMA"] or (item["Open"] < previous_item["ZLSMA"])):
+                    continue
+
                 entry_price = item["real_price_open"]
                 position_open = True
                 position_type = "short"
