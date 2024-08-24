@@ -290,9 +290,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         )
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
-        print(
-            f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}"
-        )
+        print(f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
@@ -355,7 +353,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 and lastSentMessage["Time"] == timestamp - TIME_FRAME_MS[TIME_FRAME]
             ):
                 __time = datetime.fromtimestamp(lastSentMessage["Time"]).strftime("%Y-%m-%d %H:%M")
-                __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
+                
+                if TIME_FRAME == "15m":
+                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
+                if TIME_FRAME == "30m":
+                    __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
+                    
                 logger.info(f"Delete invalid message: Token: {TOKEN} {__body}, ts = {__time}")
                 res = delete_message(__body)
                 if res:
