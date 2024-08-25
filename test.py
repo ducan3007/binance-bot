@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 leverage = 2
 fee_rate = 0.0035
 position_fraction = 1.00
-stop_lost = -0.06
+stop_lost = -0.05
 tp = 99
 
 
@@ -12,11 +12,12 @@ mode = ""
 
 time_frame_ha_check = False
 
-is_zlma_check = True
+is_zlma_check = False
+is_zlma_check_32 = False
 
 enable_log = True
 
-time_frame = "30m"
+time_frame = "15m"
 
 time_frame_seconds_map = {
     "5m": 60 * 5,
@@ -29,12 +30,14 @@ time_frame_seconds_map = {
 
 seconds = time_frame_seconds_map[time_frame]
 
-start_date = "2024-04-01 00:00"
+start_date = "2024-04-23 00:00"
 start_date_dt = datetime.strptime(start_date, "%Y-%m-%d %H:%M")
 
 x = 32
 y = 92
-length = 32
+length = 50
+
+ATR = 1.8
 
 start_back_test_time_dt = start_date_dt + timedelta(seconds=seconds * (y + (length - x) * 2))
 start_back_test_time = int(start_back_test_time_dt.timestamp())
@@ -50,6 +53,22 @@ def check_time(time1):
     if start_time <= current_time <= end_time:
         return False
     return True
+
+
+def check_zlma_32(df, time, is_long):
+    if df is None:
+        return True
+
+    candle = df[df["Time"] == time]
+    if candle.empty:
+        return False
+
+    if is_long:
+        if candle.iloc[0]["Open"] > candle.iloc[0]["ZLSMA"]:
+            return True
+    else:
+        if candle.iloc[0]["Open"] < candle.iloc[0]["ZLSMA"]:
+            return True
 
 
 def check_direction_with_ha(df_ha, time, pre_direction, direction, seconds=900, tf="15m"):
@@ -85,14 +104,19 @@ def check_direction_with_ha(df_ha, time, pre_direction, direction, seconds=900, 
 
 def run_trading_strategy(token, time_frame):
     if mode == "ha":
-        data = pd.read_csv(f"{token}_ce_{time_frame}_ha.csv")
+        data = pd.read_csv(f"{token}_ce_{time_frame}_{length}_{ATR}_ha.csv")
     else:
-        data = pd.read_csv(f"{token}_ce_{time_frame}.csv")
+        data = pd.read_csv(f"{token}_ce_{time_frame}_{length}_{ATR}.csv")
 
     if time_frame_ha_check:
-        df_ha = pd.read_csv(f"{token}_ce_{time_frame}_ha.csv")
+        df_ha = pd.read_csv(f"{token}_ce_{time_frame}_{length}_{ATR}_ha.csv")
     else:
         df_ha = None
+
+    if is_zlma_check_32:
+        df_zlma = pd.read_csv(f"{token}_ce_{time_frame}_50_1.8_ha.csv")
+    else:
+        df_zlma = None
 
     initial_capital = 2300
     capital = initial_capital
@@ -404,7 +428,16 @@ def run_trading_strategy(token, time_frame):
                 if time_frame_ha_check and not check_direction_with_ha(df_ha, item["Time"], -1, 1, seconds, time_frame):
                     continue
 
-                if is_zlma_check and not ((previous_item["Open"] > previous_item["ZLSMA"]) or (item["Open"] > previous_item["ZLSMA"])):
+                if is_zlma_check and not (
+                    (previous_item["Open"] > previous_item["ZLSMA"])
+                    # or (pre_previous_item["Close"] > pre_previous_item["ZLSMA"])
+                ):
+                    continue
+
+                if is_zlma_check_32 and not check_zlma_32(df_zlma, previous_item["Time"], True):
+                    continue
+
+                if not previous_item["real_price_change"] > 0:
                     continue
 
                 entry_price = item["real_price_open"]
@@ -420,7 +453,17 @@ def run_trading_strategy(token, time_frame):
                 if time_frame_ha_check and not check_direction_with_ha(df_ha, item["Time"], 1, -1, seconds, time_frame):
                     continue
 
-                if is_zlma_check and not (previous_item["Open"] < previous_item["ZLSMA"] or (item["Open"] < previous_item["ZLSMA"])):
+                if is_zlma_check and not (
+                    (previous_item["Open"] < previous_item["ZLSMA"])
+                    # or (pre_previous_item["Close"] < pre_previous_item["ZLSMA"])
+                ):
+                    continue
+
+                if is_zlma_check_32 and not check_zlma_32(df_zlma, previous_item["Time"], False):
+                    continue
+
+                
+                if not previous_item["real_price_change"] < 0:
                     continue
 
                 entry_price = item["real_price_open"]

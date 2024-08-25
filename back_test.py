@@ -23,12 +23,12 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-04-01"
-END_DATE = "2024-08-23"
+START_DATE = "2024-04-23"
+END_DATE = "2024-08-24"
 MODE = "HA"  # KLINE or HEIKIN ASHI
 EXCHANGE = "future"
 
-ZLSMA_LENGTH = 32
+ZLSMA_LENGTH = 50
 ZLSMA_OFFSET = 0
 
 
@@ -222,6 +222,7 @@ def fetch_klines_non_spot(PAIR, TIME_FRAME, startTimeMs, endTimeMs, limit):
 
 
 def fetch_klines(binance_spot: Spot, PAIR, TIME_FRAME, startTimeMs, endTimeMs, limit):
+    print(f"Fetching klines for {PAIR} from {datetime.fromtimestamp(startTimeMs / 1000)} to {datetime.fromtimestamp(endTimeMs / 1000)}")
     if EXCHANGE == "future":
         return fetch_klines_non_spot(PAIR, TIME_FRAME, limit=limit, startTimeMs=startTimeMs, endTimeMs=endTimeMs)
     if PAIR in NON_SPOT_PAIRS:
@@ -323,12 +324,15 @@ def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
     # Calculate Chandelier Exit
     chandelier_exit.calculate_chandelier_exit(data=data)
 
+    print("Calculating ZLSMA")
     calculate_zlsma(data, length=ZLSMA_LENGTH, offset=ZLSMA_OFFSET)
 
+    print("Exporting CSV")
+
     if MODE == "KLINE":
-        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}.csv")
+        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{ZLSMA_LENGTH}_{CEConfig.MULT.value}.csv")
     else:
-        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_ha.csv")
+        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{ZLSMA_LENGTH}_{CEConfig.MULT.value}_ha.csv")
 
 
 def init_data():
@@ -355,6 +359,7 @@ def init_data():
 
 
 import multiprocessing
+import traceback
 
 
 def run_strategy(token, time_frame, pair, MONTH, YEAR):
@@ -363,6 +368,7 @@ def run_strategy(token, time_frame, pair, MONTH, YEAR):
         data = init_data()
         main(data, token, time_frame, pair, MONTH, YEAR)
     except Exception as e:
+        print(traceback.format_exc())
         print(f"Error: {e}")
         time.sleep(5)
 
