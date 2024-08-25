@@ -353,12 +353,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 and lastSentMessage["Time"] == timestamp - TIME_FRAME_MS[TIME_FRAME]
             ):
                 __time = datetime.fromtimestamp(lastSentMessage["Time"]).strftime("%Y-%m-%d %H:%M")
-                
-                if TIME_FRAME == "15m":
-                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
-                if TIME_FRAME == "30m":
+
+                if MODE == "normal":
                     __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
-                    
+                else:
+                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
+
                 logger.info(f"Delete invalid message: Token: {TOKEN} {__body}, ts = {__time}")
                 res = delete_message(__body)
                 if res:
@@ -368,6 +368,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
                 if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
+                    logger.info(f"Pre send signal: {TOKEN} {TIME_FRAME} {timestamp}")
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
                     prev_close_price = data["Close_p"][SIZE - 2]
@@ -390,7 +391,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                             lastSentMessage["message_id"] = res.get("message_id")
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                         hasSentSignal = True
-                        print(f"Signal sent:", body)
+                        logger.info(f"Signal sent:", body)
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
@@ -410,7 +411,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 res = send_telegram_message(body)
                 if res:
                     hasSentSignal = True
-                    print(f"Signal sent:", body)
+                    logger.info(f"Signal sent:", body)
         time.sleep(TIME_SLEEP)
 
 
