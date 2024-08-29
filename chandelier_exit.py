@@ -411,7 +411,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 res = send_telegram_message(body)
                 if res:
                     hasSentSignal = True
-                    logger.info(f"Signal sent: { body}")
+                    logger.info(f"Signal sent: {body}")
         time.sleep(TIME_SLEEP)
 
 
