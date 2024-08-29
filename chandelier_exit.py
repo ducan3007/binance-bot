@@ -391,7 +391,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                             lastSentMessage["message_id"] = res.get("message_id")
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                         hasSentSignal = True
-                        logger.info(f"Signal sent:", body)
+                        logger.info(f"Signal sent: {body}")
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
@@ -411,7 +411,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 res = send_telegram_message(body)
                 if res:
                     hasSentSignal = True
-                    logger.info(f"Signal sent:", body)
+                    logger.info(f"Signal sent: { body}")
         time.sleep(TIME_SLEEP)
 
 
