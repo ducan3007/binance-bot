@@ -12,7 +12,7 @@ mode = ""
 
 time_frame_ha_check = False
 
-is_zlma_check = False
+is_zlma_check = True
 is_zlma_check_32 = False
 
 enable_log = True
@@ -430,6 +430,9 @@ def run_trading_strategy(token, time_frame):
 
                 if is_zlma_check and not (
                     (previous_item["Open"] > previous_item["ZLSMA"])
+                    # and ( previous_item["LongStop"] > previous_item["ZLSMA"])
+                    and (previous_item["Close"] > previous_item["ZLSMA"])
+                    # and (item["Close"] > item["ZLSMA"])
                     # or (pre_previous_item["Close"] > pre_previous_item["ZLSMA"])
                 ):
                     continue
@@ -455,6 +458,9 @@ def run_trading_strategy(token, time_frame):
 
                 if is_zlma_check and not (
                     (previous_item["Open"] < previous_item["ZLSMA"])
+                    # and (previous_item["ShortStop"] < previous_item["ZLSMA"])
+                    and (previous_item["Close"] < previous_item["ZLSMA"])
+                    # and (item["Close"] < item["ZLSMA"])
                     # or (pre_previous_item["Close"] < pre_previous_item["ZLSMA"])
                 ):
                     continue
@@ -462,7 +468,6 @@ def run_trading_strategy(token, time_frame):
                 if is_zlma_check_32 and not check_zlma_32(df_zlma, previous_item["Time"], False):
                     continue
 
-                
                 if not previous_item["real_price_change"] < 0:
                     continue
 
