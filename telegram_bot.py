@@ -94,10 +94,15 @@ def handle_message_type1(response, token, chat_id, message: MessageType1):
     if response.json()["ok"] == True:
         logger.info(f"Message sent successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         message_id = response.json()["result"]["message_id"]
-        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [TimeFrame.h4, TimeFrame.m30, TimeFrame.m30_normal]:
+        has_unpineed = False
+        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
+            TimeFrame.h4,
+            TimeFrame.m30,
+            TimeFrame.m30_normal,
+        ]:
             last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
             if last_pinned_message_id:
-                pin_unpin_telegram_message(
+                has_unpineed = pin_unpin_telegram_message(
                     token,
                     chat_id,
                     last_pinned_message_id,
@@ -106,9 +111,18 @@ def handle_message_type1(response, token, chat_id, message: MessageType1):
                     message.time_frame,
                     action="unpinChatMessage",
                 )
-            pin_unpin_telegram_message(
-                token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
-            )
+                if has_unpineed:
+                    pin_unpin_telegram_message(
+                        token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
+                    )
+                else:
+                    logger.info(f"Failed to unpin message: {message.symbol} {message.signal} {message.time_frame}")
+                    return False
+            else:
+                logger.info(f"Pinned new message: {message.symbol} {message.signal} {message.time_frame}")
+                pin_unpin_telegram_message(
+                    token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
+                )
             return message_id
         else:
             return message_id
@@ -149,14 +163,14 @@ def pin_unpin_telegram_message(
     symbol,
     signal,
     time_frame,
-    max_retries=5,
+    max_retries=10,
     action="pinChatMessage",
 ):
     url = f"https://api.telegram.org/bot{token}/{action}"
     payload = {"chat_id": chat_id, "message_id": message_id}
     retry_count = 0
     delay = 5  # Initial delay in seconds
-    max_delay = 41  # Maximum delay in seconds
+    max_delay = 300  # Maximum delay in seconds
 
     while retry_count < max_retries:
         response = requests.post(url, data=payload)
@@ -234,7 +248,7 @@ def send_telegram_message(signal, token, chat_id, message=None):
 def del_message(token, chat_id, message_id):
     url = f"https://api.telegram.org/bot{token}/deleteMessage"
     payload = {"chat_id": chat_id, "message_id": message_id}
-    max_attempts = 4
+    max_attempts = 10
     attempt = 1
 
     while attempt <= max_attempts:

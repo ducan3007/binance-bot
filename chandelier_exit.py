@@ -392,6 +392,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                         hasSentSignal = True
                         logger.info(f"Signal sent: {body}")
+                    else:
+                        logger.info(f"Failed to pre-send signal: {body}")
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:
             if not hasSentSignal:
                 signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
@@ -412,6 +414,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 if res:
                     hasSentSignal = True
                     logger.info(f"Signal sent: {body}")
+                else:
+                    logger.info(f"Failed to send signal: {body}")
         time.sleep(TIME_SLEEP)
 
 
