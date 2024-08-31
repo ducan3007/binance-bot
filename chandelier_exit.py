@@ -343,7 +343,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             raise Exception("Time not match !!!")
             break
 
-        if TIME_FRAME == "30m" or TIME_FRAME == "15m":
+        if TIME_FRAME == "30m" or TIME_FRAME == "15m" and TOKEN not in ["BTC", "ETH"]:
             """
             Pre send telegram message before candle close
             """

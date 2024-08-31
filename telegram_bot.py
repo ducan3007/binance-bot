@@ -90,66 +90,102 @@ def get_message_id(symbol, time_frame):
     return None
 
 
-def handle_message_type1(response, token, chat_id, message: MessageType1):
-    if response.json()["ok"] == True:
-        logger.info(f"Message sent successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
+def handle_message_type1(url, payload, signal, token, chat_id, message: MessageType1):
+    # Unpin the last pinned message first if necessary
+    last_pinned_message_id = None
+    if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
+        TimeFrame.h4,
+        TimeFrame.m30,
+        TimeFrame.m30_normal,
+    ]:
+        last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
+        if last_pinned_message_id:
+            has_unpinned = pin_unpin_telegram_message(
+                token,
+                chat_id,
+                last_pinned_message_id,
+                message.symbol,
+                message.signal,
+                message.time_frame,
+                action="unpinChatMessage",
+            )
+            if not has_unpinned:
+                logger.info(f"Failed to unpin message: {message.symbol} {message.signal} {message.time_frame}")
+                return False
+        else:
+            logger.info(f"No previous message to unpin for: {message.symbol} {message.signal} {message.time_frame}")
+
+    # Send the new message
+    response = requests.post(url, data=payload)
+    logger.info(signal)
+    logger.info(response.json())
+
+    if response.json().get("ok"):
+        logger.info(f"Message sent type 1 successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         message_id = response.json()["result"]["message_id"]
-        has_unpineed = False
+
+        # Pin the new message
         if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
             TimeFrame.h4,
             TimeFrame.m30,
             TimeFrame.m30_normal,
         ]:
-            last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
-            if last_pinned_message_id:
-                has_unpineed = pin_unpin_telegram_message(
-                    token,
-                    chat_id,
-                    last_pinned_message_id,
-                    message.symbol,
-                    message.signal,
-                    message.time_frame,
-                    action="unpinChatMessage",
-                )
-                if has_unpineed:
-                    pin_unpin_telegram_message(
-                        token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
-                    )
-                else:
-                    logger.info(f"Failed to unpin message: {message.symbol} {message.signal} {message.time_frame}")
-                    return False
-            else:
-                logger.info(f"Pinned new message: {message.symbol} {message.signal} {message.time_frame}")
-                pin_unpin_telegram_message(
-                    token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
-                )
-            return message_id
-        else:
-            return message_id
+            pin_unpin_telegram_message(
+                token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
+            )
+            logger.info(f"Pinned new message: {message.symbol} {message.signal} {message.time_frame}")
+
+        return message_id
     else:
         logger.info(f"Failed to send message: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         return False
 
 
-def handle_message_type2(response, token, chat_id, message: MessageType2):
+def handle_message_type2(url, payload, signal, token, chat_id, message: MessageType2):
     symbol = "$DAILY_REPORT"
     signal = "Binace Future Top Gainers & Losers"
     date = time.strftime("%Y-%m-%d", time.localtime())
-    if response.json()["ok"] == True:
-        logger.info(f"Message sent successfully: {symbol} {signal} {message.time_frame} {date}")
+
+    # Unpin the last pinned message first if necessary
+    last_pinned_message_id = get_message_id(symbol, message.time_frame.value)
+    if last_pinned_message_id:
+        has_unpinned = pin_unpin_telegram_message(
+            token,
+            chat_id,
+            last_pinned_message_id,
+            symbol,
+            signal,
+            message.time_frame,
+            action="unpinChatMessage",
+        )
+        if not has_unpinned:
+            logger.info(f"Failed to unpin message: {symbol} {signal} {message.time_frame}")
+            return False
+    else:
+        logger.info(f"No previous message to unpin for: {symbol} {signal} {message.time_frame}")
+
+    # Send the new message
+    response = requests.post(url, data=payload)
+    if response.json().get("ok"):
+        logger.info(f"Message Type 2 sent successfully: {symbol} {signal} {message.time_frame} {date}")
         message_id = response.json()["result"]["message_id"]
-        last_pinned_message_id = get_message_id("$DAILY_REPORT", message.time_frame.value)
-        if last_pinned_message_id:
-            pin_unpin_telegram_message(
-                token,
-                chat_id,
-                last_pinned_message_id,
-                symbol,
-                signal,
-                message.time_frame,
-                action="unpinChatMessage",
-            )
-        return pin_unpin_telegram_message(token, chat_id, message_id, symbol, signal, message.time_frame.value)
+
+        # Pin the new message
+        pin_success = pin_unpin_telegram_message(
+            token,
+            chat_id,
+            message_id,
+            symbol,
+            signal,
+            message.time_frame.value
+        )
+        
+        if pin_success:
+            logger.info(f"New message pinned: {symbol} {signal} {message.time_frame}")
+            return True
+        else:
+            logger.info(f"Failed to pin new message: {symbol} {signal} {message.time_frame}")
+            return False
 
     else:
         logger.info(f"Failed to send message: {symbol} {signal} {message.time_frame} {date}")
@@ -163,7 +199,7 @@ def pin_unpin_telegram_message(
     symbol,
     signal,
     time_frame,
-    max_retries=10,
+    max_retries=100,
     action="pinChatMessage",
 ):
     url = f"https://api.telegram.org/bot{token}/{action}"
@@ -226,29 +262,23 @@ def construct_message(message: MessageType1):
 def send_telegram_message(signal, token, chat_id, message=None):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": signal, "parse_mode": "HTML"}
-    response = requests.post(url, data=payload)
-    logger.info(signal)
-    logger.info(response.json())
     if isinstance(message, MessageType1):
-        ack = handle_message_type1(response, token, chat_id, message)
+        ack = handle_message_type1(url, payload, signal, token, chat_id, message)
         return {
             "status": "success" if ack else "failed",
             "message_id": ack,
         }
     elif isinstance(message, MessageType2):
-        ack = handle_message_type2(response, token, chat_id, message)
+        ack = handle_message_type2(url, payload, signal, token, chat_id, message)
         return {
             "status": ack,
         }
-    return {
-        "status": response.json()["ok"],
-    }
 
 
 def del_message(token, chat_id, message_id):
     url = f"https://api.telegram.org/bot{token}/deleteMessage"
     payload = {"chat_id": chat_id, "message_id": message_id}
-    max_attempts = 10
+    max_attempts = 50
     attempt = 1
 
     while attempt <= max_attempts:
