@@ -212,6 +212,9 @@ def pin_unpin_telegram_message(
             return True
     else:
         logger.info(f"Failed to {action} message: {symbol} {signal} {time_frame}")
+        if response_data["error_code"] == 400:
+            last_pinned_message_to_file("", symbol, time_frame)
+            return True
         return False
 
 
