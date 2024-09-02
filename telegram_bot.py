@@ -121,7 +121,9 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     logger.info(response.json())
 
     if response.json().get("ok"):
-        logger.info(f"Message sent type 1 successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}")
+        logger.info(
+            f"Message sent type 1 successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}"
+        )
         message_id = response.json()["result"]["message_id"]
 
         # Pin the new message
@@ -171,15 +173,8 @@ def handle_message_type2(url, payload, signal, token, chat_id, message: MessageT
         message_id = response.json()["result"]["message_id"]
 
         # Pin the new message
-        pin_success = pin_unpin_telegram_message(
-            token,
-            chat_id,
-            message_id,
-            symbol,
-            signal,
-            message.time_frame.value
-        )
-        
+        pin_success = pin_unpin_telegram_message(token, chat_id, message_id, symbol, signal, message.time_frame.value)
+
         if pin_success:
             logger.info(f"New message pinned: {symbol} {signal} {message.time_frame}")
             return True
@@ -199,32 +194,25 @@ def pin_unpin_telegram_message(
     symbol,
     signal,
     time_frame,
-    max_retries=100,
     action="pinChatMessage",
 ):
     url = f"https://api.telegram.org/bot{token}/{action}"
     payload = {"chat_id": chat_id, "message_id": message_id}
-    retry_count = 0
-    delay = 5  # Initial delay in seconds
-    max_delay = 300  # Maximum delay in seconds
 
-    while retry_count < max_retries:
-        response = requests.post(url, data=payload)
-        logger.info(response.json())
-        if response.json()["ok"]:
-            logger.info(f"{action} successfully: {symbol} {signal} {time_frame}")
-            if action == "pinChatMessage":
-                last_pinned_message_to_file(message_id, symbol, time_frame)
+    response = requests.post(url, data=payload)
+    response_data = response.json()
+    logger.info(response_data)
+
+    if response_data["ok"]:
+        logger.info(f"{action} successfully: {symbol} {signal} {time_frame}")
+        if action == "pinChatMessage":
+            last_pinned_message_to_file(message_id, symbol, time_frame)
+        elif action == "unpinChatMessage":
+            last_pinned_message_to_file("", symbol, time_frame)
             return True
-        else:
-            logger.info(f"Failed to {action} message: {symbol} {signal} {time_frame}")
-            retry_count += 1
-            sleep_time = min(delay * (2**retry_count), max_delay)
-            logger.info(f"Retrying in {sleep_time} seconds...")
-            time.sleep(sleep_time)
-
-    logger.info(f"Failed to {action} message after {max_retries} retries: {symbol} {signal} {time_frame}")
-    return False
+    else:
+        logger.info(f"Failed to {action} message: {symbol} {signal} {time_frame}")
+        return False
 
 
 def format_float_dynamic(value):
@@ -278,36 +266,23 @@ def send_telegram_message(signal, token, chat_id, message=None):
 def del_message(token, chat_id, message_id):
     url = f"https://api.telegram.org/bot{token}/deleteMessage"
     payload = {"chat_id": chat_id, "message_id": message_id}
-    max_attempts = 50
-    attempt = 1
 
-    while attempt <= max_attempts:
-        try:
-            response = requests.post(url, data=payload)
-            response.raise_for_status()  # Raises an error for bad HTTP status codes
-            logger.info(response.json())
+    try:
+        response = requests.post(url, data=payload)
+        response.raise_for_status()  # Raises an error for bad HTTP status codes
+        logger.info(response.json())
+        return {
+            "status": response.json()["ok"],
+        }
+    except requests.exceptions.RequestException as e:
+        if e.response is not None and e.response.status_code == 400:
+            logger.info(f"Message not found: {message_id}")
             return {
-                "status": response.json()["ok"],
+                "status": True,
+                "message": "Message not found",
             }
-        except requests.exceptions.RequestException as e:
-            if e.response.status_code == 400:
-                logger.info(f"Message not found: {message_id}")
-                return {
-                    "status": True,
-                    "message": "Message not found",
-                }
-
-            if attempt == max_attempts:
-                logger.error(f"Failed after {attempt} attempts: {e}")
-                return {
-                    "status": False,
-                }
-            else:
-                wait_time = min(2**attempt, 60)
-                print("error", e)
-                logger.warning(f"Attempt {attempt} failed: {e}. Retrying in {wait_time} seconds...")
-                time.sleep(wait_time)
-                attempt += 1
-    return {
-        "status": False,
-    }
+        else:
+            logger.error(f"Failed to delete message: {e}")
+            return {
+                "status": False,
+            }

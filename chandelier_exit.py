@@ -151,7 +151,7 @@ class KlineHelper:
 
 
 class ChandlierExit:
-    def __init__(self, size, multiplier=2.0, length=1, use_close=True):
+    def __init__(self, size, multiplier=1.8, length=1, use_close=True):
         self.size = size
         self.length = length
         self.use_close = use_close
@@ -228,9 +228,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
     if not MODE:
         MODE = "heikin_ashi"
-
-    if MODE == "normal":
-        MULT = 1.80
 
     print(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
@@ -340,10 +337,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             logger.info(
                 f"Time not match: {TOKEN} ts: {timestamp} 0: {data_temp_dict['Time'][0]} 1: {data_temp_dict['Time'][1]}"
             )
-            raise Exception("Time not match !!!")
             break
-
-        if TIME_FRAME == "30m" or TIME_FRAME == "15m" and TOKEN not in ["BTC", "ETH"]:
+        if TOKEN not in ["BTC", "ETH"] and (TIME_FRAME == "30m" or TIME_FRAME == "15m"):
             """
             Pre send telegram message before candle close
             """
