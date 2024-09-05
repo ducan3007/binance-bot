@@ -338,7 +338,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 f"Time not match: {TOKEN} ts: {timestamp} 0: {data_temp_dict['Time'][0]} 1: {data_temp_dict['Time'][1]}"
             )
             break
-        if TOKEN not in ["BTC", "ETH"] and (TIME_FRAME == "30m" or TIME_FRAME == "15m"):
+        if TOKEN not in ["BTC", "ETH"] and (TIME_FRAME == "5m"):
             """
             Pre send telegram message before candle close
             """
@@ -513,7 +513,7 @@ if __name__ == "__main__":
     files = {
         "1m": "tokens.1m.txt",
         "3m": "tokens.txt",
-        "5m": "tokens.15m.normal.txt",
+        "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
         "15mnormal": "tokens.15m.normal.txt",
         "5mnormal": "tokens.15m.normal.txt",

@@ -40,7 +40,7 @@ TOKEN_15M_V2 = os.environ.get("TOKEN_15M_V2")
 BOT = {
     "1m": {"chat_id": CHAT_ID_1M, "token": TOKEN_1M},
     "3m": {"chat_id": CHAT_ID_3M, "token": TOKEN_3M},
-    "5m": {"chat_id": CHAT_ID_5M, "token": TOKEN_5M},
+    "5m": {"chat_id": CHAT_ID_15M_V2, "token": TOKEN_15M_V2},
     "15m": {"chat_id": CHAT_ID_5M, "token": TOKEN_5M},
     "30m": {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
     "30m_normal": {"chat_id": CHAT_ID_1M, "token": TOKEN_1M},
