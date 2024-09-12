@@ -8,6 +8,7 @@ import requests
 import json
 import argparse
 from logger import logger
+import random
 
 EPSILON = 1e-9
 
@@ -379,6 +380,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
+                    # Randomly wait 1-5 seconds
+                    sleep_duration = random.uniform(1, 5)  # Generate a random float between 1 and 5
+                    logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
+                    time.sleep(sleep_duration)
                     res = send_telegram_message(body)
                     if res:
                         if res.get("message_id"):

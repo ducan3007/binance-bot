@@ -118,7 +118,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     # Send the new message
     response = requests.post(url, data=payload)
     logger.info(signal)
-    logger.info(response.json())
+    logger.info(f"Response type1: {response.json()}")
 
     if response.json().get("ok"):
         logger.info(
