@@ -381,7 +381,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
                     # Randomly wait 1-5 seconds
-                    sleep_duration = random.uniform(1, 5)  # Generate a random float between 1 and 5
+                    sleep_duration = random.uniform(1000, 5000) / 1000
                     logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
                     time.sleep(sleep_duration)
                     res = send_telegram_message(body)
@@ -439,7 +439,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.85
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.84
     return False
 
 

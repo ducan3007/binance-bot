@@ -285,7 +285,7 @@ def del_message(token, chat_id, message_id):
                 "message": "Message not found",
             }
         else:
-            logger.error(f"Failed to delete message: {e}")
+            logger.info(f"Failed to delete message: {e}")
             return {
                 "status": False,
             }
