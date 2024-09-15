@@ -23,13 +23,15 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-04-23"
-END_DATE = "2024-08-24"
+START_DATE = "2024-07-01"
+END_DATE = "2024-07-31"
 MODE = "HA"  # KLINE or HEIKIN ASHI
 EXCHANGE = "future"
 
-ZLSMA_LENGTH = 50
+ZLSMA_LENGTH_50 = 50
 ZLSMA_OFFSET = 0
+
+ZLSMA_LENGTH_32 = 32
 
 
 class CEConfig(Enum):
@@ -85,6 +87,7 @@ class KlineHelper:
         else:
             change = None
         data["real_price_change"].append(change)
+        data["signal"].append(0)
 
     def _append_heikin_ashi(self, data, kline, prev_item=None):
         open_p = float(kline[1])
@@ -136,6 +139,7 @@ class KlineHelper:
         else:
             change = None
         data["real_price_change"].append(change)
+        data["signal"].append(0)
 
     def get_kline_data(self, data, klines, prev_item=None):
         for kline in klines:
@@ -171,9 +175,7 @@ class ChandlierExit:
 
             # Calculate Long Stop
             longStop = (
-                max(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else max(data["High"][max(0, i - self.length + 1) : i + 1])
+                max(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else max(data["High"][max(0, i - self.length + 1) : i + 1])
             ) - data["ATR"][i]
 
             longStopPrev = data["LongStop"][i - 1] if data["LongStop"][i - 1] is not None else longStop
@@ -188,9 +190,7 @@ class ChandlierExit:
 
             # Calculate Short Stop
             shortStop = (
-                min(data["Close"][max(0, i - self.length + 1) : i + 1])
-                if self.use_close
-                else min(data["Low"][max(0, i - self.length + 1) : i + 1])
+                min(data["Close"][max(0, i - self.length + 1) : i + 1]) if self.use_close else min(data["Low"][max(0, i - self.length + 1) : i + 1])
             ) + data["ATR"][i]
 
             shortStopPrev = data["ShortStop"][i - 1] if data["ShortStop"][i - 1] is not None else shortStop
@@ -325,30 +325,32 @@ def main(data, TOKEN, TIME_FRAME, PAIR, MONTH, YEAR):
     chandelier_exit.calculate_chandelier_exit(data=data)
 
     print("Calculating ZLSMA")
-    calculate_zlsma(data, length=ZLSMA_LENGTH, offset=ZLSMA_OFFSET)
+    calculate_zlsma(data, key="ZLSMA_32", length=ZLSMA_LENGTH_32, offset=ZLSMA_OFFSET)
+    calculate_zlsma(data, key="ZLSMA_50", length=ZLSMA_LENGTH_50, offset=ZLSMA_OFFSET)
 
     print("Exporting CSV")
 
     if MODE == "KLINE":
-        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{ZLSMA_LENGTH}_{CEConfig.MULT.value}.csv")
+        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{CEConfig.MULT.value}.csv")
     else:
-        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{ZLSMA_LENGTH}_{CEConfig.MULT.value}_ha.csv")
+        kline_helper.export_csv(data, filename=f"{TOKEN}_ce_{time_frame}_{CEConfig.MULT.value}_HA.csv")
 
 
 def init_data():
     keys = [
+        "Time1",
+        "direction",
+        "signal",
         "Open",
         "High",
         "Low",
         "Close",
-        "Time1",
         "Time",
         "ATR",
         "LongStop",
         "ShortStop",
         "LongStopPrev",
         "ShortStopPrev",
-        "direction",
         "real_price_open",
         "real_price_close",
         "real_price_change",
@@ -372,6 +374,95 @@ def run_strategy(token, time_frame, pair, MONTH, YEAR):
         print(f"Error: {e}")
         time.sleep(5)
 
+
+def extract_signals(mode, TIME_FRAME):
+    files = {
+        "1m": "tokens.15m.txt",
+        "3m": "tokens.15m.txt",
+        "5m": "tokens.15m.txt",
+        "15m": "tokens.15m.txt",
+        "30m": "tokens.15m.txt",
+        "1h": "tokens.15m.txt",
+        "2h": "tokens.15m.txt",
+        "4h": "tokens.15m.txt",
+    }
+
+    try:
+        with open(files[TIME_FRAME], "r") as file:
+            tokens = [line.strip() for line in file]
+    except FileNotFoundError:
+        print(f"File not found for time frame {TIME_FRAME}")
+        return
+
+    # Build the list of files to extract data from
+    files_to_extract = [f"{token}_ce_{TIME_FRAME}_{CEConfig.MULT.value}_{mode}.csv" for token in tokens]
+
+    # Read CSVs and store DataFrames along with their tokens
+    dfs = [{"df": pd.read_csv(file), "token": file.split("_")[0], "file": file} for file in files_to_extract]
+
+    # Check if data is available
+    if not dfs or len(dfs[0]["df"]) == 0:
+        print("No data found in the CSVs.")
+        return
+
+    size = len(dfs[0]["df"])  # Get number of rows from the first DataFrame
+
+
+    # token counter, dict with key as token and value as 0
+
+    counter = {token: 0 for token in tokens}
+
+    # Process signals from index 128 onwards
+    for i in range(128, size):
+        long_signal = []
+        short_signal = []
+        final = []
+        is_long = False  # Flag to track if it's a long signal
+
+        # Loop through DataFrames and determine signal direction
+        for df_dict in dfs:
+            df_data = df_dict["df"]
+
+            # Ensure 'direction' column exists
+            if "direction" not in df_data.columns:
+                continue
+
+            cur = df_data["direction"].iloc[i]
+            pre = df_data["direction"].iloc[i - 1]
+            pre_pre = df_data["direction"].iloc[i - 2]
+
+            # Check for long signal
+            if cur == 1 and pre == -1 and pre_pre == -1:
+                long_signal.append(df_dict["token"])
+
+            # Check for short signal
+            elif cur == -1 and pre == 1 and pre_pre == 1:
+                short_signal.append(df_dict["token"])
+
+        # Determine which signal is stronger and ensure final has at least 3 tokens
+        if len(long_signal) >= len(short_signal) and len(long_signal) >= 4:
+            final = long_signal
+            is_long = True
+        elif len(short_signal) >= len(long_signal) and len(short_signal) >= 4:
+            final = short_signal
+
+        # Only add a signal if final has 3 or more tokens
+        if len(final) >= 3:
+            print(f"Signal detected at index {i}, time: {df_data['Time1'].iloc[i]} with tokens: {final}")
+            # Add a new column "signal" to the DataFrames for the tokens in final
+            for df_dict in dfs:
+                if df_dict["token"] in final:
+                    # Set signal value: 1 for long, -1 for short
+                    counter[df_dict["token"]] += 1
+                    df_dict["df"].at[i, "signal"] = 1 if is_long else -1
+
+    # Save each DataFrame back to its respective CSV file
+    for df_dict in dfs:
+        df_dict["df"].to_csv(df_dict["file"], index=False)  # Save without the index column
+        print(f"Updated {df_dict['file']} with new signals.")
+
+
+    print(f"Token Counter: {counter}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process trading pair and timeframe.")
@@ -408,3 +499,13 @@ if __name__ == "__main__":
         process = multiprocessing.Process(target=run_strategy, args=(token, time_frame, pair, MONTH, YEAR))
         processes.append(process)
         process.start()
+
+    for process in processes:
+        process.join()
+
+    print("All processes completed.")
+    print("Extracting signals...")
+    extract_signals(MODE, TIME_FRAME)
+
+# Token Counter: {'1000PEPE': 245, '1000FLOKI': 230, 'BOME': 229, '1000BONK': 179, 'ORDI': 202, 'WIF': 190, 'NOT': 204, 'TON': 142, 'PEOPLE': 170, '1000SATS': 134, 'ZRO': 147, 'IO': 153, 'TIA': 189, 'WLD': 178, 'SUI': 224}
+# Token Counter: {'1000PEPE': 170, '1000FLOKI': 157, 'BOME': 144, '1000BONK': 125, 'ORDI': 132, 'WIF': 117, 'NOT': 135, 'TON': 90, 'PEOPLE': 109, '1000SATS': 83, 'ZRO': 87, 'IO': 97, 'TIA': 117, 'WLD': 109, 'SUI': 145}

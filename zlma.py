@@ -134,14 +134,14 @@ def fetch_binance_klines(PAIR="BTCUSDT", TIME_FRAME="1h", limit=500):
     return data
 
 
-def calculate_zlsma(data, length=32, offset=0):
+def calculate_zlsma(data, key="ZLSMA", length=32, offset=0):
     # Extract closing prices from the data structure
     close_prices = np.array(data["Close"], dtype=float)
 
     zlsma = ZLSMA(close_prices, length, offset)
 
     # Add ZLSMA to the data structure
-    data["ZLSMA"] = zlsma.tolist()
+    data[key] = zlsma.tolist()
 
 
 def fetch_zlsma(Ticker, interval, limit):
@@ -149,9 +149,3 @@ def fetch_zlsma(Ticker, interval, limit):
 
     # Calculate ZLSMA
     calculate_zlsma(data)
-
-    # Output the ZLSMA values
-    KlineHelper().export_csv(data, "zlsma.csv")
-
-
-fetch_zlsma("BTCUSDT", "15m", 500)
