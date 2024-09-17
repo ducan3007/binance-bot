@@ -234,8 +234,6 @@ def format_float_dynamic(value):
 def construct_message(message: MessageType1):
     # if message.time_frame in [TimeFrame.m5]:
     sub_str = Signals[message.signal][0]
-    if message.time_frame in [TimeFrame.m5]:
-        return f"<b>{sub_str}</b> <b>{message.time}</b> <b>{message.symbol}</b> {message.change}"
     if message.symbol in ["$BTC", "$ETH"]:
         price = format_float_dynamic(message.price)
         price = "{:,.2f}".format(float(price))
