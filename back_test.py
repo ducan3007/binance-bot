@@ -440,14 +440,14 @@ def extract_signals(mode, TIME_FRAME):
                 short_signal.append(df_dict["token"])
 
         # Determine which signal is stronger and ensure final has at least 3 tokens
-        if len(long_signal) >= len(short_signal) and len(long_signal) >= 4:
+        if len(long_signal) >= len(short_signal) and len(long_signal) >= 5:
             final = long_signal
             is_long = True
-        elif len(short_signal) >= len(long_signal) and len(short_signal) >= 4:
+        elif len(short_signal) >= len(long_signal) and len(short_signal) >= 5:
             final = short_signal
 
         # Only add a signal if final has 3 or more tokens
-        if len(final) >= 3:
+        if len(final) >= 5:
             print(f"Signal detected at index {i}, time: {df_data['Time1'].iloc[i]} with tokens: {final}")
             # Add a new column "signal" to the DataFrames for the tokens in final
             for df_dict in dfs:
