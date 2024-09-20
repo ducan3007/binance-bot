@@ -1,0 +1,96 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © veryfid
+
+//@version=5
+indicator(title='Optimized ZLSMA - Double Zero Lag LSMA with Chandelier Exit and Hull Suite', shorttitle='ZLSMA-EMA-Optimized', overlay=true)
+
+// Input Section
+length = input.int(title='ZLSMA Length', defval=32)
+length_1 = input.int(title='ZLSMA Secondary Length', defval=50)
+offset = input.int(title='Offset', defval=0)
+src = input(close, title='Source')
+
+// ZLSMA Calculations
+zlsma_calc(_src, _length, _offset) =>
+    lsma = ta.linreg(_src, _length, _offset)
+    lsma2 = ta.linreg(lsma, _length, _offset)
+    lsma + (lsma - lsma2)
+
+zlsma = zlsma_calc(src, length, offset)
+zlsma_1 = zlsma_calc(src, length_1, offset)
+
+// Plot ZLSMA
+plot(zlsma, color=color.yellow, linewidth=3)
+plot(zlsma_1, color=color.red, linewidth=3)
+
+// Chandelier Exit Settings
+length_atr = input.int(title='ATR Period', defval=22)
+mult = input.float(title='ATR Multiplier', step=0.1, defval=3.0)
+useClose = input.bool(title='Use Close Price for Extremums', defval=true)
+showLabels = input.bool(title='Show Buy/Sell Labels', defval=true)
+highlightState = input.bool(title='Highlight State', defval=true)
+
+atr = mult * ta.atr(length_atr)
+
+// Chandelier Stop Calculations
+longStop = (useClose ? ta.highest(close, length_atr) : ta.highest(length_atr)) - atr
+longStopPrev = nz(longStop[1], longStop)
+longStop := close[1] > longStopPrev ? math.max(longStop, longStopPrev) : longStop
+
+shortStop = (useClose ? ta.lowest(close, length_atr) : ta.lowest(length_atr)) + atr
+shortStopPrev = nz(shortStop[1], shortStop)
+shortStop := close[1] < shortStopPrev ? math.min(shortStop, shortStopPrev) : shortStop
+
+// Initialize dir as an integer variable with 'var' to avoid the error
+var int dir = na
+dir := close > shortStopPrev ? 1 : close < longStopPrev ? -1 : dir
+
+// Plot Chandelier Stops
+plot(dir == 1 ? longStop : na, title='Long Stop', style=plot.style_linebr, linewidth=2, color=color.new(color.green, 0))
+plot(dir == -1 ? shortStop : na, title='Short Stop', style=plot.style_linebr, linewidth=2, color=color.new(color.red, 0))
+
+// Buy and Sell Signal Logic
+buySignal = dir == 1 and dir[1] == -1
+sellSignal = dir == -1 and dir[1] == 1
+
+plotshape(buySignal ? longStop : na, title='Buy Signal', text="Buy", location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.green, 0),textcolor = color.new(color.white,0))
+plotshape(sellSignal ? shortStop : na, title='Sell Signal', text="Sell", location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor = color.new(color.white,0))
+
+// Hull Suite Settings
+src__ = input(close, title='Hull Source')
+modeSwitch = input.string('Hma', title='Hull Variation', options=['Hma', 'Thma', 'Ehma'])
+length__ = input.int(55, title='Hull Length')
+lengthMult = input.float(1.0, title='Hull Length Multiplier')
+
+useHtf = input.bool(false, title='Show Hull MA from Higher Timeframe')
+htf = input.timeframe('240', title='Higher Timeframe')
+
+switchColor = input.bool(true, title='Color Hull based on Trend')
+candleCol = input.bool(false, title='Color Candles based on Hull')
+visualSwitch = input.bool(true, title='Show as Band')
+thicknesSwitch = input.int(1, title='Line Thickness')
+transpSwitch = input.int(40, title='Band Transparency')
+
+// Hull Suite Functions
+HMA(_src, _length) =>
+    ta.wma(2 * ta.wma(_src, _length / 2) - ta.wma(_src, _length), math.round(math.sqrt(_length)))
+    
+EHMA(_src, _length) =>
+    ta.ema(2 * ta.ema(_src, _length / 2) - ta.ema(_src, _length), math.round(math.sqrt(_length)))
+    
+THMA(_src, _length) =>
+    ta.wma(ta.wma(_src, _length / 3) * 3 - ta.wma(_src, _length / 2) - ta.wma(_src, _length), _length)
+
+// Hull Calculation
+_hull = modeSwitch == 'Hma' ? HMA(src__, length__) : modeSwitch == 'Ehma' ? EHMA(src__, length__) : THMA(src__, length__ / 2)
+HULL = useHtf ? request.security(syminfo.ticker, htf, _hull) : _hull
+
+// Hull Plotting
+hullColor = switchColor ? (HULL > HULL[2] ? #00ff00 : #ff0000) : #ff9800
+
+Fi1 = plot(HULL, title='Hull Line', color=hullColor, linewidth=thicknesSwitch, transp=50)
+Fi2 = plot(visualSwitch ? HULL[2] : na, title='Hull Secondary Line', color=hullColor, linewidth=thicknesSwitch, transp=50)
+fill(Fi1, Fi2, title='Hull Band Fill', color=hullColor, transp=transpSwitch)
+
+// Candle Coloring based on Hull Trend
+barcolor(candleCol ? hullColor : na)
