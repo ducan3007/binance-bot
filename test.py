@@ -8,14 +8,11 @@ stop_lost = -0.05
 tp = 99
 
 
-mode = ""
-
-time_frame_ha_check = False
-
+mode = "HA"
 
 enable_log = True
 
-time_frame = "15m"
+time_frame = "5m"
 
 time_frame_seconds_map = {
     "5m": 60 * 5,
@@ -28,7 +25,7 @@ time_frame_seconds_map = {
 
 seconds = time_frame_seconds_map[time_frame]
 
-start_date = "2024-04-23 00:00"
+start_date = "2024-08-19 00:00"
 start_date_dt = datetime.strptime(start_date, "%Y-%m-%d %H:%M")
 
 x = 32
@@ -44,44 +41,13 @@ print("start_back_test_time", start_back_test_time)
 
 
 def check_time(time1):
-    time_object = datetime.strptime(time1, "%Y-%m-%d %H:%M")
-    current_time = time_object.time()
-    start_time = datetime.strptime("01:15", "%H:%M").time()
-    end_time = datetime.strptime("06:00", "%H:%M").time()
-    if start_time <= current_time <= end_time:
-        return False
+    # time_object = datetime.strptime(time1, "%Y-%m-%d %H:%M")
+    # current_time = time_object.time()
+    # start_time = datetime.strptime("01:15", "%H:%M").time()
+    # end_time = datetime.strptime("06:00", "%H:%M").time()
+    # if start_time <= current_time <= end_time:
+    #     return False
     return True
-
-
-def check_direction_with_ha(df_ha, time, pre_direction, direction, seconds=900, tf="15m"):
-    if df_ha is None:
-        return True
-
-    # Find the previous, current, and next 15m_ha candle rows
-    pre_ha_candle = df_ha[df_ha["Time"] == (time - seconds)]
-    current_ha_candle = df_ha[df_ha["Time"] == time]
-    next_ha_candle = df_ha[df_ha["Time"] == (time + seconds)]
-
-    # Check if the direction matches
-    if not pre_ha_candle.empty and not current_ha_candle.empty:
-        if pre_ha_candle.iloc[0]["direction"] == pre_direction and current_ha_candle.iloc[0]["direction"] == direction:
-            print(
-                f"Check Previous {tf} and Current {tf} direction match",
-                pre_ha_candle.iloc[0]["Time1"],
-                current_ha_candle.iloc[0]["Time1"],
-            )
-            return True
-
-    if not current_ha_candle.empty and not next_ha_candle.empty:
-        if current_ha_candle.iloc[0]["direction"] == pre_direction and next_ha_candle.iloc[0]["direction"] == direction:
-            print(
-                f"Check Current {tf} and Next {tf} direction match",
-                current_ha_candle.iloc[0]["Time1"],
-                next_ha_candle.iloc[0]["Time1"],
-            )
-            return True
-
-    return False
 
 
 def run_trading_strategy(token, time_frame):
@@ -89,11 +55,6 @@ def run_trading_strategy(token, time_frame):
         data = pd.read_csv(f"{token}_ce_{time_frame}_{ATR}_HA.csv")
     else:
         data = pd.read_csv(f"{token}_ce_{time_frame}_{ATR}.csv")
-
-    if time_frame_ha_check:
-        df_ha = pd.read_csv(f"{token}_ce_{time_frame}_{ATR}_HA.csv")
-    else:
-        df_ha = None
 
     initial_capital = 2300
     capital = initial_capital
@@ -110,15 +71,7 @@ def run_trading_strategy(token, time_frame):
     long_opened = 0
     short_opened = 0
     daily_results = {}
-    price_retrace_entry = {
-        "2024-04-02 02:30": True,
-    }
 
-    """
-    {
-    "2024-06-26": {"win": 5, "lost": 4},
-    }
-    """
     daily_win_lost = {}
     stop_lost_rate = 0
 
@@ -398,10 +351,11 @@ def run_trading_strategy(token, time_frame):
             if pre_previous_direction == -1 and previous_direction == 1:
                 if not check_time(item["Time1"]):
                     continue
-                if time_frame_ha_check and not check_direction_with_ha(df_ha, item["Time"], -1, 1, seconds, time_frame):
-                    continue
 
                 if not previous_item["real_price_change"] > 0:
+                    continue
+
+                if not previous_item["signal"] == 1:
                     continue
 
                 entry_price = item["real_price_open"]
@@ -414,10 +368,11 @@ def run_trading_strategy(token, time_frame):
             elif pre_previous_direction == 1 and previous_direction == -1:
                 if not check_time(item["Time1"]):
                     continue
-                if time_frame_ha_check and not check_direction_with_ha(df_ha, item["Time"], 1, -1, seconds, time_frame):
-                    continue
 
                 if not previous_item["real_price_change"] < 0:
+                    continue
+
+                if not (previous_item["signal"] == -1):
                     continue
 
                 entry_price = item["real_price_open"]
