@@ -388,11 +388,14 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     res = send_telegram_message(body)
                     if res:
                         if res.get("message_id"):
+                            message_id = res.get("message_id")
                             lastSentMessage["Time"] = timestamp
-                            lastSentMessage["message_id"] = res.get("message_id")
+                            lastSentMessage["message_id"] = message_id
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
-                        hasSentSignal = True
-                        logger.info(f"Signal sent: {body}")
+                            hasSentSignal = True
+                            logger.info(f"Signal sent: {body} | message_id: {message_id}")
+                        else:
+                            logger.info(f"Failed to send signal: {body} | message_id: not found")
                     else:
                         logger.info(f"Failed to pre-send signal: {body}")
         elif data["Direction"][SIZE - 2] != data["Direction"][SIZE - 3]:

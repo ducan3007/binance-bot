@@ -121,9 +121,6 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     logger.info(f"Response type1: {response.json()}")
 
     if response.json().get("ok"):
-        logger.info(
-            f"Message sent type 1 successfully: {message.symbol} {message.signal} {message.time_frame} {message.time}"
-        )
         message_id = response.json()["result"]["message_id"]
 
         # Pin the new message
@@ -137,6 +134,9 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
             )
             logger.info(f"Pinned new message: {message.symbol} {message.signal} {message.time_frame}")
 
+        logger.info(
+            f"Message sent type1 successfully, message_id: {message_id} | {message.symbol} {message.signal} {message.time_frame} {message.time}"
+        )
         return message_id
     else:
         logger.info(f"Failed to send message: {message.symbol} {message.signal} {message.time_frame} {message.time}")
