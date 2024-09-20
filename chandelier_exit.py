@@ -253,7 +253,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     # Save the last time
     timestamp = data["Time"][SIZE - 1]
 
-    counter = 0
+    counter = 1
     hasSentSignal = False
     lastSentMessage = {"message_id": None, "Time": None, "Direction": None}
     _token = TOKEN.ljust(12)
@@ -272,7 +272,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
     time.sleep(1)
     while True:
-        counter += 1
         data_temp_dict = init_data()
         two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2, weight)
 
@@ -311,6 +310,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
         elif timestamp == data_temp_dict["Time"][0]:
+            counter += 1
             timestamp = data_temp_dict["Time"][1]
             hasSentSignal = False
 
@@ -339,6 +339,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 f"Time not match: {TOKEN} ts: {timestamp} 0: {data_temp_dict['Time'][0]} 1: {data_temp_dict['Time'][1]}"
             )
             break
+
         if TOKEN not in ["BTC", "ETH"] and (TIME_FRAME == "5m"):
             """
             Pre send telegram message before candle close
@@ -347,9 +348,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 hasSentSignal is False
                 and lastSentMessage["message_id"] is not None
                 and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
-                # and lastSentMessage["Time"] == timestamp - TIME_FRAME_MS[TIME_FRAME]
+                and lastSentMessage["Counter"] == counter - 1
             ):
-                __time = datetime.fromtimestamp(lastSentMessage["Time"]).strftime("%Y-%m-%d %H:%M")
+                __time = datetime.fromtimestamp(lastSentMessage["Counter"]).strftime("%Y-%m-%d %H:%M")
 
                 if MODE == "normal":
                     __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
@@ -359,7 +360,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 logger.info(f"Delete invalid message: Token: {TOKEN} {__body}, ts = {__time}")
                 res = delete_message(__body)
                 if res:
-                    lastSentMessage["Time"] = None
+                    lastSentMessage["Counter"] = None
                     lastSentMessage["message_id"] = None
                     lastSentMessage["Direction"] = None
 
@@ -389,7 +390,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     if res:
                         if res.get("message_id"):
                             message_id = res.get("message_id")
-                            lastSentMessage["Time"] = timestamp
+                            lastSentMessage["Counter"] = counter
                             lastSentMessage["message_id"] = message_id
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                             hasSentSignal = True
