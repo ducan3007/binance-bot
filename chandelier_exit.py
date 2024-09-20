@@ -350,17 +350,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
                 and lastSentMessage["Counter"] == counter - 1
             ):
-                __time = datetime.fromtimestamp(lastSentMessage["Counter"]).strftime("%Y-%m-%d %H:%M")
-
                 if MODE == "normal":
                     __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
                 else:
                     __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
 
-                logger.info(f"Delete invalid message: Token: {TOKEN} {__body}, ts = {__time}")
+                logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
                 res = delete_message(__body)
                 if res:
                     lastSentMessage["Counter"] = None
+                    lastSentMessage["_Time"] = None
                     lastSentMessage["message_id"] = None
                     lastSentMessage["Direction"] = None
 
@@ -391,6 +390,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                         if res.get("message_id"):
                             message_id = res.get("message_id")
                             lastSentMessage["Counter"] = counter
+                            lastSentMessage["_Time"] = _time
                             lastSentMessage["message_id"] = message_id
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                             hasSentSignal = True
