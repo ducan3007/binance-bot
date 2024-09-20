@@ -344,9 +344,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             Pre send telegram message before candle close
             """
             if (
-                lastSentMessage["message_id"] is not None
+                hasSentSignal is False
+                and lastSentMessage["message_id"] is not None
                 and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
-                and lastSentMessage["Time"] == timestamp - TIME_FRAME_MS[TIME_FRAME]
+                # and lastSentMessage["Time"] == timestamp - TIME_FRAME_MS[TIME_FRAME]
             ):
                 __time = datetime.fromtimestamp(lastSentMessage["Time"]).strftime("%Y-%m-%d %H:%M")
 
