@@ -1,3 +1,5 @@
+import multiprocessing
+import traceback
 import time
 import pandas as pd
 from lib.volatility import AverageTrueRange
@@ -369,7 +371,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
                     prev_close_price = data["Close_p"][SIZE - 2]
-                    per = _cal_change(TOKEN, close_p, prev_close_price)
+                    per = _cal_change(close_p, prev_close_price)
                     current_time = datetime.now().strftime("%H:%M")
                     logger.info(f"Calculated change: {current_time} {TOKEN}: {close_p} | {prev_close_price} | {per}")
                     _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
@@ -492,7 +494,6 @@ def init_data():
     return data
 
 
-import multiprocessing
 
 
 def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
@@ -502,7 +503,7 @@ def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
             data = init_data()
             main(data, token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
         except Exception as e:
-            print(f"Error: {e}")
+            traceback.print_exc()
             time.sleep(5)
 
 
