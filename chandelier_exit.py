@@ -369,7 +369,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
                     prev_close_price = data["Close_p"][SIZE - 2]
-                    per = _cal_change(close_p, prev_close_price)
+                    per = _cal_change(TOKEN, close_p, prev_close_price)
+                    current_time = datetime.now().strftime("%H:%M")
+                    logger.info(f"Calculated change: {current_time} {TOKEN}: {close_p} | {prev_close_price} | {per}")
                     _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
                     body = {
                         "signal": signal,
