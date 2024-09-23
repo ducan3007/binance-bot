@@ -128,6 +128,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
             TimeFrame.h4,
             TimeFrame.m30,
             TimeFrame.m30_normal,
+            TimeFrame.m5,
         ]:
             pin_unpin_telegram_message(
                 token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
