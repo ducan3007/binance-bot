@@ -97,6 +97,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
         TimeFrame.h4,
         TimeFrame.m30,
         TimeFrame.m30_normal,
+        TimeFrame.m5,
     ]:
         last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
         if last_pinned_message_id:
