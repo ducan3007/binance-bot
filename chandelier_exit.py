@@ -342,7 +342,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             )
             break
 
-        if TOKEN not in ["BTC", "ETH"] and (TIME_FRAME == "5m"):
+        if TOKEN not in ["BTC", "ETH"] and (TIME_FRAME == "5m") or (TIME_FRAME == "15m"):
             """
             Pre send telegram message before candle close
             """
