@@ -23,8 +23,8 @@ NON_SPOT_PAIRS = {
 # Define the maximum number of klines per request
 MAX_KLINES = 1000
 
-START_DATE = "2024-08-19"
-END_DATE = "2024-09-18"
+START_DATE = "2024-06-01"
+END_DATE = "2024-06-30"
 MODE = "HA"  # KLINE or HEIKIN ASHI
 EXCHANGE = "future"
 
@@ -448,7 +448,8 @@ def extract_signals(mode, TIME_FRAME):
 
         # Only add a signal if final has 3 or more tokens
         if len(final) >= 3:
-            print(f"Signal detected at index {i}, time: {df_data['Time1'].iloc[i]} with tokens: {final}")
+            type = "LONG" if is_long else "SHORT"
+            print(f"Signal {type} detected at index {i}, time: {df_data['Time1'].iloc[i]} with tokens: {final}")
             # Add a new column "signal" to the DataFrames for the tokens in final
             for df_dict in dfs:
                 if df_dict["token"] in final:
