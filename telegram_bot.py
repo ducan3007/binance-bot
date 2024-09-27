@@ -239,8 +239,8 @@ def construct_message(message: MessageType1):
     if message.symbol in ["$BTC", "$ETH"]:
         price = format_float_dynamic(message.price)
         price = "{:,.2f}".format(float(price))
-        return f"<b>{sub_str}</b> <b>{message.time}</b> <b>{message.symbol}</b> <code>{price}</code> <code>{message.change}</code>"
-    return f"<b>{sub_str}</b> <b>{message.time}</b> <b>{message.symbol}</b> <code>{message.change}</code>"
+        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{message.symbol}</b> <code>{price}</code> <code>{message.change}</code>"
+    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{message.symbol}</b> <code>{message.change}</code>"
 
 
 # else:
