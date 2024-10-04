@@ -21,11 +21,19 @@ NON_SPOT_PAIRS = {
     "1000BONKUSDT": "1000BONKUSDT",
     "1000RATSUSDT": "1000RATSUSDT",
     "1000FLOKIUSDT": "1000FLOKIUSDT",
+    "1000SHIBUSDT": "1000SHIBUSDT",
     "MEWUSDT": "MEWUSDT",
     "ZETAUSDT": "ZETAUSDT",
 }
 
-TOKEN_SHORTCUT = {"1000PEPE": "PEPE", "1000BONK": "BONK", "1000RATS": "RATS", "1000SATS": "SATS", "1000FLOKI": "FLOKI"}
+TOKEN_SHORTCUT = {
+    "1000PEPE": "PEPE",
+    "1000BONK": "BONK",
+    "1000RATS": "RATS",
+    "1000SATS": "SATS",
+    "1000FLOKI": "FLOKI",
+    "1000SHIB": "SHIB",
+}
 
 TIME_FRAME_MS = {
     "15m": 15 * 60,
@@ -492,8 +500,6 @@ def init_data():
 
     data = {key: [] for key in keys}
     return data
-
-
 
 
 def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
