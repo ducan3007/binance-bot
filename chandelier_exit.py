@@ -512,6 +512,9 @@ def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
         except Exception as e:
             logger.error(f"[{token}] Error in run_strategy: {traceback.format_exc()}")
             time.sleep(5)
+        finally:
+            logger.info(f"[{token}] Restarting strategy after failure...")
+
 
 if __name__ == "__main__":
     # Set up argparse to handle command-line arguments
@@ -549,9 +552,23 @@ if __name__ == "__main__":
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
 
     processes = []
-    for token, time_frame, pair in strategies:
+
+    def start_process(token, time_frame, pair):
         process = multiprocessing.Process(
             target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
         )
-        processes.append(process)
         process.start()
+        return process
+
+    for token, time_frame, pair in strategies:
+        process = start_process(token, time_frame, pair)
+        processes.append((token, process))
+
+    while True:
+        for i, (token, process) in enumerate(processes):
+            if not process.is_alive():
+                logger.info(f"[{token}] Process stopped. Restarting...")
+                process = start_process(token, strategies[i][1], strategies[i][2])
+                processes[i] = (token, process)
+
+        time.sleep(10)
