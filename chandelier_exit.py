@@ -506,13 +506,12 @@ def init_data():
 def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
     while True:
         try:
-            print("STARTING CE BOT")
+            logger.info(f"Running strategy for {token} {time_frame} {pair}")
             data = init_data()
             main(data, token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
         except Exception as e:
-            traceback.print_exc()
+            logger.error(f"[{token}] Error in run_strategy: {traceback.format_exc()}")
             time.sleep(5)
-
 
 if __name__ == "__main__":
     # Set up argparse to handle command-line arguments
