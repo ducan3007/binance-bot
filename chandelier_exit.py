@@ -52,7 +52,8 @@ class CEConfig(Enum):
 
 
 class KlineHelper:
-    def __init__(self, mode, exchange):
+    def __init__(self, mode, exchange, time_frame="1m"):
+        self.time_frame = time_frame
         self.mode = mode
         self.exchange = exchange
 
@@ -142,10 +143,10 @@ class KlineHelper:
         try:
             URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
             headers = {"Content-Type": "application/json"}
-            logger.info(f"[${PAIR}] Fetching Future Klines")
+            logger.info(f"[{self.time_frame}] [${PAIR}] Fetching Future Klines")
             res = requests.get(URL, headers=headers, timeout=None)
             weight["m1"] = int(res.headers["x-mbx-used-weight-1m"])
-            logger.info(f"[${PAIR}] Fetch Done")
+            logger.info(f"[{self.time_frame}] [${PAIR}] Fetch Done")
             return res.json()
         except Exception as e:
             logger.error(f"Error Fetching Future Klines: {e}")
@@ -245,7 +246,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
     logger.info(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
-    kline_helper = KlineHelper(mode=MODE, exchange=EXCHANGE)
+    kline_helper = KlineHelper(mode=MODE, exchange=EXCHANGE, time_frame=TIME_FRAME)
     binance_spot = Spot()
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
@@ -298,9 +299,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 "Low": data["Low"][SIZE - 3],
             },
         )
-
-        _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
-        logger.info(f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
