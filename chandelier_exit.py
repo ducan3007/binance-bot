@@ -142,8 +142,10 @@ class KlineHelper:
         try:
             URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
             headers = {"Content-Type": "application/json"}
+            logger.info(f"[${PAIR}] Fetching Future Klines: {URL}")
             res = requests.get(URL, headers=headers, timeout=None)
             weight["m1"] = int(res.headers["x-mbx-used-weight-1m"])
+            logger.info(f"[${PAIR}] Fetch Done")
             return res.json()
         except Exception as e:
             logger.error(f"Error Fetching Future Klines: {e}")
@@ -241,7 +243,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     if not MODE:
         MODE = "heikin_ashi"
 
-    print(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
+    logger.info(f"Starting {PAIR}: MODE: {MODE}, SIZE: {SIZE}, LENGTH: {LENGTH}, MULT: {MULT}, USE_CLOSE: {USE_CLOSE}")
 
     kline_helper = KlineHelper(mode=MODE, exchange=EXCHANGE)
     binance_spot = Spot()
@@ -298,7 +300,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         )
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
-        print(f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
+        logger.info(f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
@@ -319,7 +321,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
 
             # Save to CSV
             # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
-
         elif timestamp == data_temp_dict["Time"][0]:
             counter += 1
             timestamp = data_temp_dict["Time"][1]

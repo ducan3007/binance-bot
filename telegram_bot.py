@@ -275,10 +275,20 @@ def del_message(token, chat_id, message_id):
     try:
         response = requests.post(url, data=payload)
         response.raise_for_status()  # Raises an error for bad HTTP status codes
-        logger.info(response.json())
-        return {
-            "status": response.json()["ok"],
-        }
+        response_data = response.json()
+
+        if response_data.get("ok") and response_data.get("result"):
+            logger.info(f"Message {message_id} deleted successfully.")
+            return {
+                "status": True,
+                "message": "Message deleted successfully",
+            }
+        else:
+            logger.info(f"Failed to delete message: {response_data}")
+            return {
+                "status": False,
+                "message": "Failed to delete message",
+            }
     except requests.exceptions.RequestException as e:
         if e.response is not None and e.response.status_code == 400:
             logger.info(f"Message not found: {message_id}")
@@ -290,4 +300,5 @@ def del_message(token, chat_id, message_id):
             logger.info(f"Failed to delete message: {e}")
             return {
                 "status": False,
+                "message": "Request failed",
             }
