@@ -463,7 +463,7 @@ def pre_send_signal(timestamp, time_frame):
 def delete_message(body):
     URL = "http://localhost:8000/deleteMessage"
     headers = {"Content-Type": "application/json"}
-    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
+    res = requests.post(URL, headers=headers, data=json.dumps(body))
     if res.json()["status"]:
         return True
     else:
@@ -473,7 +473,7 @@ def delete_message(body):
 def send_telegram_message(body):
     URL = "http://localhost:8000/sendMessage"
     headers = {"Content-Type": "application/json"}
-    res = requests.post(URL, headers=headers, data=json.dumps(body), timeout=None)
+    res = requests.post(URL, headers=headers, data=json.dumps(body))
     if res.json()["status"] == "success":
         return res.json()
     else:
