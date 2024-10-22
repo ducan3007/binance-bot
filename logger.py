@@ -5,8 +5,8 @@ import os
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
 log_file_path = "/var/log/fastapi.log"
-log_file_max_size = 1024 * 1024 * 10
-log_file_backup_count = 10
+log_file_max_size = 1024 * 1024 * 20
+log_file_backup_count = 50
 
 LOGGING_CONFIG = {
     "version": 1,
