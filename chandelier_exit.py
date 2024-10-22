@@ -142,7 +142,7 @@ class KlineHelper:
         try:
             URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
             headers = {"Content-Type": "application/json"}
-            logger.info(f"[${PAIR}] Fetching Future Klines: {URL}")
+            logger.info(f"[${PAIR}] Fetching Future Klines")
             res = requests.get(URL, headers=headers, timeout=None)
             weight["m1"] = int(res.headers["x-mbx-used-weight-1m"])
             logger.info(f"[${PAIR}] Fetch Done")
