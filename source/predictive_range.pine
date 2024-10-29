@@ -1,0 +1,37 @@
+indicator("range", "range", overlay = true)
+
+len_input = input.int(200, 'Length', minval = 2)  // Changed "length" to "len_input"
+factor    = input.float(6., 'Factor', minval = 0, step = .5)  // Changed "mult" to "factor"
+timeframe = input.timeframe('', 'Timeframe')  // Changed "tf" to "timeframe"
+price_src = input(close, 'Source')  // Changed "src" to "price_src"
+
+
+calc_pred_ranges(len_input, factor)=>
+    var moving_avg = price_src  // Changed "avg" to "moving_avg"
+    var stored_atr = 0.  // Changed "hold_atr" to "stored_atr"
+
+    current_atr = nz(ta.atr(len_input)) * factor  // Changed "atr" to "current_atr"
+        
+    moving_avg := price_src - moving_avg > current_atr ? moving_avg + current_atr : 
+      moving_avg - price_src > current_atr ? moving_avg - current_atr : 
+      moving_avg
+        
+    stored_atr := moving_avg != moving_avg[1] ? current_atr / 2 : stored_atr  // Changed "hold_atr" to "stored_atr"
+        
+    [moving_avg + stored_atr * 2, moving_avg + stored_atr, moving_avg, moving_avg - stored_atr, moving_avg - stored_atr * 2]
+
+[range_upper2
+  , range_upper1
+  , range_avg
+  , range_lower1
+  , range_lower2] = request.security(syminfo.tickerid, timeframe, calc_pred_ranges(len_input, factor))
+
+
+plot_ru2  = plot(range_upper2, 'Range Upper 2', range_avg != range_avg[1] ? na : #f23645)  // Changed "prR2" to "range_upper2"
+plot_ru1  = plot(range_upper1, 'Range Upper 1', range_avg != range_avg[1] ? na : #f23645)  // Changed "prR1" to "range_upper1"
+plot_ravg = plot(range_avg , 'Range Average', range_avg != range_avg[1] ? na : #5b9cf6)  // Changed "avg" to "range_avg"
+plot_rl1  = plot(range_lower1, 'Range Lower 1', range_avg != range_avg[1] ? na : #089981)  // Changed "prS1" to "range_lower1"
+plot_rl2  = plot(range_lower2, 'Range Lower 2', range_avg != range_avg[1] ? na : #089981)  // Changed "prS2" to "range_lower2"
+
+fill(plot_ru2, plot_ru1, range_avg != range_avg[1] ? na : color.new(#f23645, 95))
+fill(plot_rl1, plot_rl2, range_avg != range_avg[1] ? na : color.new(#089981, 95))

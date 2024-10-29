@@ -1,0 +1,83 @@
+//@version=5
+indicator("Nadaraya-Watson Envelope [LuxAlgo]", "LuxAlgo - Nadaraya-Watson Envelope", overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back=500)
+
+bandwidth = input.float(8., 'Bandwidth', minval = 0)
+multiplier = input.float(3., minval = 0)
+source = input(close, 'Source')
+
+enableRepaint = input(true, 'Repainting Smoothing', tooltip = 'Repainting is an effect where the indicators historical output is subject to change over time. Disabling repainting will cause the indicator to output the endpoints of the calculations')
+
+colorUp = input.color(color.teal, 'Colors', inline = 'inline1', group = 'Style')
+colorDown = input.color(color.red, '', inline = 'inline1', group = 'Style')
+
+gaussianWindow(x, h) => math.exp(-(math.pow(x, 2)/(h * h * 2)))
+
+barIdx = bar_index
+
+var linesArray = array.new_line(0)
+
+if barstate.isfirst and enableRepaint
+    for i = 0 to 499
+        array.push(linesArray, line.new(na, na, na, na))
+
+var coefficients = array.new_float(0)
+var denominator = 0.
+
+if barstate.isfirst and not enableRepaint
+    for i = 0 to 499
+        weight = gaussianWindow(i, bandwidth)
+        coefficients.push(weight)
+
+    denominator := coefficients.sum()
+
+output = 0.
+if not enableRepaint
+    for i = 0 to 499
+        output += source[i] * coefficients.get(i)
+output /= denominator
+meanAbsError = ta.sma(math.abs(source - output), 499) * multiplier
+
+upperBand = output + meanAbsError
+lowerBand = output - meanAbsError
+
+var currentY2 = na
+var currentY1 = na
+
+nadarayaWatsonEnvelope = array.new<float>(0)
+if barstate.islast and enableRepaint
+    smoothAbsError = 0.
+    for i = 0 to math.min(499, barIdx - 1)
+        weightedSum = 0.
+        weightedSumTotal = 0.
+        for j = 0 to math.min(499, barIdx - 1)
+            weight = gaussianWindow(i - j, bandwidth)
+            weightedSum += source[j] * weight
+            weightedSumTotal += weight
+
+        currentY2 := weightedSum / weightedSumTotal
+        smoothAbsError += math.abs(source[i] - currentY2)
+        nadarayaWatsonEnvelope.push(currentY2)
+    
+    smoothAbsError := smoothAbsError / math.min(499, barIdx - 1) * multiplier
+    for i = 0 to math.min(499, barIdx - 1)
+        if i % 2
+            line.new(barIdx - i + 1, currentY1 + smoothAbsError, barIdx - i, nadarayaWatsonEnvelope.get(i) + smoothAbsError, color = colorUp)
+            line.new(barIdx - i + 1, currentY1 - smoothAbsError, barIdx - i, nadarayaWatsonEnvelope.get(i) - smoothAbsError, color = colorDown)
+        
+        if source[i] > nadarayaWatsonEnvelope.get(i) + smoothAbsError and source[i + 1] < nadarayaWatsonEnvelope.get(i) + smoothAbsError
+            label.new(barIdx - i, source[i], '▼', color = color(na), style = label.style_label_down, textcolor = colorDown, textalign = text.align_center)
+        if source[i] < nadarayaWatsonEnvelope.get(i) - smoothAbsError and source[i + 1] > nadarayaWatsonEnvelope.get(i) - smoothAbsError
+            label.new(barIdx - i, source[i], '▲', color = color(na), style = label.style_label_up, textcolor = colorUp, textalign = text.align_center)
+        
+        currentY1 := nadarayaWatsonEnvelope.get(i)
+
+var tableDisplay = table.new(position.top_right, 1, 1, bgcolor = #1e222d, border_color = #373a46, border_width = 1, frame_color = #373a46, frame_width = 1)
+
+if enableRepaint
+    tableDisplay.cell(0, 0, 'Repainting Mode Enabled', text_color = color.white, text_size = size.small)
+
+plot(enableRepaint ? na : output + meanAbsError, 'Upper', colorUp)
+plot(enableRepaint ? na : output - meanAbsError, 'Lower', colorDown)
+
+plotshape(ta.crossunder(close, output - meanAbsError) ? low : na, "Crossunder", shape.labelup, location.absolute, color(na), 0 , text = '▲', textcolor = colorUp, size = size.tiny)
+plotshape(ta.crossover(close, output + meanAbsError) ? high : na, "Crossover", shape.labeldown, location.absolute, color(na), 0 , text = '▼', textcolor = colorDown, size = size.tiny)

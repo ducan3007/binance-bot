@@ -1,0 +1,251 @@
+//@version=4
+study("Exit-Willy Alerts", overlay=true)
+
+show_Baseline = true
+show_SSL1 = false
+show_atr = true
+//ATR
+atrlen = 14 //input(14, "ATR Period")
+mult = 1 //input(1, "ATR Multi", step=0.1)
+smoothing = "WMA" //input(title="ATR Smoothing", defval="WMA", options=["RMA", "SMA", "EMA", "WMA"])
+
+ma_function(source, atrlen) => 
+    if smoothing == "RMA"
+        rma(source, atrlen)
+    else
+        if smoothing == "SMA"
+            sma(source, atrlen)
+        else
+            if smoothing == "EMA"
+                ema(source, atrlen)
+            else
+                wma(source, atrlen)
+atr_slen = ma_function(tr(true), atrlen)
+////ATR Up/Low Bands
+upper_band = atr_slen * mult + close
+lower_band = close - atr_slen * mult
+
+////BASELINE / SSL1 / SSL2 / EXIT MOVING AVERAGE VALUES
+maType = "HMA" //input(title="SSL1 / Baseline Type", type=input.string, defval="HMA", options=["SMA","EMA","DEMA","TEMA","LSMA","WMA","MF","VAMA","TMA","HMA", "JMA", "Kijun v2", "EDSMA","McGinley"])
+len = 60 //input(title="SSL1 / Baseline Length", defval=60)
+
+SSL2Type = "JMA" //input(title="SSL2 / Continuation Type", type=input.string, defval="JMA", options=["SMA","EMA","DEMA","TEMA","WMA","MF","VAMA","TMA","HMA", "JMA","McGinley"])
+len2 = 5 //input(title="SSL 2 Length", defval=5)
+//
+SSL3Type = input(title="EXIT Type", type=input.string, defval="HMA", options=["DEMA","TEMA","LSMA","VAMA","TMA","HMA","JMA", "Kijun v2", "McGinley", "MF"])
+len3 = input(title="EXIT Length", defval=15)
+src = close //input(title="Source", type=input.source, defval=close)
+
+//
+tema(src, len) =>
+    ema1 = ema(src, len)
+    ema2 = ema(ema1, len)
+    ema3 = ema(ema2, len)
+    (3 * ema1) - (3 * ema2) + ema3
+kidiv = input(defval=1,maxval=4,  title="Kijun MOD Divider")
+
+jurik_phase = input(title="* Jurik (JMA) Only - Phase", type=input.integer, defval=3)
+jurik_power = input(title="* Jurik (JMA) Only - Power", type=input.integer, defval=1)
+volatility_lookback = input(10, title="* Volatility Adjusted (VAMA) Only - Volatility lookback length")
+//MF
+beta = input(0.8,minval=0,maxval=1,step=0.1,  title="Modular Filter, General Filter Only - Beta")
+feedback = input(false, title="Modular Filter Only - Feedback")
+z = input(0.5,title="Modular Filter Only - Feedback Weighting",step=0.1, minval=0, maxval=1)
+//EDSMA
+ssfLength = input(title="EDSMA - Super Smoother Filter Length", type=input.integer, minval=1, defval=20)
+ssfPoles = input(title="EDSMA - Super Smoother Filter Poles", type=input.integer, defval=2, options=[2, 3])
+
+//----
+
+//EDSMA
+get2PoleSSF(src, length) =>
+    PI = 2 * asin(1)
+    arg = sqrt(2) * PI / length
+    a1 = exp(-arg)
+    b1 = 2 * a1 * cos(arg)
+    c2 = b1
+    c3 = -pow(a1, 2)
+    c1 = 1 - c2 - c3
+    
+    ssf = 0.0
+    ssf := c1 * src + c2 * nz(ssf[1]) + c3 * nz(ssf[2])
+
+get3PoleSSF(src, length) =>
+    PI = 2 * asin(1)
+
+    arg = PI / length
+    a1 = exp(-arg)
+    b1 = 2 * a1 * cos(1.738 * arg)
+    c1 = pow(a1, 2)
+
+    coef2 = b1 + c1
+    coef3 = -(c1 + b1 * c1)
+    coef4 = pow(c1, 2)
+    coef1 = 1 - coef2 - coef3 - coef4
+
+    ssf = 0.0
+    ssf := coef1 * src + coef2 * nz(ssf[1]) + coef3 * nz(ssf[2]) + coef4 * nz(ssf[3])
+
+ma(type, src, len) =>
+    float result = 0
+    if type=="TMA"
+        result := sma(sma(src, ceil(len / 2)), floor(len / 2) + 1)
+    if type=="MF"
+        ts=0.,b=0.,c=0.,os=0.
+        //----
+        alpha = 2/(len+1)
+        a = feedback ? z*src + (1-z)*nz(ts[1],src) : src
+        //----
+        b := a > alpha*a+(1-alpha)*nz(b[1],a) ? a : alpha*a+(1-alpha)*nz(b[1],a)
+        c := a < alpha*a+(1-alpha)*nz(c[1],a) ? a : alpha*a+(1-alpha)*nz(c[1],a)
+        os := a == b ? 1 : a == c ? 0 : os[1]
+        //----
+        upper = beta*b+(1-beta)*c
+        lower = beta*c+(1-beta)*b 
+        ts := os*upper+(1-os)*lower
+        result := ts
+    if type=="LSMA"
+        result := linreg(src, len, 0)
+    if type=="SMA" // Simple
+        result := sma(src, len)
+    if type=="EMA" // Exponential
+        result := ema(src, len)
+    if type=="DEMA" // Double Exponential
+        e = ema(src, len)
+        result := 2 * e - ema(e, len)
+    if type=="TEMA" // Triple Exponential
+        e = ema(src, len)
+        result := 3 * (e - ema(e, len)) + ema(ema(e, len), len)
+    if type=="WMA" // Weighted
+        result := wma(src, len)
+    if type=="VAMA" // Volatility Adjusted
+        /// Copyright © 2019 to present, Joris Duyck (JD)
+        mid=ema(src,len)
+        dev=src-mid
+        vol_up=highest(dev,volatility_lookback)
+        vol_down=lowest(dev,volatility_lookback)
+        result := mid+avg(vol_up,vol_down)
+    if type=="HMA" // Hull
+        result := wma(2 * wma(src, len / 2) - wma(src, len), round(sqrt(len)))
+    if type=="JMA" // Jurik
+        /// Copyright © 2018 Alex Orekhov (everget)
+        /// Copyright © 2017 Jurik Research and Consulting.
+        phaseRatio = jurik_phase < -100 ? 0.5 : jurik_phase > 100 ? 2.5 : jurik_phase / 100 + 1.5
+        beta1 = 0.45 * (len - 1) / (0.45 * (len - 1) + 2)
+        alpha = pow(beta1, jurik_power)
+        jma = 0.0
+        e0 = 0.0
+        e0 := (1 - alpha) * src + alpha * nz(e0[1])
+        e1 = 0.0
+        e1 := (src - e0) * (1 - beta1) + beta1 * nz(e1[1])
+        e2 = 0.0
+        e2 := (e0 + phaseRatio * e1 - nz(jma[1])) * pow(1 - alpha, 2) + pow(alpha, 2) * nz(e2[1]) 
+        jma := e2 + nz(jma[1])
+        result := jma
+    if type=="Kijun v2"
+        kijun = avg(lowest(len), highest(len))//, (open + close)/2)
+        conversionLine = avg(lowest(len/kidiv), highest(len/kidiv))
+        delta = (kijun + conversionLine)/2
+        result :=delta
+    if type=="McGinley"
+        mg = 0.0
+        ema1 = ema(src, len)
+        mg := na(mg[1]) ? ema1 : mg[1] + (src - mg[1]) / (len * pow(src/mg[1], 4))
+        result :=mg
+    if type=="EDSMA"
+    
+        zeros = src - nz(src[2])
+        avgZeros = (zeros + zeros[1]) / 2
+        
+        // Ehlers Super Smoother Filter 
+        ssf = ssfPoles == 2
+             ? get2PoleSSF(avgZeros, ssfLength)
+             : get3PoleSSF(avgZeros, ssfLength)
+        
+        // Rescale filter in terms of Standard Deviations
+        stdev = stdev(ssf, len)
+        scaledFilter = stdev != 0
+             ? ssf / stdev
+             : 0
+        
+        alpha = 5 * abs(scaledFilter) / len
+        
+        edsma = 0.0
+        edsma := alpha * src + (1 - alpha) * nz(edsma[1])
+        result :=  edsma
+    result
+    
+///SSL 1 and SSL2
+emaHigh = ma(maType, high, len)
+emaLow = ma(maType, low, len)
+
+maHigh = ma(SSL2Type, high, len2)
+maLow = ma(SSL2Type, low, len2)
+
+///EXIT
+ExitHigh = ma(SSL3Type, high, len3)
+ExitLow = ma(SSL3Type, low, len3)
+
+///Keltner Baseline Channel
+BBMC = ma(maType, close, len)
+useTrueRange = true //input(true)
+multy = 0.2 //input(0.2, step=0.05, title="Base Channel Multiplier")
+Keltma = ma(maType, src, len)
+range = useTrueRange ? tr : high - low
+rangema = ema(range, len)
+upperk =Keltma + rangema * multy
+lowerk = Keltma - rangema * multy
+
+//Baseline Violation Candle
+open_pos =  open*1
+close_pos = close*1
+difference = abs(close_pos-open_pos)
+atr_violation = difference > atr_slen
+InRange = upper_band > BBMC and lower_band < BBMC
+candlesize_violation = atr_violation and InRange
+
+
+//SSL1 VALUES
+Hlv = int(na)
+Hlv := close > emaHigh ? 1 : close < emaLow ? -1 : Hlv[1]
+sslDown = Hlv < 0 ? emaHigh : emaLow
+
+//SSL2 VALUES
+Hlv2 = int(na)
+Hlv2 := close > maHigh ? 1 : close < maLow ? -1 : Hlv2[1]
+sslDown2 = Hlv2 < 0 ? maHigh : maLow
+
+//EXIT VALUES
+Hlv3 = int(na)
+Hlv3 := close > ExitHigh ? 1 : close < ExitLow ? -1 : Hlv3[1]
+sslExit = Hlv3 < 0 ? ExitHigh : ExitLow
+base_cross_Long = crossover(close, sslExit)
+base_cross_Short = crossover(sslExit, close)
+codiff = base_cross_Long ? 1 : base_cross_Short ? -1 : na 
+
+
+//-------------------------------------------------------------------------------------------
+
+lengthW = input(defval=21, minval=1, title="Willy Length")
+upperW = highest(lengthW)
+lowerW = lowest(lengthW)
+outputW = 100 * (close - upperW) / (upperW - lowerW)
+emaW = ema(outputW, input(defval=13, title="Willy EMA Length"))
+
+//-------------------------------------------------------------------------------------------
+srcLSMA = input(close, title = "LSMA Source")
+UseLSMA = input(false, title="Use LSMA filter")
+lengthLSMA = input(title="LSMA Length", defval=25)
+lsma = linreg(srcLSMA, lengthLSMA,0)
+
+//-------------------------------------------------------------------------------------------
+
+isSell = crossunder(outputW,emaW) and (lsma < lsma[1] or not UseLSMA) and codiff == -1
+isBuy = crossover(outputW,emaW) and (lsma > lsma[1] or not UseLSMA) and codiff == 1
+
+plotshape(isBuy ? 1 : na, style=shape.labelup, location=location.belowbar, size=size.normal, color=color.green, text="Buy",textcolor=color.white)
+plotshape(isSell ? 1 : na, style=shape.labeldown, location=location.abovebar, size=size.normal, color=color.red, text="Sell",textcolor=color.white)
+
+alertcondition(isBuy, "Buy Signal", "Buy Signal")
+alertcondition(isSell, "Sell Signal", "Sell Signal")
+

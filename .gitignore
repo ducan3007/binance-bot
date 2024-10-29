@@ -1,0 +1,9 @@
+/.venv
+*.env
+__pycache__/
+.vscode
+*.csv
+
+*/.csv
+pinned_messages.txt
+*.log

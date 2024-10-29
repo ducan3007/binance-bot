@@ -1,0 +1,137 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © veryfid
+
+//@version=5
+indicator(title='Optimized ZLSMA - Double Zero Lag LSMA with Chandelier Exit and Hull Suite', shorttitle='ZLSMA-EMA-Optimized', overlay=true)
+
+// Input Section
+
+length = input.int(title='ZLSMA Length', defval=32)
+length_1 = input.int(title='ZLSMA Secondary Length', defval=48)
+offset = input.int(title='Offset', defval=0)
+src = input(close, title='Source')
+
+// ZLSMA Calculations
+zlsma_calc(_src, _length, _offset) =>
+    lsma = ta.linreg(_src, _length, _offset)
+    lsma2 = ta.linreg(lsma, _length, _offset)
+    lsma + (lsma - lsma2)
+
+zlsma = zlsma_calc(src, length, offset)
+zlsma_1 = zlsma_calc(src, length_1, offset)
+
+// Plot ZLSMA
+plot(zlsma, color=color.yellow, linewidth=3)
+plot(zlsma_1, color=color.white, linewidth=3)
+
+// Chandelier Exit Settings
+length_atr = input.int(title='ATR Period', defval=1)
+mult = input.float(title='ATR Multiplier', step=0.1, defval=1.8)
+useClose = input.bool(title='Use Close Price for Extremums', defval=true)
+showLabels = input.bool(title='Show Buy/Sell Labels', defval=true)
+highlightState = input.bool(title='Highlight State', defval=true)
+
+atr = mult * ta.atr(length_atr)
+
+// Chandelier Stop Calculations
+longStop = (useClose ? ta.highest(close, length_atr) : ta.highest(length_atr)) - atr
+longStopPrev = nz(longStop[1], longStop)
+longStop := close[1] > longStopPrev ? math.max(longStop, longStopPrev) : longStop
+
+shortStop = (useClose ? ta.lowest(close, length_atr) : ta.lowest(length_atr)) + atr
+shortStopPrev = nz(shortStop[1], shortStop)
+shortStop := close[1] < shortStopPrev ? math.min(shortStop, shortStopPrev) : shortStop
+
+// Initialize dir as an integer variable with 'var' to avoid the error
+var int dir = na
+dir := close > shortStopPrev ? 1 : close < longStopPrev ? -1 : dir
+
+// Plot Chandelier Stops
+plot(dir == 1 ? longStop : na, title='Long Stop', style=plot.style_linebr, linewidth=2, color=color.new(color.green, 0))
+plot(dir == -1 ? shortStop : na, title='Short Stop', style=plot.style_linebr, linewidth=2, color=color.new(color.red, 0))
+
+// Buy and Sell Signal Logic
+buySignal = dir == 1 and dir[1] == -1
+sellSignal = dir == -1 and dir[1] == 1
+
+plotshape(buySignal ? longStop : na, title='Buy Signal', text="", location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.green, 0),textcolor = color.new(color.white,0))
+plotshape(sellSignal ? shortStop : na, title='Sell Signal', text="", location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor = color.new(color.white,0))
+
+
+
+// Chandelier exit 2
+
+length_atr_2 = input.int(title='ATR Period (2)', defval=2)
+mult_2 = input.float(title='ATR Multiplier (2)', step=0.1, defval=2.8)
+useClose_2 = input.bool(title='Use Close Price for Extremums (2)', defval=true)
+showLabels_2 = input.bool(title='Show Buy/Sell Labels (2)', defval=true)
+highlightState_2 = input.bool(title='Highlight State (2)', defval=true)
+
+atr_2 = mult_2 * ta.atr(length_atr_2)
+
+// Chandelier Stop Calculations (2, 2.8)
+longStop_2 = (useClose_2 ? ta.highest(close, length_atr_2) : ta.highest(length_atr_2)) - atr_2
+longStopPrev_2 = nz(longStop_2[1], longStop_2)
+longStop_2 := close[1] > longStopPrev_2 ? math.max(longStop_2, longStopPrev_2) : longStop_2
+
+shortStop_2 = (useClose_2 ? ta.lowest(close, length_atr_2) : ta.lowest(length_atr_2)) + atr_2
+shortStopPrev_2 = nz(shortStop_2[1], shortStop_2)
+shortStop_2 := close[1] < shortStopPrev_2 ? math.min(shortStop_2, shortStopPrev_2) : shortStop_2
+
+// Initialize dir_2 as an integer variable for the second Chandelier Exit
+var int dir_2 = na
+dir_2 := close > shortStopPrev_2 ? 1 : close < longStopPrev_2 ? -1 : dir_2
+
+// Plot Chandelier Stops (2, 2.8)
+plot(dir_2 == 1 ? longStop_2 : na, title='Long Stop (2)', style=plot.style_linebr, linewidth=2, color=color.new(color.green, 0))
+plot(dir_2 == -1 ? shortStop_2 : na, title='Short Stop (2)', style=plot.style_linebr, linewidth=2, color=color.new(color.red, 0))
+
+// Buy and Sell Signal Logic (2, 2.8)
+buySignal_2 = dir_2 == 1 and dir_2[1] == -1
+sellSignal_2 = dir_2 == -1 and dir_2[1] == 1
+
+plotshape(buySignal_2 ? longStop_2 : na, title='Buy Signal (2)', text="Buy", location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.green, 0), textcolor = color.new(color.white,0))
+plotshape(sellSignal_2 ? shortStop_2 : na, title='Sell Signal (2)', text="Sell", location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor = color.new(color.white,0))
+
+
+
+
+
+
+// BB
+
+length_bb = input.int(55, minval=1)
+maType = input.string("SMA", "Basis MA Type", options = ["SMA", "EMA", "SMMA (RMA)", "WMA", "VWMA"])
+src_bb = input(close, title="Source")
+mult_bb = input.float(2.0, minval=0.001, maxval=50, title="StdDev")
+
+ma(source, length_bb, _type) =>
+    switch _type
+        "SMA" => ta.sma(source, length_bb)
+        "EMA" => ta.ema(source, length_bb)
+        "SMMA (RMA)" => ta.rma(source, length_bb)
+        "WMA" => ta.wma(source, length_bb)
+        "VWMA" => ta.vwma(source, length_bb)
+
+basis = ma(src_bb, length_bb, maType)
+dev = mult_bb * ta.stdev(src_bb, length_bb)
+upper = basis + dev
+lower = basis - dev
+offset_bb = input.int(0, "Offset", minval = -500, maxval = 500, display = display.data_window)
+plot(basis, "Basis", color=#2962FF, offset = offset_bb)
+p1 = plot(upper, "Upper", color=#F23645, offset = offset_bb)
+p2 = plot(lower, "Lower", color=#089981, offset = offset_bb)
+fill(p1, p2, title = "Background", color=color.rgb(33, 150, 243, 95))
+
+
+// EMA
+
+
+
+longest = ta.ema(close, 200)
+
+
+
+plot(longest, title = "ema_200", color = color.blue)
+
+
