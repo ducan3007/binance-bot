@@ -1,4 +1,4 @@
- ### Chandelier Exit + ZLSMA Trading Strategy Bot Signal
+### Chandelier Exit + ZLSMA Trading Strategy Bot Signal
 
 ### Indicator config:
 - Chandelier Exit: `Length=1` and `Mult=1.8`
