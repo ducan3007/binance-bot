@@ -18,6 +18,7 @@ class TimeFrame(str, Enum):
     m1 = "1m"
     m3 = "3m"
     m5 = "5m"
+    m5_v2 = "5m_v2"
     m15 = "15m"
     m30 = "30m"
     m30_normal = "30m_normal"

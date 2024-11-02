@@ -42,6 +42,21 @@ TIME_FRAME_MS = {
     "30m": 30 * 60,
 }
 
+TIME_FRAME_MAP = {
+    "1m": "1m",
+    "3m": "3m",
+    "5m": "5m",
+    "5m_v2": "5m",
+    "15m": "15m",
+    "15m_normal": "15m",
+    "5m_normal": "5m",
+    "30m_normal": "30m",
+    "30m": "30m",
+    "1h": "1h",
+    "2h": "2h",
+    "4h": "4h",
+}
+
 
 class CEConfig(Enum):
     SIZE = 200
@@ -236,6 +251,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
         CEConfig.SUB_SIZE.value,
     )
 
+    MAPPED_TIME_FRAME = TIME_FRAME_MAP.get(TIME_FRAME)
     weight = {"m1": 0}
 
     if not MODE:
@@ -248,7 +264,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE, weight)
+    klines = kline_helper.fetch_klines(binance_spot, PAIR, MAPPED_TIME_FRAME, SIZE, weight)
     kline_helper.get_heikin_ashi(data, klines)
     df_data = pd.DataFrame(data)
 
@@ -284,7 +300,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
     time.sleep(1)
     while True:
         data_temp_dict = init_data()
-        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2, weight)
+        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, MAPPED_TIME_FRAME, 2, weight)
 
         kline_helper.get_heikin_ashi(
             data_temp_dict,
@@ -360,10 +376,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                 and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
                 and lastSentMessage["Counter"] == counter - 1
             ):
-                if MODE == "normal":
-                    __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
-                else:
-                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
+               
+                __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
 
                 logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
                 res = delete_message(__body)
@@ -374,7 +388,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     lastSentMessage["Direction"] = None
 
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
-                if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
+                if not hasSentSignal and pre_send_signal(timestamp, MAPPED_TIME_FRAME):
                     logger.info(f"Pre send signal: {TOKEN} {TIME_FRAME} {timestamp}")
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
@@ -382,7 +396,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     per = _cal_change(close_p, prev_close_price)
                     current_time = datetime.now().strftime("%H:%M")
                     logger.info(f"Calculated change: {current_time} {TOKEN}: {close_p} | {prev_close_price} | {per}")
-                    _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
+                    _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[MAPPED_TIME_FRAME]).strftime("%H:%M")
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
@@ -532,20 +546,21 @@ if __name__ == "__main__":
 
     # Each .txt file for each time frame
     files = {
-        "1m": "tokens.1m.txt",
-        "3m": "tokens.txt",
-        "5m": "tokens.5m.txt",
-        "15m": "tokens.15m.txt",
-        "15mnormal": "tokens.15m.normal.txt",
-        "5mnormal": "tokens.15m.normal.txt",
-        "30mnormal": "tokens.30m.txt",
-        "30m": "tokens.30m.txt",
-        "1h": "tokens.txt",
-        "2h": "tokens.txt",
-        "4h": "tokens.txt",
+        "1m": "tokens_1m.txt",
+        "3m": "tokens_txt",
+        "5m": "tokens_5m.txt",
+        "5m_v2": "tokens_5m_v2.txt",
+        "15m": "tokens_15m.txt",
+        "15m_normal": "tokens_15m_normal.txt",
+        "5m_normal": "tokens_15m_normal.txt",
+        "30m_normal": "tokens_30m.txt",
+        "30m": "tokens_30m.txt",
+        "1h": "tokens_txt",
+        "2h": "tokens_txt",
+        "4h": "tokens_txt",
     }
 
-    with open(files[f"{TIME_FRAME}{MODE}"], "r") as file:
+    with open(files[f"{TIME_FRAME}"], "r") as file:
         tokens = [line.strip() for line in file]
 
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
