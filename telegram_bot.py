@@ -95,8 +95,9 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     last_pinned_message_id = None
     if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
         TimeFrame.h4,
+        TimeFrame.h2,
         TimeFrame.m30,
-        TimeFrame.m30_normal,
+        TimeFrame.h2,
         TimeFrame.m5,
     ]:
         last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
@@ -128,7 +129,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
         if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
             TimeFrame.h4,
             TimeFrame.m30,
-            TimeFrame.m30_normal,
+            TimeFrame.h2,
             TimeFrame.m5,
         ]:
             pin_unpin_telegram_message(
