@@ -4,6 +4,7 @@ import requests
 import time
 from tabulate import tabulate
 from logger import logger
+from datetime import datetime, timedelta
 
 N = 50
 
@@ -94,7 +95,7 @@ def format_oi_vol_table(data):
         # Append the values in the new format: TOKEN VOL OI TOKEN
         combined_table.append((vol_token, vol_value, oi_value, oi_token))
 
-    colalign = ("left", "right", "left", "left") 
+    colalign = ("left", "right", "left", "left")
     return tabulate(combined_table, tablefmt="plain", colalign=colalign)
 
 
@@ -227,6 +228,108 @@ def fetch_top_open_interest_usdt_from_top_100_quote_vol(usdt_pairs, OPEN_INTERES
     return sorted_oi_data[:TOP_OI], filtered_top_100_pairs[:TOP_VOL]
 
 
+def fetch_last_week_24hr_tickers():
+    with open("tokens.5m.txt", "r") as file:
+        tokens = [line.strip() for line in file]
+        # Ensure BTC, ETH, and SOL are included
+        tokens.extend(["BTC", "ETH", "SOL"])
+        return list(set(tokens))  # Remove any duplicates
+
+
+def fetch_klines_future(PAIR, TIME_FRAME, limit, weight, end_time=None):
+    try:
+        URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
+        if end_time:
+            URL += f"&endTime={end_time}"
+        headers = {"Content-Type": "application/json"}
+        res = requests.get(URL, headers=headers, timeout=10)
+        weight["m1"] = int(res.headers.get("x-mbx-used-weight-1m", 0))
+        return res.json()
+    except Exception as e:
+        logger.error(f"Error Fetching Future Klines for {PAIR}: {e}")
+        return None
+
+
+def get_price_from_days_ago(token, days_ago, weight):
+    end_time = int((datetime.now() - timedelta(days=days_ago)).timestamp() * 1000)
+    try:
+        data = fetch_klines_future(f"{token}USDT", "1d", 1, weight, end_time)
+        if data and isinstance(data, list):
+            return float(data[0][4])  # Closing price for that day
+        else:
+            logger.info(f"Data not found for token: {token}")
+    except Exception as e:
+        logger.error(f"Error fetching price for {token}: {e}")
+    return None
+
+
+def fetch_last_week_24hr_change():
+    tokens = fetch_last_week_24hr_tickers()
+    special_tokens = ["BTC", "ETH", "SOL"]
+    token_changes = {}
+    weight = {"m1": 0}
+
+    for token in tokens:
+        try:
+            # Get prices from 8 days ago and 7 days ago
+            price_8_days_ago = get_price_from_days_ago(token, 8, weight)
+            price_7_days_ago = get_price_from_days_ago(token, 7, weight)
+
+            if price_8_days_ago and price_7_days_ago:
+                # Calculate the percentage change over that 24-hour period
+                change = ((price_7_days_ago - price_8_days_ago) / price_8_days_ago) * 100
+                token_changes[token] = change
+            else:
+                logger.info(f"Could not retrieve prices for {token}")
+        except Exception as e:
+            logger.error(f"Error calculating change for {token}: {e}")
+            token_changes[token] = None
+
+    # Sort tokens so BTC, ETH, and SOL are first, followed by the others in alphabetical order
+    sorted_tokens = sorted(token_changes.keys(), key=lambda x: (x not in special_tokens, x))
+    sorted_changes = [(token, token_changes[token]) for token in sorted_tokens if token_changes[token] is not None]
+    return sorted_changes
+
+
+def print_changes_table(changes):
+    if not changes:
+        print("No data to display.")
+        return
+
+    # Split data into two columns for display
+    n = len(changes)
+    half_n = (n + 1) // 2  # Ensures that the first half is larger if n is odd
+
+    left_column = changes[:half_n]
+    right_column = changes[half_n:]
+
+    # Format data into rows of four columns
+    table_data = []
+    for i in range(max(len(left_column), len(right_column))):
+        row = []
+        if i < len(left_column):
+            left_token, left_change = left_column[i]
+            left_change_formatted = f"{left_change:.2f}%"
+            if left_change > 0:
+                left_change_formatted = f"+{left_change_formatted}"
+            row.extend([left_token, left_change_formatted])
+        else:
+            row.extend(["", ""])  # Empty cells for alignment if needed
+
+        if i < len(right_column):
+            right_token, right_change = right_column[i]
+            right_change_formatted = f"{right_change:.2f}%"
+            if right_change > 0:
+                right_change_formatted = f"+{right_change_formatted}"
+            row.extend([right_token, right_change_formatted])
+        else:
+            row.extend(["", ""])  # Empty cells for alignment if needed
+
+        table_data.append(row)
+
+    return tabulate(table_data, tablefmt="plain")
+
+
 def main(OPEN_INTEREST_MAP):
     start = time.time()
     data = get_24h_price_change()
@@ -234,6 +337,7 @@ def main(OPEN_INTEREST_MAP):
 
     top_gainers, top_losers = get_top_gainers_and_losers(usdt_pairs, OPEN_INTEREST_MAP)
     top_oi_usdt, top_quote_vol = fetch_top_open_interest_usdt_from_top_100_quote_vol(usdt_pairs, OPEN_INTEREST_MAP)
+    last_week_changes = fetch_last_week_24hr_change()
 
     result = {
         "gainers": [
@@ -246,6 +350,7 @@ def main(OPEN_INTEREST_MAP):
         ],
         "top_oi_usdt": top_oi_usdt,
         "top_quote_vol": top_quote_vol,
+        "last_week_changes": last_week_changes,
     }
 
     logger.info(f"Time taken: {time.time() - start:.2f} seconds")
@@ -258,7 +363,7 @@ def binance_24hr_tickers():
 
     table_vol_oi = format_oi_vol_table(message)
     table = format_table(message)
-
+    last_week_changes_table = print_changes_table(message["last_week_changes"])
     print("Top 50 Gainers & Losers 24hr\n", table)
     print("\nTop 40 Volume Trade and Open Interest \n", table_vol_oi)
 
@@ -266,9 +371,11 @@ def binance_24hr_tickers():
     Display
     """
 
-    date = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
-    down = "🔻🔻🔻"
-    up = "🟢🟢🟢"
+    yesterday = datetime.now() - timedelta(days=1)
+    date = yesterday.strftime("%a, %b %d")
+
+    down = "🔻🔻"
+    up = "🟢🟢"
 
     down1 = "📉"
     up1 = "📈"
@@ -298,7 +405,7 @@ def binance_24hr_tickers():
 
     print("gain", gainers_idx)
     print("losers", losers_idx)
-    message = f"#DAILY_REPORT {date} {trend}\n\nBinance Future\n\nTop 50 Gainers & Losers 24hr {trend1}\n\n<pre language='javascript'>{table}</pre>\n\nTop Volume Trade and Open Interest\n\n<pre language='javascript'>{table_vol_oi}</pre>"
+    message = f"#DAILY_REPORT {date} {trend}\n\nBinance Future\n\nTop Gainers & Losers Last 24hr {trend1}\n\n<pre language='javascript'>{table}</pre>\n\nTop Volume Trade and Open Interest\n\n<pre language='javascript'>{table_vol_oi}</pre>\n\n Last Week Behavior\n\n<pre language='javascript'>{last_week_changes_table}</pre>"
     URL = "http://localhost:8000/send24hrPriceChange"
     response = requests.post(
         URL,
