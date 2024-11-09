@@ -93,13 +93,11 @@ def get_message_id(symbol, time_frame):
 def handle_message_type1(url, payload, signal, token, chat_id, message: MessageType1):
     # Unpin the last pinned message first if necessary
     last_pinned_message_id = None
-    if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
-        TimeFrame.h4,
-        TimeFrame.h2,
-        TimeFrame.m30,
-        TimeFrame.h2,
-        TimeFrame.m5,
-    ]:
+    is_pin = (
+        message.symbol in ["$BTC", "$ETH"]
+        and message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.m30, TimeFrame.h2]
+    ) or (message.symbol in ["$BTC"] and message.time_frame in [TimeFrame.m5])
+    if is_pin:
         last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
         if last_pinned_message_id:
             has_unpinned = pin_unpin_telegram_message(
@@ -126,12 +124,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
         message_id = response.json()["result"]["message_id"]
 
         # Pin the new message
-        if message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
-            TimeFrame.h4,
-            TimeFrame.m30,
-            TimeFrame.h2,
-            TimeFrame.m5,
-        ]:
+        if is_pin:
             pin_unpin_telegram_message(
                 token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
             )
@@ -237,20 +230,14 @@ def format_float_dynamic(value):
 def construct_message(message: MessageType1):
     # if message.time_frame in [TimeFrame.m5]:
     sub_str = Signals[message.signal][0]
-    if message.symbol in ["$BTC", "$ETH"]:
+    is_show_price = (message.symbol in ["$BTC", "$ETH"] and message.time_frame not in [TimeFrame.m5]) or (
+        message.symbol in ["$BTC"] and message.time_frame in [TimeFrame.m5]
+    )
+    if is_show_price:
         price = format_float_dynamic(message.price)
         price = "{:,.2f}".format(float(price))
         return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{message.symbol}</b> <code>{price}</code> <code>{message.change}</code>"
     return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{message.symbol}</b> <code>{message.change}</code>"
-
-
-# else:
-#     sub_str = Signals[message.signal][0]
-#     if message.symbol in ["$BTC", "$ETH"]:
-#         price = format_float_dynamic(message.price)
-#         price = "{:,.2f}".format(float(price))
-#         return f"<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>\n<code>{price}</code>"
-#     return f"<b>{sub_str} {message.symbol} {message.time}</b>  <code>{message.change}</code>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
