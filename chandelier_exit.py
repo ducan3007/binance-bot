@@ -536,7 +536,7 @@ if __name__ == "__main__":
         "3m": "tokens.txt",
         "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
-        "15mnormal": "tokens.15m.normal.txt",
+        "15mnormal": "tokens.15m.txt",
         "5mnormal": "tokens.15m.normal.txt",
         "30mnormal": "tokens.30m.txt",
         "30m": "tokens.30m.txt",
