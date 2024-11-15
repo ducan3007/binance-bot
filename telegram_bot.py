@@ -96,7 +96,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     is_pin = (
         message.symbol in ["$BTC", "$ETH"]
         and message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.m30, TimeFrame.h2]
-    ) or (message.symbol in ["$BTC"] and message.time_frame in [TimeFrame.m5])
+    ) or (message.symbol in ["$BTC"] and message.time_frame in [TimeFrame.m5, TimeFrame.m15])
     if is_pin:
         last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
         if last_pinned_message_id:
@@ -230,7 +230,7 @@ def format_float_dynamic(value):
 def construct_message(message: MessageType1):
     # if message.time_frame in [TimeFrame.m5]:
     sub_str = Signals[message.signal][0]
-    is_show_price = (message.symbol in ["$BTC", "$ETH"] and message.time_frame not in [TimeFrame.m5]) or (
+    is_show_price = (message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame not in [TimeFrame.m5]) or (
         message.symbol in ["$BTC"] and message.time_frame in [TimeFrame.m5]
     )
     if is_show_price:
