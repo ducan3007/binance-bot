@@ -228,7 +228,6 @@ def format_float_dynamic(value):
 
 
 def construct_message(message: MessageType1):
-    # if message.time_frame in [TimeFrame.m5]:
     sub_str = Signals[message.signal][0]
     is_show_price = (message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame not in [TimeFrame.m5]) or (
         message.symbol in ["$BTC"] and message.time_frame in [TimeFrame.m5]
