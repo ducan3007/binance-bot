@@ -3,8 +3,7 @@ import time
 from collections import defaultdict
 
 
-# TOKEN = "7489321215:AAF_i_0x-8pgEI-6wd71t917NRqs4bjHooc"
-# GROUP_CHAT_ID = "-1002194508247"
+
 
 # Dictionary to hold aggregated messages
 aggregated_messages = defaultdict(list)
