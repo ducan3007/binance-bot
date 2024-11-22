@@ -115,6 +115,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
         else:
             logger.info(f"No previous message to unpin for: {message.symbol} {message.signal} {message.time_frame}")
 
+    print("IS PIN", is_pin, message.symbol, message.time_frame)
     # Send the new message
     response = requests.post(url, data=payload)
     logger.info(signal)
@@ -233,13 +234,15 @@ def construct_message(message: MessageType1):
         message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame in [TimeFrame.m5]
     )
     if message.symbol in ["$BTC", "$ETH", "$SOL", "$BNB", "$PEPE", "$XRP", "$SUI"]:
-        message.symbol += "*"
+        msg = message.symbol + "*"
+    else:
+        msg = message.symbol
 
     if is_show_price:
         price = format_float_dynamic(message.price)
         price = "{:,.2f}".format(float(price))
-        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{message.symbol}</b> <code>{price}</code> <code>{message.change}</code>"
-    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{message.symbol}</b> <code>{message.change}</code>"
+        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b> <code>{price}</code> <code>{message.change}</code>"
+    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b> <code>{message.change}</code>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
