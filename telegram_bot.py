@@ -232,6 +232,9 @@ def construct_message(message: MessageType1):
     is_show_price = (message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame not in [TimeFrame.m5]) or (
         message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame in [TimeFrame.m5]
     )
+    if message.symbol in ["$BTC", "$ETH", "$SOL", "$BNB", "$PEPE", "$XRP", "$SUI"]:
+        message.symbol += "*"
+
     if is_show_price:
         price = format_float_dynamic(message.price)
         price = "{:,.2f}".format(float(price))
