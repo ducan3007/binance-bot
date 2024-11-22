@@ -233,7 +233,7 @@ def construct_message(message: MessageType1):
     is_show_price = (message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame not in [TimeFrame.m5]) or (
         message.symbol in ["$BTC", "$ETH", "$SOL"] and message.time_frame in [TimeFrame.m5]
     )
-    if message.symbol in ["$BTC", "$ETH", "$SOL", "$BNB", "$PEPE", "$XRP", "$SUI"]:
+    if message.symbol in ["$BTC", "$ETH", "$SOL", "$BNB", "$PEPE", "$XRP", "$SUI", "$DOGE"]:
         msg = message.symbol + "*"
     else:
         msg = message.symbol
