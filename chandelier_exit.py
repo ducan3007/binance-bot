@@ -37,6 +37,7 @@ TOKEN_SHORTCUT = {
 }
 
 TIME_FRAME_MS = {
+    "3m": 3 * 60,
     "15m": 15 * 60,
     "5m": 5 * 60,
     "30m": 30 * 60,
@@ -350,7 +351,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
             )
             break
 
-        if TOKEN not in ["BTC"] and ((TIME_FRAME == "5m") or (TIME_FRAME == "15m")):
+        if (TIME_FRAME == "3m") or (TOKEN not in ["BTC"] and ((TIME_FRAME == "5m") or (TIME_FRAME == "15m"))):
             """
             Pre send telegram message before candle close
             """
@@ -456,7 +457,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.86
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.88
     return False
 
 
@@ -533,7 +534,7 @@ if __name__ == "__main__":
     # Each .txt file for each time frame
     files = {
         "1m": "tokens.1m.txt",
-        "3m": "tokens.txt",
+        "3m": "tokens.top.txt",
         "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
         "15mnormal": "tokens.15m.txt",

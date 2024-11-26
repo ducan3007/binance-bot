@@ -35,10 +35,12 @@ TOKEN_4H = os.environ.get("TOKEN_4H")
 CHAT_ID_15M_V2 = os.environ.get("CHAT_ID_15M_V2")
 TOKEN_15M_V2 = os.environ.get("TOKEN_15M_V2")
 
+CHAT_ID_TOP = os.environ.get("CHAT_ID_TOP")
+TOKEN_TOP = os.environ.get("TOKEN_TOP")
 
 BOT = {
     "1m": {"chat_id": CHAT_ID_1M, "token": TOKEN_1M},
-    "3m": {"chat_id": CHAT_ID_3M, "token": TOKEN_3M},
+    "3m": {"chat_id": CHAT_ID_TOP, "token": TOKEN_TOP},
     "5m": {"chat_id": CHAT_ID_15M_V2, "token": TOKEN_15M_V2},
     "15m": {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
     "30m": {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
