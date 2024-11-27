@@ -2,3 +2,4 @@ BTC
 ETH
 BNB
 SOL
+XRP
