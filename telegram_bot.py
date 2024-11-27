@@ -235,6 +235,8 @@ def construct_message(message: MessageType1):
     )
     if message.symbol in ["$BTC", "$ETH", "$SOL", "$BNB", "$PEPE", "$XRP", "$SUI", "$DOGE"] and message.time_frame not in [TimeFrame.m3]:
         msg = message.symbol + "*"
+    elif message.symbol in ["$BTC", "$ETH"] and message.time_frame in [TimeFrame.m3]:
+        msg = message.symbol + "*"
     else:
         msg = message.symbol
 
