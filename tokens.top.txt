@@ -3,3 +3,5 @@ ETH
 BNB
 SOL
 XRP
+DOGE
+SUI
