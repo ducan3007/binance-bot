@@ -4,4 +4,4 @@ BNB
 SOL
 XRP
 DOGE
-SUI
+ADA
