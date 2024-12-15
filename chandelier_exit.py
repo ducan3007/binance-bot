@@ -228,7 +228,7 @@ class ChandlierExit:
             data["Direction"][i] = dir
 
 
-def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
+def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
         CEConfig.LENGTH.value,
@@ -394,6 +394,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, TIME_SLEEP, MODE, EXCHANGE):
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
+                        
+                    if VERSION:
+                        body["time_frame"] = f"{TIME_FRAME}_{VERSION}"
                     # Randomly wait 1-5 seconds
                     sleep_duration = random.uniform(1000, 5000) / 1000
                     logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
@@ -503,12 +506,12 @@ def init_data():
     return data
 
 
-def run_strategy(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE):
+def run_strategy(token, time_frame, pair, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     while True:
         try:
             logger.info(f"Running strategy for {token} {time_frame} {pair}")
             data = init_data()
-            main(data, token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
+            main(data, token, time_frame, pair, VERSION, TIME_SLEEP, MODE, EXCHANGE)
         except Exception as e:
             logger.error(f"[{token}] Error in run_strategy: {traceback.format_exc()}")
             time.sleep(5)
@@ -523,6 +526,7 @@ if __name__ == "__main__":
     parser.add_argument("--sleep", type=str, help='Time sleep, e.g., "15"', default="10")
     parser.add_argument("--mode", type=str, help='Chart mode, e.g., "heikin_ashi/normal"', default="")
     parser.add_argument("--exchange", type=str, help='Exchange, e.g., "future/spot"', default="spot")
+    parser.add_argument("--version", type=str, help='Version"', default="")
 
     args = parser.parse_args()
 
@@ -530,6 +534,7 @@ if __name__ == "__main__":
     TIME_FRAME = args.timeframe
     TIME_SLEEP = int(args.sleep)
     EXCHANGE = args.exchange
+    VERSION = args.version
 
     # Each .txt file for each time frame
     files = {
@@ -537,6 +542,7 @@ if __name__ == "__main__":
         "3m": "tokens.top.txt",
         "5m": "tokens.5m.txt",
         "15m": "tokens.15m.txt",
+        "15mv2": "tokens.top.txt",
         "15mnormal": "tokens.15m.txt",
         "5mnormal": "tokens.15m.normal.txt",
         "30mnormal": "tokens.30m.txt",
@@ -546,7 +552,7 @@ if __name__ == "__main__":
         "4h": "tokens.txt",
     }
 
-    with open(files[f"{TIME_FRAME}{MODE}"], "r") as file:
+    with open(files[f"{TIME_FRAME}{MODE}{VERSION}"], "r") as file:
         tokens = [line.strip() for line in file]
 
     strategies = [(token, TIME_FRAME, f"{token}USDT") for token in tokens]
@@ -555,7 +561,7 @@ if __name__ == "__main__":
 
     def start_process(token, time_frame, pair):
         process = multiprocessing.Process(
-            target=run_strategy, args=(token, time_frame, pair, TIME_SLEEP, MODE, EXCHANGE)
+            target=run_strategy, args=(token, time_frame, pair, VERSION, TIME_SLEEP, MODE, EXCHANGE)
         )
         process.start()
         return process

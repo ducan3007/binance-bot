@@ -19,6 +19,7 @@ class TimeFrame(str, Enum):
     m3 = "3m"
     m5 = "5m"
     m15 = "15m"
+    m15_v2 = "15m_v2"
     m30 = "30m"
     m30_normal = "30m_normal"
     m15_normal = "15m_normal"
@@ -247,7 +248,7 @@ def construct_message(message: MessageType1):
 
     if message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame not in [TimeFrame.m3]:
         msg = message.symbol + " *"
-    elif message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame in [TimeFrame.m3, TimeFrame.m15]:
+    elif message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame in [TimeFrame.m3, TimeFrame.m15, TimeFrame.m15_v2]:
         msg = message.symbol + " *"
     else:
         msg = message.symbol
