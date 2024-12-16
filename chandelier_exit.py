@@ -394,9 +394,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
-                        
                     if VERSION:
-                        body["time_frame"] = f"{TIME_FRAME}_{VERSION}"
+                        body["time_frame"] = f"{body['time_frame']}_{VERSION}"
                     # Randomly wait 1-5 seconds
                     sleep_duration = random.uniform(1000, 5000) / 1000
                     logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
@@ -431,6 +430,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 }
                 if MODE == "normal":
                     body["time_frame"] = f"{TIME_FRAME}_normal"
+                if VERSION:
+                    body["time_frame"] = f"{body['time_frame']}_{VERSION}"
                 res = send_telegram_message(body)
                 if res:
                     hasSentSignal = True
