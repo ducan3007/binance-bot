@@ -7,7 +7,7 @@ import os
 
 Signals = {
     "BUY": "🟢🟢🟢",
-    "SELL": "🔻🔻🔻",
+    "SELL": "🔴🔴🔴",
 }
 
 
