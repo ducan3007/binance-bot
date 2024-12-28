@@ -97,6 +97,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     is_pin = message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
         TimeFrame.h4,
         TimeFrame.h2,
+        TimeFrame.h1,
         TimeFrame.m30,
     ]
     if is_pin:
