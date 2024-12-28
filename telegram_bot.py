@@ -24,6 +24,7 @@ class TimeFrame(str, Enum):
     m30_normal = "30m_normal"
     m15_normal = "15m_normal"
     m5_normal = "5m_normal"
+    h1_normal = "1h_normal"
     h1 = "1h"
     h2 = "2h"
     h4 = "4h"
@@ -97,7 +98,7 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
     is_pin = message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
         TimeFrame.h4,
         TimeFrame.h2,
-        TimeFrame.h1,
+        TimeFrame.h1_normal,
         TimeFrame.m30,
     ]
     if is_pin:

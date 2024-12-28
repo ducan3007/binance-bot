@@ -49,6 +49,7 @@ BOT = {
     "15m_normal":  {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
     "5m_normal": {"chat_id": CHAT_ID_1M, "token": TOKEN_1M},
     "1h": {"chat_id": CHAT_ID_2H, "token": TOKEN_2H},
+    "1h_normal": {"chat_id": CHAT_ID_2H, "token": TOKEN_2H},
     "2h": {"chat_id": CHAT_ID_2H, "token": TOKEN_2H},
     "4h": {"chat_id": CHAT_ID_2H, "token": TOKEN_2H},
 }

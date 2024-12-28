@@ -549,6 +549,7 @@ if __name__ == "__main__":
         "30mnormal": "tokens.30m.txt",
         "30m": "tokens.30m.txt",
         "1h": "tokens.txt",
+        "1hnormal": "tokens.txt",
         "2h": "tokens.txt",
         "4h": "tokens.txt",
     }
