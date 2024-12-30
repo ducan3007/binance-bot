@@ -351,7 +351,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
             )
             break
 
-        if (TIME_FRAME == "3m") or (TIME_FRAME == "5m") or (TIME_FRAME == "15m"):
+        if (TIME_FRAME == "30m") or (TIME_FRAME == "5m") or (TIME_FRAME == "15m"):
             """
             Pre send telegram message before candle close
             """
@@ -461,7 +461,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.89
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.90
     return False
 
 
@@ -547,7 +547,7 @@ if __name__ == "__main__":
         "15mnormal": "tokens.15m.txt",
         "5mnormal": "tokens.15m.normal.txt",
         "30mnormal": "tokens.30m.txt",
-        "30m": "tokens.30m.txt",
+        "30m": "tokens.top.txt",
         "1h": "tokens.txt",
         "1hnormal": "tokens.txt",
         "2h": "tokens.txt",

@@ -99,7 +99,6 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
         TimeFrame.h4,
         TimeFrame.h2,
         TimeFrame.h1_normal,
-        TimeFrame.m30,
     ]
     if is_pin:
         last_pinned_message_id = get_message_id(message.symbol, message.time_frame.value)
@@ -250,7 +249,7 @@ def construct_message(message: MessageType1):
 
     if message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame not in [TimeFrame.m3]:
         msg = message.symbol + " *"
-    elif message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame in [TimeFrame.m3, TimeFrame.m15, TimeFrame.m15_v2]:
+    elif message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame in [TimeFrame.m3, TimeFrame.m15, TimeFrame.m15_v2, TimeFrame.m30]:
         msg = message.symbol + " *"
     else:
         msg = message.symbol
