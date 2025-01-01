@@ -256,8 +256,8 @@ def construct_message(message: MessageType1):
 
     if is_show_price:
         price = format_token_price(message.symbol, message.price)
-        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b> <code>{price}</code>"
-    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b> <code>{message.change}</code>"
+        return f"<b>{sub_str}</b> <code>{message.time}</code> <b>{msg}</b> <code>{price}</code>"
+    return f"<b>{sub_str}</b> <code>{message.time}</code> <b>{msg}</b> <code>{message.change}</code>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
