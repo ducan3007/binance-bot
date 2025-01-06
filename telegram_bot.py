@@ -245,7 +245,7 @@ def format_token_price(token, value):
 
 def construct_message(message: MessageType1):
     sub_str = Signals[message.signal][0]
-    is_show_price = message.time_frame in [TimeFrame.m3, TimeFrame.m5]
+    is_show_price = False
 
     if message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame not in [TimeFrame.m3]:
         msg = message.symbol + " *"

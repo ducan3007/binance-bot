@@ -237,6 +237,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
         CEConfig.SUB_SIZE.value,
     )
 
+    if TIME_FRAME == "5m":
+        MULT = 2.0
+        
     weight = {"m1": 0}
 
     if not MODE:
