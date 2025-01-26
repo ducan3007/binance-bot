@@ -541,6 +541,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 pre_close_price = data["Close_p"][SIZE - 2]
                 pre_pre_close_price = data["Close_p"][SIZE - 3]
                 per = _cal_change(pre_close_price, pre_pre_close_price)
+                ema.calculate_ema()
                 ema_cross = ema.check_cross(
                     data["Open"][SIZE - 1], data["High"][SIZE - 1], data["Low"][SIZE - 1], signal
                 )
