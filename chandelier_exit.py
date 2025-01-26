@@ -3,6 +3,7 @@ import traceback
 import time
 import pandas as pd
 from lib.volatility import AverageTrueRange
+from lib.trend import ema_indicator
 from binance.spot import Spot
 from enum import Enum
 from datetime import datetime
@@ -11,6 +12,7 @@ import json
 import argparse
 from logger import logger
 import random
+from typing import Literal
 
 EPSILON = 1e-9
 
@@ -47,7 +49,7 @@ TIME_FRAME_MS = {
 class CEConfig(Enum):
     SIZE = 200
     LENGTH = 1
-    MULT = 1.8
+    MULT = 2.0
     USE_CLOSE = True
     SUB_SIZE = 2
 
@@ -56,6 +58,7 @@ class KlineHelper:
     def __init__(self, mode, exchange):
         self.mode = mode
         self.exchange = exchange
+        self.weight = {"m1": 0}
 
     def _append_kline(self, data, kline):
         open_p = float(kline[1])
@@ -120,7 +123,7 @@ class KlineHelper:
         data["Open_p"].append(open_p)
         data["Close_p"].append(close_p)
 
-    def get_heikin_ashi(self, data, klines, prev_item=None):
+    def populate(self, data, klines, prev_item=None):
         for kline in klines:
             if self.mode == "heikin_ashi":
                 self._append_heikin_ashi(data, kline, prev_item)
@@ -139,23 +142,23 @@ class KlineHelper:
         for key in data1:
             data1[key].extend(data2[key])
 
-    def fetch_klines_future(self, PAIR, TIME_FRAME, limit, weight):
+    def fetch_klines_future(self, PAIR, TIME_FRAME, limit):
         try:
             URL = f"https://fapi.binance.com/fapi/v1/klines?symbol={PAIR}&interval={TIME_FRAME}&limit={limit}"
             headers = {"Content-Type": "application/json"}
             res = requests.get(URL, headers=headers, timeout=10)
-            weight["m1"] = int(res.headers["x-mbx-used-weight-1m"])
+            self.weight["m1"] = int(res.headers["x-mbx-used-weight-1m"])
             return res.json()
         except Exception as e:
             logger.error(f"Error Fetching Future Klines: {e}")
             raise e
 
-    def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit, weight):
+    def fetch_klines(self, binance_spot: Spot, PAIR, TIME_FRAME, limit):
         if self.exchange == "future":
-            return self.fetch_klines_future(PAIR, TIME_FRAME, limit, weight)
+            return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
         else:
             if PAIR in NON_SPOT_PAIRS:
-                return self.fetch_klines_future(PAIR, TIME_FRAME, limit, weight)
+                return self.fetch_klines_future(PAIR, TIME_FRAME, limit)
             return binance_spot.klines(PAIR, TIME_FRAME, limit=limit)
 
     def export_csv(self, data, filename="atr2.csv"):
@@ -228,6 +231,107 @@ class ChandlierExit:
             data["Direction"][i] = dir
 
 
+class EMA:
+    def __init__(
+        self,
+        PAIR,
+        TIME_FRAME,
+        MODE,
+        EXCHANGE,
+        SIZE=1000,
+    ):
+        print(f"EMA: {PAIR} {TIME_FRAME} {MODE} {EXCHANGE} {SIZE}")
+        self.PAIR = PAIR
+        self.TIME_FRAME = TIME_FRAME
+        self.SIZE = SIZE
+        self.binance_spot = Spot()
+        self.kline_helper = KlineHelper(mode=MODE, exchange=EXCHANGE)
+        self.data = None
+        self.df = None
+        self.timestamp = None
+        self.ema_200_value = None
+        self.ema_35_value = None
+
+    def init_data(self):
+        keys = [
+            "Open",
+            "High",
+            "Low",
+            "Close",
+            "Time1",
+            "Time",
+            "ATR",
+            "LongStop",
+            "ShortStop",
+            "LongStopPrev",
+            "ShortStopPrev",
+            "Direction",
+            "Open_p",
+            "Close_p",
+        ]
+        return {key: [] for key in keys}
+
+    def ema_fetch_klines(self):
+        """Fetch the latest klines from Binance and populate the data."""
+        logger.info(f"Fetching EMA klines")
+        self.data = self.init_data()
+        klines = self.kline_helper.fetch_klines(self.binance_spot, self.PAIR, self.TIME_FRAME, self.SIZE)
+        self.kline_helper.populate(self.data, klines)
+        self.df = pd.DataFrame(self.data)
+        self.timestamp = self.data["Time"][self.SIZE - 1]
+
+    def update_klines(self):
+        new_data = self.init_data()
+        klines = self.kline_helper.fetch_klines(self.binance_spot, self.PAIR, self.TIME_FRAME, 2)
+        self.kline_helper.populate(new_data, klines)
+        latest_new_timestamp = new_data["Time"][-1]
+        last_existing_timestamp = self.data["Time"][-1] if self.data["Time"] else None
+        if last_existing_timestamp is not None and latest_new_timestamp == last_existing_timestamp:
+            self.kline_helper._pop_tail_data(self.data)
+            self.kline_helper.populate(self.data, [klines[-1]])
+        elif last_existing_timestamp is None or latest_new_timestamp == (
+            last_existing_timestamp + TIME_FRAME_MS[self.TIME_FRAME]
+        ):
+            self.kline_helper._pop_top_data(self.data)
+            self.kline_helper._pop_tail_data(self.data)
+            self.kline_helper.populate(self.data, klines)
+        else:
+            logger.error(f"Timestamp mismatch: {last_existing_timestamp} {latest_new_timestamp}")
+            self.ema_fetch_klines()
+        self.df = pd.DataFrame(self.data)
+
+    def calculate_ema(self):
+        self.calculate_ema_200()
+        self.calculate_ema_35()
+
+    def calculate_ema_200(self):
+        self.df["EMA_200"] = ema_indicator(self.df["Close"], 200)
+        self.ema_200_value = self.df["EMA_200"].iloc[-1]
+
+    def calculate_ema_35(self):
+        self.df["EMA_35"] = ema_indicator(self.df["Close"], 35)
+        self.ema_35_value = self.df["EMA_35"].iloc[-1]
+
+    def to_csv(self, filename="ema.csv"):
+        self.df[["Time1", "Close", "EMA_200", "EMA_35"]].to_csv(filename, index=False)
+
+    def check_cross(self, open, high, low, signal=Literal["BUY", "SELL"]):
+        res = {
+            "ema_200_cross": False,
+            "ema_35_cross": False,
+        }
+        if signal == "BUY":
+            if open < self.ema_200_value and high > self.ema_200_value:
+                res["ema_200_cross"] = True
+            if open < self.ema_35_value and high > self.ema_35_value:
+                res["ema_35_cross"] = True
+        if signal == "SELL":
+            if low < self.ema_200_value and open > self.ema_200_value:
+                res["ema_200_cross"] = True
+            if low < self.ema_35_value and open > self.ema_35_value:
+                res["ema_35_cross"] = True
+
+
 def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
@@ -238,9 +342,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     )
 
     if TIME_FRAME == "5m":
-        MULT = 2.0
-        
-    weight = {"m1": 0}
+        MULT = 2.1
 
     if not MODE:
         MODE = "heikin_ashi"
@@ -252,8 +354,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     chandelier_exit = ChandlierExit(size=SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
     # Get 500 Klines
-    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE, weight)
-    kline_helper.get_heikin_ashi(data, klines)
+    klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, SIZE)
+    kline_helper.populate(data, klines)
     df_data = pd.DataFrame(data)
 
     # Calculate ATR
@@ -285,12 +387,14 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
 
     # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
+    ema = EMA(PAIR=PAIR, TIME_FRAME=TIME_FRAME, MODE=MODE, EXCHANGE=EXCHANGE, SIZE=1000)
+    ema.ema_fetch_klines()
     time.sleep(1)
     while True:
         data_temp_dict = init_data()
-        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2, weight)
+        two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
 
-        kline_helper.get_heikin_ashi(
+        kline_helper.populate(
             data_temp_dict,
             two_latest_klines,
             prev_item={
@@ -302,7 +406,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
         )
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
-        print(f"Time: {counter} {weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
+
+        ema.update_klines()
+
+        print(f"Time: {counter} {MULT} {kline_helper.weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:
             df_temp = chandelier_exit_2.calculate_atr(pd.DataFrame(data_temp_dict))
@@ -387,6 +494,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     current_time = datetime.now().strftime("%H:%M")
                     logger.info(f"Calculated change: {current_time} {TOKEN}: {close_p} | {prev_close_price} | {per}")
                     _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
+                    ema.calculate_ema()
+                    ema_cross = ema.check_cross(
+                        data["Open"][SIZE - 1], data["High"][SIZE - 1], data["Low"][SIZE - 1], signal
+                    )
+
+                    # if not (ema_cross["ema_200_cross"] or ema_cross["ema_35_cross"]):
+                    #     if TIME_FRAME == "5m":
+                    #         logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                    #         continue
+
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
@@ -394,6 +511,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         "time": _time,
                         "price": data["Close"][SIZE - 1],
                         "change": per,
+                        "ema_cross": ema_cross,
                     }
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -423,6 +541,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 pre_close_price = data["Close_p"][SIZE - 2]
                 pre_pre_close_price = data["Close_p"][SIZE - 3]
                 per = _cal_change(pre_close_price, pre_pre_close_price)
+                ema_cross = ema.check_cross(
+                    data["Open"][SIZE - 1], data["High"][SIZE - 1], data["Low"][SIZE - 1], signal
+                )
                 body = {
                     "signal": signal,
                     "symbol": f"${TOKEN}",
@@ -430,6 +551,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "time": data["Time1"][SIZE - 1][11:],
                     "price": data["Close"][SIZE - 1],
                     "change": per,
+                    "ema_cross": ema_cross,
                 }
                 if MODE == "normal":
                     body["time_frame"] = f"{TIME_FRAME}_normal"

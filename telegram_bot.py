@@ -2,7 +2,8 @@ import time
 from enum import Enum
 import requests
 from logger import logger
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Any
 import os
 
 Signals = {
@@ -31,12 +32,13 @@ class TimeFrame(str, Enum):
 
 
 class MessageType1(BaseModel):
-    signal: str  # BUY or SELL
-    symbol: str
-    time_frame: TimeFrame
-    time: str
-    price: float
-    change: str
+    signal: str = Field(..., example="BUY")
+    symbol: str = Field(..., example="$BTC")
+    time_frame: TimeFrame = Field(..., example="5m")
+    time: str = Field(..., example="14:45")
+    price: float = Field(..., example=150000)
+    change: str = Field(..., example="+2.5%")
+    ema_cross: dict[str, Any] = Field(..., example={"ema_200_cross": True, "ema_35_cross": False})
 
 
 class MessageType2(BaseModel):
@@ -245,19 +247,20 @@ def format_token_price(token, value):
 
 def construct_message(message: MessageType1):
     sub_str = Signals[message.signal][0]
-    is_show_price = False
 
-    if message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame not in [TimeFrame.m3]:
+    ema_200 = message.ema_cross.get("ema_200_cross")
+    ema_35 = message.ema_cross.get("ema_35_cross")
+
+    if ema_35:
         msg = message.symbol + " *"
-    elif message.symbol in ["$BTC", "$ETH", "$BNB"] and message.time_frame in [TimeFrame.m3, TimeFrame.m15, TimeFrame.m15_v2, TimeFrame.m30]:
-        msg = message.symbol + " *"
-    else:
+
+    if ema_200:
+        msg = message.symbol + " **"
+
+    if not ema_35 and not ema_200:
         msg = message.symbol
 
-    if is_show_price:
-        price = format_token_price(message.symbol, message.price)
-        return f"<b>{sub_str}</b> {message.time} <b>{msg}</b> <code>{price}</code>"
-    return f"<b>{sub_str}</b> {message.time} <b>{msg}</b> <code>{message.change}</code>"
+    return f"<b>{sub_str}</b> {message.time} <b>{msg}</b>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
