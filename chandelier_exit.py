@@ -330,7 +330,7 @@ class EMA:
                 res["ema_200_cross"] = True
             if low < self.ema_35_value and open > self.ema_35_value:
                 res["ema_35_cross"] = True
-
+        return res
 
 def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
