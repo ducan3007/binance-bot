@@ -320,6 +320,10 @@ class EMA:
             "ema_200_cross": False,
             "ema_35_cross": False,
         }
+
+        if self.ema_200_value is None or self.ema_35_value is None:
+            return res
+        
         if signal == "BUY":
             if open < self.ema_200_value and high > self.ema_200_value:
                 res["ema_200_cross"] = True
