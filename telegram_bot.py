@@ -252,10 +252,10 @@ def construct_message(message: MessageType1):
     ema_35 = message.ema_cross.get("ema_35_cross")
 
     if ema_35:
-        msg = message.symbol + " *"
+        msg = message.symbol + " <code>*</code>"
 
     if ema_200:
-        msg = message.symbol + " * *"
+        msg = message.symbol + " <code>**</code>"
 
     if not ema_35 and not ema_200:
         msg = message.symbol
