@@ -316,7 +316,7 @@ class EMA:
     def to_csv(self, filename="ema.csv"):
         self.df[["Time1", "Close", "EMA_200", "EMA_35"]].to_csv(filename, index=False)
 
-    def check_cross(self, open, high, low, signal=Literal["BUY", "SELL"]):
+    def check_cross(self, time_frame, open, high, low, close, signal=Literal["BUY", "SELL"]):
         res = {
             "ema_200_cross": False,
             "ema_35_cross": False,
@@ -324,7 +324,20 @@ class EMA:
 
         if self.ema_200_value is None or self.ema_35_value is None:
             return res
-        
+
+        if time_frame == "5m":
+            if signal == "BUY":
+                if open < self.ema_200_value and close > self.ema_200_value:
+                    res["ema_200_cross"] = True
+                if open < self.ema_35_value and close > self.ema_35_value:
+                    res["ema_35_cross"] = True
+            if signal == "SELL":
+                if close < self.ema_200_value and open > self.ema_200_value:
+                    res["ema_200_cross"] = True
+                if close < self.ema_35_value and open > self.ema_35_value:
+                    res["ema_35_cross"] = True
+            return res
+
         if signal == "BUY":
             if open < self.ema_200_value and high > self.ema_200_value:
                 res["ema_200_cross"] = True
@@ -501,7 +514,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     _time = datetime.fromtimestamp(timestamp + TIME_FRAME_MS[TIME_FRAME]).strftime("%H:%M")
                     ema.calculate_ema()
                     ema_cross = ema.check_cross(
-                        data["Open"][SIZE - 1], data["High"][SIZE - 1], data["Low"][SIZE - 1], signal
+                        TIME_FRAME,
+                        data["Open"][SIZE - 1],
+                        data["High"][SIZE - 1],
+                        data["Low"][SIZE - 1],
+                        data["Close"][SIZE - 1],
+                        signal,
                     )
 
                     if not (ema_cross["ema_200_cross"] or ema_cross["ema_35_cross"]):
@@ -548,7 +566,12 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 per = _cal_change(pre_close_price, pre_pre_close_price)
                 ema.calculate_ema()
                 ema_cross = ema.check_cross(
-                    data["Open"][SIZE - 1], data["High"][SIZE - 1], data["Low"][SIZE - 1], signal
+                    TIME_FRAME,
+                    data["Open"][SIZE - 1],
+                    data["High"][SIZE - 1],
+                    data["Low"][SIZE - 1],
+                    data["Close"][SIZE - 1],
+                    signal,
                 )
                 body = {
                     "signal": signal,
