@@ -503,10 +503,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         data["Open"][SIZE - 1], data["High"][SIZE - 1], data["Low"][SIZE - 1], signal
                     )
 
-                    # if not (ema_cross["ema_200_cross"] or ema_cross["ema_35_cross"]):
-                    #     if TIME_FRAME == "5m":
-                    #         logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
-                    #         continue
+                    if not (ema_cross["ema_200_cross"] or ema_cross["ema_35_cross"]):
+                        if TIME_FRAME == "5m":
+                            logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                            continue
 
                     body = {
                         "signal": signal,

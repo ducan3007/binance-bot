@@ -1,4 +1,5 @@
 BTC
+BTCDOM
 ETH
 BNB
 SOL
