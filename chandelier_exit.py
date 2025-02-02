@@ -50,7 +50,7 @@ TIME_FRAME_MS = {
 class CEConfig(Enum):
     SIZE = 200
     LENGTH = 1
-    MULT = 2.0
+    MULT = 2.1
     USE_CLOSE = True
     SUB_SIZE = 2
 
@@ -306,10 +306,14 @@ class EMA:
         self.calculate_ema_35()
 
     def calculate_ema_200(self):
+        if "EMA_200" in self.df.columns:
+            self.df.drop(columns=["EMA_200"], inplace=True)
         self.df["EMA_200"] = ema_indicator(self.df["Close"], 200)
         self.ema_200_value = self.df["EMA_200"].iloc[-1]
 
     def calculate_ema_35(self):
+        if "EMA_35" in self.df.columns:
+            self.df.drop(columns=["EMA_35"], inplace=True)
         self.df["EMA_35"] = ema_indicator(self.df["Close"], 35)
         self.ema_35_value = self.df["EMA_35"].iloc[-1]
 
@@ -321,6 +325,10 @@ class EMA:
             "ema_200_cross": False,
             "ema_35_cross": False,
         }
+
+        if self.ema_200_value is None or self.ema_35_value is None:
+            logger.info(f"EMA values are None, {self.TIME_FRAME} {self.PAIR} {self.timestamp}")
+            self.calculate_ema()
 
         if self.ema_200_value is None or self.ema_35_value is None:
             return res
@@ -605,7 +613,7 @@ def _cal_change(close, pre_close):
 
 def cal_change(close, pre_close):
     per = (close - pre_close) / pre_close * 100
-    per = per >= 0 and f"(+{per:.2f}%)" or f"({per:.2f}%)"
+    per = per >= 0 and f"+{per:.2f}%" or f"{per:.2f}%"
     return per
 
 
