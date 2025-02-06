@@ -251,6 +251,9 @@ def construct_message(message: MessageType1):
     ema_200 = message.ema_cross.get("ema_200_cross")
     ema_35 = message.ema_cross.get("ema_35_cross")
 
+    # replace $ from symbol = #
+    message.symbol = message.symbol.replace("$", "#")
+
     if ema_35:
         msg = message.symbol + " *"
 
