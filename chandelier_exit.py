@@ -333,7 +333,7 @@ class EMA:
         if self.ema_200_value is None or self.ema_35_value is None:
             return res
 
-        if time_frame == "5m":
+        if time_frame == "5m" or time_frame == "15m":
             if signal == "BUY":
                 if open < self.ema_200_value and close > self.ema_200_value:
                     res["ema_200_cross"] = True
