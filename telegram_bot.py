@@ -263,7 +263,7 @@ def construct_message(message: MessageType1):
     if not ema_35 and not ema_200:
         msg = message.symbol
 
-    if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m15]:
+    if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m15, TimeFrame.m30_normal]:
         return f"<b>{sub_str}</b> {message.time} <b>{msg}</b>  <code>{message.change}</code>"
 
     return f"<b>{sub_str}</b> {message.time} <b>{msg}</b>"
