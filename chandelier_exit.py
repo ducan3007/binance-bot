@@ -314,7 +314,7 @@ class EMA:
     def calculate_ema_35(self):
         if "EMA_35" in self.df.columns:
             self.df.drop(columns=["EMA_35"], inplace=True)
-        self.df["EMA_35"] = ema_indicator(self.df["Close"], 35)
+        self.df["EMA_35"] = ema_indicator(self.df["Close"], 34)
         self.ema_35_value = self.df["EMA_35"].iloc[-1]
 
     def to_csv(self, filename="ema.csv"):
