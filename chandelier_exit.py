@@ -50,7 +50,7 @@ TIME_FRAME_MS = {
 class CEConfig(Enum):
     SIZE = 200
     LENGTH = 1
-    MULT = 2.1
+    MULT = 2
     USE_CLOSE = True
     SUB_SIZE = 2
 
