@@ -333,7 +333,7 @@ class EMA:
         if self.ema_200_value is None or self.ema_35_value is None:
             return res
 
-        if time_frame == "5m" or time_frame == "15m":
+        if time_frame == "5m":
             if signal == "BUY":
                 if open < self.ema_200_value and close > self.ema_200_value:
                     res["ema_200_cross"] = True
@@ -534,7 +534,11 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         if TIME_FRAME == "5m":
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
-
+                    
+                        if TIME_FRAME == "15m":
+                            logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                            continue
+                        
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
