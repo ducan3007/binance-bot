@@ -257,8 +257,11 @@ def construct_message(message: MessageType1):
     if ema_35:
         msg = message.symbol + "*"
 
-    if ema_200:
+    if ema_200 and not ema_35:
         msg = message.symbol + "* *"
+
+    if ema_35 and ema_200:
+        msg = message.symbol + "* * *"
 
     if not ema_35 and not ema_200:
         msg = message.symbol
