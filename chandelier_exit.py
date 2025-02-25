@@ -628,12 +628,12 @@ def pre_send_signal(timestamp, time_frame):
     
     if time_frame == "5m":
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.98
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.95
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
         return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.90
-        
+
     return False
 
 
