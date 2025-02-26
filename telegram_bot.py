@@ -264,7 +264,7 @@ def construct_message(message: MessageType1):
     if (ema_35 or ema_21) and ema_200:
         msg = message.symbol + "* * *"
 
-    if not ema_35 and not ema_200:
+    if not (ema_35 or ema_21) and not ema_200:
         msg = message.symbol
 
     if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m15, TimeFrame.m30_normal]:
