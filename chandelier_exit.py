@@ -342,36 +342,42 @@ class EMA:
         if self.ema_200_value is None or self.ema_35_value is None or self.ema_21_value is None:
             return res
 
-        if time_frame == "5m" or time_frame == "15m":
+        def is_greater(a, b):
+            return (a - b) > EPSILON
+
+        def is_less(a, b):
+            return (b - a) > EPSILON
+
+        if time_frame in ["5m", "15m"]:
             if signal == "BUY":
-                if open < self.ema_200_value and close > self.ema_200_value:
+                if is_less(open, self.ema_200_value) and is_greater(close, self.ema_200_value):
                     res["ema_200_cross"] = True
-                if open < self.ema_35_value and close > self.ema_35_value:
+                if is_less(open, self.ema_35_value) and is_greater(close, self.ema_35_value):
                     res["ema_35_cross"] = True
-                if open < self.ema_21_value and close > self.ema_21_value:
+                if is_less(open, self.ema_21_value) and is_greater(close, self.ema_21_value):
                     res["ema_21_cross"] = True
-            if signal == "SELL":
-                if close < self.ema_200_value and open > self.ema_200_value:
+            elif signal == "SELL":
+                if is_less(close, self.ema_200_value) and is_greater(open, self.ema_200_value):
                     res["ema_200_cross"] = True
-                if close < self.ema_35_value and open > self.ema_35_value:
+                if is_less(close, self.ema_35_value) and is_greater(open, self.ema_35_value):
                     res["ema_35_cross"] = True
-                if close < self.ema_21_value and open > self.ema_21_value:
+                if is_less(close, self.ema_21_value) and is_greater(open, self.ema_21_value):
                     res["ema_21_cross"] = True
             return res
 
         if signal == "BUY":
-            if open < self.ema_200_value and high > self.ema_200_value:
+            if is_less(open, self.ema_200_value) and is_greater(high, self.ema_200_value):
                 res["ema_200_cross"] = True
-            if open < self.ema_35_value and high > self.ema_35_value:
+            if is_less(open, self.ema_35_value) and is_greater(high, self.ema_35_value):
                 res["ema_35_cross"] = True
-            if open < self.ema_21_value and high > self.ema_21_value:
+            if is_less(open, self.ema_21_value) and is_greater(high, self.ema_21_value):
                 res["ema_21_cross"] = True
-        if signal == "SELL":
-            if low < self.ema_200_value and open > self.ema_200_value:
+        elif signal == "SELL":
+            if is_less(low, self.ema_200_value) and is_greater(open, self.ema_200_value):
                 res["ema_200_cross"] = True
-            if low < self.ema_35_value and open > self.ema_35_value:
+            if is_less(low, self.ema_35_value) and is_greater(open, self.ema_35_value):
                 res["ema_35_cross"] = True
-            if low < self.ema_21_value and open > self.ema_21_value:
+            if is_less(low, self.ema_21_value) and is_greater(open, self.ema_21_value):
                 res["ema_21_cross"] = True
         return res
 
@@ -551,11 +557,11 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         if TIME_FRAME == "5m":
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
-                    
+
                         if TIME_FRAME == "15m":
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
-                        
+
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
@@ -642,7 +648,7 @@ def pre_send_signal(timestamp, time_frame):
     """
     Check if 80% of the time frame has passed
     """
-    
+
     if time_frame == "5m":
         ts = int(time.time())
         return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.95
