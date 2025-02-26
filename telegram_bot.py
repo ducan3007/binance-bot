@@ -250,17 +250,18 @@ def construct_message(message: MessageType1):
 
     ema_200 = message.ema_cross.get("ema_200_cross")
     ema_35 = message.ema_cross.get("ema_35_cross")
+    ema_21 = message.ema_cross.get("ema_21_cross")
 
     # replace $ from symbol = #
     message.symbol = message.symbol.replace("$", "#")
 
-    if ema_35:
+    if ema_35 or ema_21:
         msg = message.symbol + "*"
 
     if ema_200 and not ema_35:
         msg = message.symbol + "* *"
 
-    if ema_35 and ema_200:
+    if (ema_35 or ema_21) and ema_200:
         msg = message.symbol + "* * *"
 
     if not ema_35 and not ema_200:

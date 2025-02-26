@@ -252,6 +252,7 @@ class EMA:
         self.timestamp = None
         self.ema_200_value = None
         self.ema_35_value = None
+        self.ema_21_value = None
 
     def init_data(self):
         keys = [
@@ -304,6 +305,7 @@ class EMA:
     def calculate_ema(self):
         self.calculate_ema_200()
         self.calculate_ema_35()
+        self.calculate_ema_21()
 
     def calculate_ema_200(self):
         if "EMA_200" in self.df.columns:
@@ -317,6 +319,12 @@ class EMA:
         self.df["EMA_35"] = ema_indicator(self.df["Close"], 34)
         self.ema_35_value = self.df["EMA_35"].iloc[-1]
 
+    def calculate_ema_21(self):
+        if "EMA_21" in self.df.columns:
+            self.df.drop(columns=["EMA_21"], inplace=True)
+        self.df["EMA_21"] = ema_indicator(self.df["Close"], 21)
+        self.ema_21_value = self.df["EMA_21"].iloc[-1]
+
     def to_csv(self, filename="ema.csv"):
         self.df[["Time1", "Close", "EMA_200", "EMA_35"]].to_csv(filename, index=False)
 
@@ -324,13 +332,14 @@ class EMA:
         res = {
             "ema_200_cross": False,
             "ema_35_cross": False,
+            "ema_21_cross": False,
         }
 
-        if self.ema_200_value is None or self.ema_35_value is None:
+        if self.ema_200_value is None or self.ema_35_value is None or self.ema_21_value is None:
             logger.info(f"EMA values are None, {self.TIME_FRAME} {self.PAIR} {self.timestamp}")
             self.calculate_ema()
 
-        if self.ema_200_value is None or self.ema_35_value is None:
+        if self.ema_200_value is None or self.ema_35_value is None or self.ema_21_value is None:
             return res
 
         if time_frame == "5m" or time_frame == "15m":
@@ -339,11 +348,15 @@ class EMA:
                     res["ema_200_cross"] = True
                 if open < self.ema_35_value and close > self.ema_35_value:
                     res["ema_35_cross"] = True
+                if open < self.ema_21_value and close > self.ema_21_value:
+                    res["ema_21_cross"] = True
             if signal == "SELL":
                 if close < self.ema_200_value and open > self.ema_200_value:
                     res["ema_200_cross"] = True
                 if close < self.ema_35_value and open > self.ema_35_value:
                     res["ema_35_cross"] = True
+                if close < self.ema_21_value and open > self.ema_21_value:
+                    res["ema_21_cross"] = True
             return res
 
         if signal == "BUY":
@@ -351,11 +364,15 @@ class EMA:
                 res["ema_200_cross"] = True
             if open < self.ema_35_value and high > self.ema_35_value:
                 res["ema_35_cross"] = True
+            if open < self.ema_21_value and high > self.ema_21_value:
+                res["ema_21_cross"] = True
         if signal == "SELL":
             if low < self.ema_200_value and open > self.ema_200_value:
                 res["ema_200_cross"] = True
             if low < self.ema_35_value and open > self.ema_35_value:
                 res["ema_35_cross"] = True
+            if low < self.ema_21_value and open > self.ema_21_value:
+                res["ema_21_cross"] = True
         return res
 
 def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
@@ -530,7 +547,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         signal,
                     )
 
-                    if not (ema_cross["ema_200_cross"] or ema_cross["ema_35_cross"]):
+                    if not (ema_cross["ema_200_cross"] or ema_cross["ema_35_cross"] or ema_cross["ema_21_cross"]):
                         if TIME_FRAME == "5m":
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
