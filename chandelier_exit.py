@@ -348,7 +348,7 @@ class EMA:
         def is_less(a, b):
             return (b - a) > EPSILON
 
-        if time_frame in ["5m"]:
+        if time_frame in ["5m", "15m"]:
             if signal == "BUY":
                 if is_less(open, self.ema_200_value) and is_greater(close, self.ema_200_value):
                     res["ema_200_cross"] = True
