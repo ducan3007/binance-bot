@@ -50,7 +50,7 @@ TIME_FRAME_MS = {
 class CEConfig(Enum):
     SIZE = 200
     LENGTH = 1
-    MULT = 2.2
+    MULT = 1.80
     USE_CLOSE = True
     SUB_SIZE = 2
 
@@ -348,7 +348,7 @@ class EMA:
         def is_less(a, b):
             return (b - a) > EPSILON
 
-        if time_frame in ["5m", "15m"]:
+        if time_frame in ["5m"]:
             if signal == "BUY":
                 if is_less(open, self.ema_200_value) and is_greater(close, self.ema_200_value):
                     res["ema_200_cross"] = True
@@ -655,7 +655,7 @@ def pre_send_signal(timestamp, time_frame):
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.90
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.94
 
     return False
 
