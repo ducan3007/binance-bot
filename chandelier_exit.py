@@ -634,7 +634,7 @@ def _cal_change(close, pre_close):
     per = (close - pre_close) / pre_close * 100
     # if -0.9 <= per < 0.9:
     #     return ""
-    per = per >= 0 and f"(+{per:.2f}%)" or f"({per:.2f}%)"
+    per = per >= 0 and f" +{per:.2f}%" or f" {per:.2f}%"
     return per
 
 
