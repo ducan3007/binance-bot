@@ -268,9 +268,9 @@ def construct_message(message: MessageType1):
         msg = message.symbol
 
     if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m15, TimeFrame.m30_normal]:
-        return f"<b>{sub_str}</b> {message.time} <b>{msg}</b>  <code>{message.change}</code>"
+        return f"<b>{sub_str}</b> {message.time}  <b>{msg}</b>  <code>{message.change}</code>"
 
-    return f"<b>{sub_str}</b> {message.time} <b>{msg}</b>"
+    return f"<b>{sub_str}</b> {message.time}  <b>{msg}</b>"
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
