@@ -391,7 +391,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     )
 
     if TIME_FRAME == "5m":
-        MULT = 2.2
+        MULT = 1.80
 
     if not MODE:
         MODE = "heikin_ashi"
