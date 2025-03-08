@@ -2,10 +2,10 @@ import pandas as pd
 import mplfinance as mpf
 import matplotlib.pyplot as plt
 from logger import logger
-
+import os
 # Telegram Bot Credentials
-TELEGRAM_BOT_TOKEN = "7565493265:AAFPnrLlqKtENz8O_slfXCwVwYHkOzTO9C8"
-CHAT_ID = "-1002194508247"
+TELEGRAM_BOT_TOKEN = os.getenv("TOKEN_15M_V2")
+CHAT_ID = os.getenv("CHAT_ID_15M_V2")
 
 # Load Data
 df_data = pd.read_csv("t_DOGE_ce_15m_1.8_HA.csv")
