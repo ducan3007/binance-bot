@@ -430,10 +430,11 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
         TOKEN = TOKEN_SHORTCUT[TOKEN]
 
     # Remove 150 data
-    for i in range(70):
+    aa = SIZE - 200
+    for i in range(aa):
         kline_helper._pop_top_data(data)
-    chandelier_exit.size = SIZE - 70
-    SIZE = SIZE - 70
+    chandelier_exit.size = SIZE - aa
+    SIZE = SIZE - aa
 
     # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
@@ -572,7 +573,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         "change": per,
                         "ema_cross": ema_cross,
                     }
-                    image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', pd.DataFrame(data))
+                    image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
                     body["image"] = image
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -620,7 +621,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "change": per,
                     "ema_cross": ema_cross,
                 }
-                image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', pd.DataFrame(data))
+                image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
                 body["image"] = image
 
                 if MODE == "normal":

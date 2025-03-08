@@ -2,26 +2,21 @@ import pandas as pd
 import mplfinance as mpf
 import matplotlib.pyplot as plt
 from logger import logger
-import os
-# Telegram Bot Credentials
-TELEGRAM_BOT_TOKEN = os.getenv("TOKEN_15M_V2")
-CHAT_ID = os.getenv("CHAT_ID_15M_V2")
-
-# Load Data
-df_data = pd.read_csv("t_DOGE_ce_15m_1.8_HA.csv")
+import zlma
 
 
-def generate_chart(title, df: pd.DataFrame):
+def generate_chart(title, PAIR, TIME_FRAME):
     try:
         image_path = f"heikin_ashi_scaled_{title}.png"
-        df["Time1"] = pd.to_datetime(df["Time1"])  # Convert time column
-
-        # Set index for mplfinance
-        df.set_index("Time1", inplace=True)
+        df = zlma.fetch_zlsma(PAIR, TIME_FRAME)
+        df.loc[:, "Time1"] = pd.to_datetime(df["Time1"])  # Should already be datetime64[ns]
+        
+        # Set index for mplfinance without triggering inference warning
+        df.set_index("Time1", inplace=True, drop=True)
 
         # Prepare data for plotting
         ha_candles = df[["Open", "High", "Low", "Close"]].copy()
-        ha_candles.columns = ["open", "high", "low", "close"]  # Rename for mplfinance
+        ha_candles = ha_candles.rename(columns={"Open": "open", "High": "high", "Low": "low", "Close": "close"})
 
         # ✅ Drop NaN rows to prevent plotting errors
         ha_candles.dropna(inplace=True)
@@ -49,7 +44,17 @@ def generate_chart(title, df: pd.DataFrame):
             edgecolor="#0c0e14",  # Ensure edges blend with the background
         )
 
-        # Plot Heikin-Ashi Candles with custom colors
+        # Prepare ZLSMA lines for plotting
+        zlsma_34 = df["ZLSMA_34"].dropna()  # White line
+        zlsma_50 = df["ZLSMA_50"].dropna()  # Yellow line
+
+        # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
+        apds = [
+            mpf.make_addplot(zlsma_34, color="white", width=0.8, ax=ax),
+            mpf.make_addplot(zlsma_50, color="yellow", width=1.4, ax=ax),
+        ]
+
+        # Plot Heikin-Ashi Candles with custom colors and additional ZLSMA lines
         mpf.plot(
             ha_candles,
             type="candle",
@@ -57,6 +62,7 @@ def generate_chart(title, df: pd.DataFrame):
             ax=ax,
             datetime_format="%H:%M",
             xrotation=0,
+            addplot=apds,  # Add ZLSMA lines
         )
 
         # Enable grid with gray lines for visibility
@@ -87,24 +93,15 @@ def generate_chart(title, df: pd.DataFrame):
         ax.tick_params(axis="x", colors="white")
         ax.tick_params(axis="y", colors="white")
 
-        # Save the chart with #0c0e14 background
-        plt.savefig(image_path, bbox_inches="tight", facecolor="#0c0e14")
+        # Save the chart with higher DPI for better quality
+        plt.savefig(image_path, bbox_inches="tight", facecolor="#0c0e14", dpi=300)
         plt.close(fig)  # Free memory
-
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-        with open(image_path, "rb") as photo:
-            import requests
-
-            files = {"photo": photo}
-            data = {"chat_id": CHAT_ID, "caption": f"📊 Chart {title}", "parse_mode": "HTML"}
-            requests.post(url, files=files, data=data)
 
         return image_path
     except Exception as e:
         logger.error(f"Error generating chart: {e}")
         return None
 
-
 # Run the function
 if __name__ == "__main__":
-    generate_chart("DOGE", df_data)
+    generate_chart("XRP",  "XRPUSDT", "5m")
