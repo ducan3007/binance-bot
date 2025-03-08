@@ -13,6 +13,7 @@ import argparse
 from logger import logger
 import random
 from typing import Literal
+import chart
 
 EPSILON = 1e-9
 
@@ -429,10 +430,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
         TOKEN = TOKEN_SHORTCUT[TOKEN]
 
     # Remove 150 data
-    for i in range(170):
+    for i in range(70):
         kline_helper._pop_top_data(data)
-    chandelier_exit.size = SIZE - 170
-    SIZE = SIZE - 170
+    chandelier_exit.size = SIZE - 70
+    SIZE = SIZE - 70
 
     # kline_helper.export_csv(data, filename=f"{TOKEN}_ce.csv")
 
@@ -571,6 +572,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         "change": per,
                         "ema_cross": ema_cross,
                     }
+                    image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', pd.DataFrame(data))
+                    body["image"] = image
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
                     if VERSION:
@@ -617,6 +620,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "change": per,
                     "ema_cross": ema_cross,
                 }
+                image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', pd.DataFrame(data))
+                body["image"] = image
+
                 if MODE == "normal":
                     body["time_frame"] = f"{TIME_FRAME}_normal"
                 if VERSION:

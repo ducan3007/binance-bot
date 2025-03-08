@@ -1,13 +1,6 @@
 import os
 from fastapi import FastAPI
-from telegram_bot import (
-    send_telegram_message,
-    del_message,
-    construct_message,
-    MessageType1,
-    MessageType2,
-    MessageType3
-)
+from telegram_bot import send_telegram_message, del_message, construct_message, MessageType1, MessageType2, MessageType3
 from logger import logger
 from binance_24hr_tickers import binance_24hr_tickers
 

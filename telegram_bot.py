@@ -38,6 +38,7 @@ class MessageType1(BaseModel):
     time: str = Field(..., example="14:45")
     price: float = Field(..., example=150000)
     change: str = Field(..., example="+2.5%")
+    image: str = Field(..., example="DOGE.png")
     ema_cross: dict[str, Any] = Field(..., example={"ema_200_cross": True, "ema_35_cross": False})
 
 
@@ -94,7 +95,7 @@ def get_message_id(symbol, time_frame):
     return None
 
 
-def handle_message_type1(url, payload, signal, token, chat_id, message: MessageType1):
+def handle_message_type1(url, payload, files, signal, token, chat_id, message: MessageType1):
     # Unpin the last pinned message first if necessary
     last_pinned_message_id = None
     is_pin = message.symbol in ["$BTC", "$ETH"] and message.time_frame in [
@@ -122,7 +123,11 @@ def handle_message_type1(url, payload, signal, token, chat_id, message: MessageT
 
     print("IS PIN", is_pin, message.symbol, message.time_frame)
     # Send the new message
-    response = requests.post(url, data=payload)
+    if files:
+        response = requests.post(url, data=payload, files=files)
+        delete_file(message.image)
+    else:
+        response = requests.post(url, data=payload)
     logger.info(signal)
     logger.info(f"Response type1: {response.json()}")
 
@@ -267,17 +272,43 @@ def construct_message(message: MessageType1):
     if not (ema_35 or ema_21) and not ema_200:
         msg = message.symbol
 
-    if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m15, TimeFrame.m30_normal]:
-        return f"<b>{sub_str}</b> {message.time}  <b>{msg}</b>  <code>{message.change}</code>"
+    if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m30_normal]:
+        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b>  <code>{message.change}</code>"
 
-    return f"<b>{sub_str}</b> {message.time}  <b>{msg}</b>"
+    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b>"
+
+
+def get_image_data(image_path):
+    # if file not found return none else return image data
+    try:
+        if not os.path.exists(image_path):
+            logger.info(f"Image not found: {image_path}")
+            return None
+        return open(image_path, "rb")
+    except Exception as e:
+        logger.error(f"Error reading image: {e}")
+        return None
+
+
+def delete_file(file_path):
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        logger.error(f"Error deleting file: {e}")
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": signal, "parse_mode": "HTML"}
     if isinstance(message, MessageType1):
-        ack = handle_message_type1(url, payload, signal, token, chat_id, message)
+        image_data = get_image_data(message.image)
+        if image_data:
+            payload = {"chat_id": chat_id, "caption": signal, "parse_mode": "HTML"}
+            files = {"photo": image_data}
+            url = f"https://api.telegram.org/bot{token}/sendPhoto"
+        else:
+            files = None
+        ack = handle_message_type1(url, payload, files, signal, token, chat_id, message)
         return {
             "status": "success" if ack else "failed",
             "message_id": ack,

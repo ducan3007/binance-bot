@@ -40,9 +40,9 @@ def check_time(time1):
 
 def run_trading_strategy(token, time_frame):
     if mode == "HA":
-        data = pd.read_csv(f"{token}_ce_{time_frame}_{ATR}_HA.csv")
+        data = pd.read_csv(f"t_{token}_ce_{time_frame}_{ATR}_HA.csv")
     else:
-        data = pd.read_csv(f"{token}_ce_{time_frame}_{ATR}.csv")
+        data = pd.read_csv(f"t_{token}_ce_{time_frame}_{ATR}.csv")
 
     initial_capital = 2300
     capital = initial_capital
@@ -89,6 +89,7 @@ def run_trading_strategy(token, time_frame):
 
         pre_previous_item = data.iloc[i - 2]
         pre_previous_direction = pre_previous_item["direction"]
+        pre_signal = previous_item["signal"]
 
         current_date = item["Time1"][:10]
         if current_date not in daily_results:
@@ -336,15 +337,13 @@ def run_trading_strategy(token, time_frame):
 
         # Open position
         if not position_open:
-            if pre_previous_direction == -1 and previous_direction == 1:
+            if pre_previous_direction == -1 and previous_direction == 1 and pre_signal != 0:
                 if not check_time(item["Time1"]):
                     continue
 
                 if not previous_item["real_price_change"] > 0:
                     continue
 
-                if not previous_item["signal"] == 1:
-                    continue
 
                 entry_price = item["real_price_open"]
                 position_open = True
@@ -352,15 +351,12 @@ def run_trading_strategy(token, time_frame):
                 long_opened += 1
                 highest_gain_open = 0  # Reset for new position
                 if enable_log:
-                    print(f"{token} Open long at {i} {item['Time1']}")
-            elif pre_previous_direction == 1 and previous_direction == -1:
+                    print(f"{token} Open long at {i} {item['Time1']} {pre_signal}")
+            elif pre_previous_direction == 1 and previous_direction == -1  and pre_signal != 0:
                 if not check_time(item["Time1"]):
                     continue
 
                 if not previous_item["real_price_change"] < 0:
-                    continue
-
-                if not (previous_item["signal"] == -1):
                     continue
 
                 entry_price = item["real_price_open"]
@@ -369,7 +365,7 @@ def run_trading_strategy(token, time_frame):
                 short_opened += 1
                 highest_gain_open = 0  # Reset for new position
                 if enable_log:
-                    print(f"{token} Open short at {i} {item['Time1']}")
+                    print(f"{token} Open short at {i} {item['Time1']} {pre_signal}")
 
     final_capital = capital
     percentage_gain = ((final_capital - initial_capital) / initial_capital) * 100
@@ -446,7 +442,7 @@ def run_trading_strategy(token, time_frame):
     }
 
 
-with open("tokens.test.txt", "r") as file:
+with open("tokens.15m.txt", "r") as file:
     tokens = [line.strip() for line in file]
 
 import tabulate
