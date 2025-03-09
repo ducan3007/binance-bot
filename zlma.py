@@ -193,7 +193,7 @@ def fetch_zlsma(PAIR, TIME_FRAME):
     data_pdf = pd.DataFrame(data)
 
     # remove first 120 rows
-    data_pdf = data_pdf.iloc[170:]
+    data_pdf = data_pdf.iloc[190:]
     # resset index
     data_pdf.reset_index(drop=True, inplace=True)
     # helper.export_csv(data_pdf, filename="zlma.csv")

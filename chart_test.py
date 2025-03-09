@@ -50,8 +50,8 @@ def generate_chart(title, PAIR, TIME_FRAME):
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(zlsma_34, color="white", width=0.8, ax=ax),
-            mpf.make_addplot(zlsma_50, color="yellow", width=1.4, ax=ax),
+            mpf.make_addplot(zlsma_34, color="white", width=1, ax=ax),
+            mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
 
         # Plot Heikin-Ashi Candles with custom colors and additional ZLSMA lines
@@ -94,7 +94,7 @@ def generate_chart(title, PAIR, TIME_FRAME):
         ax.tick_params(axis="y", colors="white")
 
         # Save the chart with higher DPI for better quality
-        plt.savefig(image_path, bbox_inches="tight", facecolor="#0c0e14", dpi=300)
+        plt.savefig(image_path, bbox_inches="tight", facecolor="#0c0e14", dpi=400)
         plt.close(fig)  # Free memory
 
         return image_path
