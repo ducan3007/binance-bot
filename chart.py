@@ -21,12 +21,12 @@ def generate_chart(title, PAIR, TIME_FRAME):
         # ✅ Drop NaN rows to prevent plotting errors
         ha_candles.dropna(inplace=True)
 
-        # Create figure and axis with fully #0c0e14 background
-        fig, ax = plt.subplots(figsize=(10, 7), facecolor="#0c0e14")
+        # Create figure and axis with fully #101015 background
+        fig, ax = plt.subplots(figsize=(10, 7), facecolor="#101015")
 
-        # Set entire canvas background to #0c0e14
-        fig.patch.set_facecolor("#0c0e14")
-        ax.set_facecolor("#0c0e14")
+        # Set entire canvas background to #101015
+        fig.patch.set_facecolor("#101015")
+        ax.set_facecolor("#101015")
 
         # Define custom Heikin-Ashi colors
         mc = mpf.make_marketcolors(
@@ -37,11 +37,11 @@ def generate_chart(title, PAIR, TIME_FRAME):
             volume="inherit",
         )
 
-        # Apply the custom style with a #0c0e14 background
+        # Apply the custom style with a #101015 background
         s = mpf.make_mpf_style(
             marketcolors=mc,
-            facecolor="#0c0e14",  # Set background color to #0c0e14
-            edgecolor="#0c0e14",  # Ensure edges blend with the background
+            facecolor="#101015",  # Set background color to #101015
+            edgecolor="#101015",  # Ensure edges blend with the background
         )
 
         # Prepare ZLSMA lines for plotting
@@ -94,7 +94,7 @@ def generate_chart(title, PAIR, TIME_FRAME):
         ax.tick_params(axis="y", colors="white")
 
         # Save the chart with higher DPI for better quality
-        plt.savefig(image_path, bbox_inches="tight", facecolor="#0c0e14", dpi=300)
+        plt.savefig(image_path, bbox_inches="tight", facecolor="#101015", dpi=300)
         plt.close(fig)  # Free memory
 
         return image_path
