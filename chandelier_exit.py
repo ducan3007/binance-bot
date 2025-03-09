@@ -573,7 +573,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         "change": per,
                         "ema_cross": ema_cross,
                     }
-                    image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                    image = chart.get_charts(f'{TOKEN}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
                     body["image"] = image
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -621,7 +621,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "change": per,
                     "ema_cross": ema_cross,
                 }
-                image = chart.generate_chart(f'{TOKEN}_{TIME_FRAME}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                image = chart.get_charts(f'{TOKEN}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
                 body["image"] = image
 
                 if MODE == "normal":
