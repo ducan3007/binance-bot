@@ -104,4 +104,4 @@ def generate_chart(title, PAIR, TIME_FRAME):
 
 # Run the function
 if __name__ == "__main__":
-    generate_chart("XRP",  "XRPUSDT", "5m")
+    generate_chart("ADA",  "ADAUSDT", "15m")
