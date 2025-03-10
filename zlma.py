@@ -206,13 +206,10 @@ def calculate_EMA(data: dict, key="EMA_34", length=34):
     data[key] = ema_values.tolist()
 
 
-def fetch_zlsma(PAIR, TIME_FRAME, view):
+def fetch_zlsma(PAIR, TIME_FRAME, view, mode):
     klines = fetch_binance_klines(PAIR, TIME_FRAME, 800)
 
     data = init_data()
-    mode = "heikin_ashi"
-    if TIME_FRAME in ["30m", "4h"]:
-        mode = "Kline"
     helper = KlineHelper(mode=mode, exchange="future")
     helper.populate(data, klines)
 

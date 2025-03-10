@@ -7,12 +7,12 @@ from PIL import Image
 import os
 
 
-def generate_chart(title, PAIR, TIME_FRAME, view):
+def generate_chart(title, PAIR, TIME_FRAME, view, mode):
     try:
         image_path = f"{title}.png"
-        df = zlma.fetch_zlsma(PAIR, TIME_FRAME, view)
+        df = zlma.fetch_zlsma(PAIR, TIME_FRAME, view, mode)
         df.loc[:, "Time1"] = pd.to_datetime(df["Time1"])  # Should already be datetime64[ns]
-        
+
         # Set index for mplfinance without triggering inference warning
         df.set_index("Time1", inplace=True, drop=True)
 
@@ -145,9 +145,9 @@ def concatenate_images(image1_path, image2_path, output_path):
 
 
 PARI_MAP = {
-    "5m": [{"tf": "5m", "view": 100}, {"tf": "15m", "view": 80}],
-    "15m": [{"tf": "15m", "view": 90}, {"tf": "30m", "view": 84}],
-    "1h": [{"tf": "1h", "view": 72}, {"tf": "4h", "view": 60}],
+    "5m": [{"tf": "5m", "view": 100, "mode": "heikin_ashi"}, {"tf": "15m", "view": 80, "mode": "kline"}],
+    "15m": [{"tf": "15m", "view": 90, "mode": "heikin_ashi"}, {"tf": "30m", "view": 84, "mode": "kline"}],
+    "1h": [{"tf": "1h", "view": 72, "mode": "heikin_ashi"}, {"tf": "4h", "view": 60, "mode": "kline"}],
 }
 
 
@@ -159,9 +159,11 @@ def get_charts(title, PAIR, TIME_FRAME):
         tftf2 = tf2["tf"]
         view1 = tf1["view"]
         view2 = tf2["view"]
+        mode1 = tf1["mode"]
+        mode2 = tf2["mode"]
 
-        image1 = generate_chart(f"{title}_{tftf1}", PAIR, tftf1, view1)
-        image2 = generate_chart(f"{title}_{tftf2}", PAIR, tftf2, view2)
+        image1 = generate_chart(f"{title}_{tftf1}", PAIR, tftf1, view1, mode1)
+        image2 = generate_chart(f"{title}_{tftf2}", PAIR, tftf2, view2, mode2)
 
         if image1 and image2:
             output_path = f"{title}_concatenated.png"
