@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import requests
 from datetime import datetime
+from lib.trend import ema_indicator
 
 
 # Helper class to append kline data
@@ -180,25 +181,54 @@ def calculate_zlsma(data, key="ZLSMA", length=32, offset=0):
     data[key] = zlsma.tolist()
 
 
-def fetch_zlsma(PAIR, TIME_FRAME):
-    klines = fetch_binance_klines(PAIR, TIME_FRAME, 320)
+def calculate_EMA(data: dict, key="EMA_34", length=34):
+    """
+    Calculate EMA using the imported ema_indicator function and add it to the data dictionary.
+
+    Args:
+        data (dict): The data dictionary containing price data.
+        key (str): The key to store the EMA values in the data dictionary (e.g., "EMA_34").
+        length (int): The period for the EMA calculation.
+    """
+    # Extract closing prices and convert to Pandas Series
+    close_prices = pd.Series(data["Close"], dtype=float)
+
+    # Calculate EMA using the ema_indicator function from lib.trend
+    ema_values = ema_indicator(close_prices, length)
+
+    # Ensure the output length matches the input data length, filling with NaN if necessary
+    if len(ema_values) < len(close_prices):
+        ema_values = np.pad(
+            ema_values, (len(close_prices) - len(ema_values), 0), mode="constant", constant_values=np.nan
+        )
+
+    # Add EMA to the data dictionary
+    data[key] = ema_values.tolist()
+
+
+def fetch_zlsma(PAIR, TIME_FRAME, view):
+    klines = fetch_binance_klines(PAIR, TIME_FRAME, 800)
 
     data = init_data()
-    helper = KlineHelper(mode="heikin_ashi", exchange="future")
+    mode = "heikin_ashi"
+    if TIME_FRAME in ["30m", "4h"]:
+        mode = "Kline"
+    helper = KlineHelper(mode=mode, exchange="future")
     helper.populate(data, klines)
-    # Calculate ZLSMA
+
+    # Calculate ZLSMA and EMA
     calculate_zlsma(data, "ZLSMA_34", 34, 0)
     calculate_zlsma(data, "ZLSMA_50", 50, 0)
+    calculate_EMA(data, "EMA_21", 21)
+    calculate_EMA(data, "EMA_34", 34)
+    calculate_EMA(data, "EMA_50", 200)
 
     data_pdf = pd.DataFrame(data)
 
-    # remove first 120 rows
-    if TIME_FRAME in ["1h", "30m", "4h"]:
-        data_pdf = data_pdf.iloc[235:]
-    else:
-        data_pdf = data_pdf.iloc[220:]
-    # resset index
+    # Remove first rows to account for indicator warm-up
+    data_pdf = data_pdf.iloc[-view:]
+
+    # Reset index
     data_pdf.reset_index(drop=True, inplace=True)
     # helper.export_csv(data_pdf, filename="zlma.csv")
-    
     return data_pdf

@@ -7,11 +7,10 @@ from PIL import Image
 import os
 
 
-
-def generate_chart(title, PAIR, TIME_FRAME):
+def generate_chart(title, PAIR, TIME_FRAME, view):
     try:
         image_path = f"{title}.png"
-        df = zlma.fetch_zlsma(PAIR, TIME_FRAME)
+        df = zlma.fetch_zlsma(PAIR, TIME_FRAME, view)
         df.loc[:, "Time1"] = pd.to_datetime(df["Time1"])  # Should already be datetime64[ns]
 
         # Set index for mplfinance without triggering inference warning
@@ -50,10 +49,16 @@ def generate_chart(title, PAIR, TIME_FRAME):
         # Prepare ZLSMA lines for plotting
         zlsma_34 = df["ZLSMA_34"].dropna()  # White line
         zlsma_50 = df["ZLSMA_50"].dropna()  # Yellow line
+        ema_21 = df["EMA_21"].dropna()  # Light blue line
+        ema_34 = df["EMA_34"].dropna()  # Blue line
+        ema_50 = df["EMA_50"].dropna()  # Purple line
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(zlsma_34, color="white", width=0.8, ax=ax),
+            mpf.make_addplot(ema_21, color="#f76570", width=0.8, ax=ax),
+            mpf.make_addplot(ema_34, color="#3179f5", width=1.0, ax=ax),
+            mpf.make_addplot(ema_50, color="#ab47bc", width=1.4, ax=ax),
+            mpf.make_addplot(zlsma_34, color="white", width=1.0, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1.4, ax=ax),
         ]
 
@@ -79,14 +84,14 @@ def generate_chart(title, PAIR, TIME_FRAME):
 
         # Change text color to white
         ax.text(
-            0.02,
-            0.98,
+            0.5,
+            1.0,
             f"{title}",
             transform=ax.transAxes,
             fontsize=15,
             fontweight="bold",
             verticalalignment="top",
-            horizontalalignment="left",
+            horizontalalignment="center",  # Center alignment
             color="white",  # Change text color to white
         )
 
@@ -97,7 +102,7 @@ def generate_chart(title, PAIR, TIME_FRAME):
         ax.tick_params(axis="y", colors="white")
 
         # Save the chart with higher DPI for better quality
-        plt.savefig(image_path, bbox_inches="tight", facecolor="#101015", dpi=300)
+        plt.savefig(image_path, bbox_inches="tight", facecolor="#101015", dpi=400)
         plt.close(fig)  # Free memory
 
         return image_path
@@ -140,17 +145,24 @@ def concatenate_images(image1_path, image2_path, output_path):
 
 
 PARI_MAP = {
-    "5m": ["5m", "15m"],
-    "15m": ["15m", "30m"],
-    "1h": ["1h", "4h"],
+    "5m": [{"tf": "5m", "view": 100}, {"tf": "15m", "view": 80}],
+    "15m": [{"tf": "15m", "view": 90}, {"tf": "30m", "view": 84}],
+    "1h": [{"tf": "1h", "view": 72}, {"tf": "4h", "view": 60}],
 }
 
 
 
 def get_charts(title, PAIR, TIME_FRAME):
     try:
-        image1 = generate_chart(f"{title}_{TIME_FRAME}", PAIR, TIME_FRAME)
-        image2 = generate_chart(f"{title}_{PARI_MAP[TIME_FRAME][1]}", PAIR, PARI_MAP[TIME_FRAME][1])
+        tf1 = PARI_MAP[TIME_FRAME][0]
+        tf2 = PARI_MAP[TIME_FRAME][1]
+        tftf1 = tf1["tf"]
+        tftf2 = tf2["tf"]
+        view1 = tf1["view"]
+        view2 = tf2["view"]
+
+        image1 = generate_chart(f"{title}_{tftf1}", PAIR, tftf1, view1)
+        image2 = generate_chart(f"{title}_{tftf2}", PAIR, tftf2, view2)
 
         if image1 and image2:
             output_path = f"{title}_concatenated.png"
