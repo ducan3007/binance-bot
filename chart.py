@@ -23,8 +23,12 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         # ✅ Drop NaN rows to prevent plotting errors
         ha_candles.dropna(inplace=True)
 
+        # Define width and height where H = 1.5 * W
+        width = 9.15  # You can adjust this base width as needed
+        height = 1.15 * width  # Height is 1.5 times the width
+
         # Create figure and axis with fully #101015 background
-        fig, ax = plt.subplots(figsize=(10, 7), facecolor="#101015")
+        fig, ax = plt.subplots(figsize=(width, height), facecolor="#101015")
 
         # Set entire canvas background to #101015
         fig.patch.set_facecolor("#101015")
@@ -55,7 +59,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(ema_21, color="#f76570", width=0.8, ax=ax),
+            mpf.make_addplot(ema_21, color="#5b9cf6", width=0.8, ax=ax),
             mpf.make_addplot(ema_34, color="#3179f5", width=1.0, ax=ax),
             mpf.make_addplot(ema_50, color="#ab47bc", width=1.4, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1.0, ax=ax),
