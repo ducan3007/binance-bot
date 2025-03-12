@@ -284,9 +284,10 @@ class EMA:
         self.df = pd.DataFrame(self.data)
         self.timestamp = self.data["Time"][self.SIZE - 1]
 
-    def update_klines(self):
+    def update_klines(self, klines):
         new_data = self.init_data()
-        klines = self.kline_helper.fetch_klines(self.binance_spot, self.PAIR, self.TIME_FRAME, 2)
+        if not klines:
+            klines = self.kline_helper.fetch_klines(self.binance_spot, self.PAIR, self.TIME_FRAME, 2)
         self.kline_helper.populate(new_data, klines)
         latest_new_timestamp = new_data["Time"][-1]
         last_existing_timestamp = self.data["Time"][-1] if self.data["Time"] else None
@@ -446,6 +447,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     while True:
         data_temp_dict = init_data()
         two_latest_klines = kline_helper.fetch_klines(binance_spot, PAIR, TIME_FRAME, 2)
+        ema.update_klines(two_latest_klines)
 
         kline_helper.populate(
             data_temp_dict,
@@ -460,7 +462,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
 
-        ema.update_klines()
 
         print(f"Time: {counter} {MULT} {kline_helper.weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
@@ -575,16 +576,16 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         "change": per,
                         "ema_cross": ema_cross,
                     }
-                    image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME)
-                    body["image"] = image
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
                     if VERSION:
                         body["time_frame"] = f"{body['time_frame']}_{VERSION}"
-                    # Randomly wait 1-5 seconds
-                    sleep_duration = random.uniform(1000, 5000) / 1000
+                    # Randomly wait 1-3 seconds
+                    sleep_duration = random.uniform(1000, 3000) / 1000
                     logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
                     time.sleep(sleep_duration)
+                    image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                    body["image"] = image
                     res = send_telegram_message(body)
                     if res:
                         if res.get("message_id"):
@@ -660,7 +661,7 @@ def pre_send_signal(timestamp, time_frame):
 
     if time_frame == "5m":
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.95
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
