@@ -45,6 +45,7 @@ TIME_FRAME_MS = {
     "15m": 15 * 60,
     "5m": 5 * 60,
     "30m": 30 * 60,
+    "1h": 60 * 60,
 }
 
 
@@ -382,6 +383,7 @@ class EMA:
                 res["ema_21_cross"] = True
         return res
 
+
 def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
@@ -573,7 +575,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         "change": per,
                         "ema_cross": ema_cross,
                     }
-                    image = chart.get_charts(f'{TOKEN}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                    image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME)
                     body["image"] = image
                     if MODE == "normal":
                         body["time_frame"] = f"{TIME_FRAME}_normal"
@@ -621,7 +623,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "change": per,
                     "ema_cross": ema_cross,
                 }
-                image = chart.get_charts(f'{TOKEN}', PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME)
                 body["image"] = image
 
                 if MODE == "normal":
