@@ -24,7 +24,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ha_candles.dropna(inplace=True)
 
         # Define width and height where H = 1.5 * W
-        width = 11.15  # You can adjust this base width as needed
+        width = 11  # You can adjust this base width as needed
         height = 0.657 * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #101015 background
@@ -170,7 +170,7 @@ def get_charts(title, PAIR, TIME_FRAME):
         image2 = generate_chart(f"{title}_{tftf2}", PAIR, tftf2, view2, mode2)
 
         if image1 and image2:
-            output_path = f"{title}_concatenated.png"
+            output_path = f"{title}_{tftf1}_{tftf2}concatenated.png"
             concatenate_images(image1, image2, output_path)
             os.remove(image1)
             os.remove(image2)
