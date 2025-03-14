@@ -61,9 +61,9 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         apds = [
             mpf.make_addplot(ema_21, color="#5b9cf6", width=0.8, ax=ax),
             mpf.make_addplot(ema_34, color="#3179f5", width=1.0, ax=ax),
-            mpf.make_addplot(ema_50, color="#ab47bc", width=1.4, ax=ax),
+            mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1.0, ax=ax),
-            mpf.make_addplot(zlsma_50, color="yellow", width=1.4, ax=ax),
+            mpf.make_addplot(zlsma_50, color="yellow", width=1.2, ax=ax),
         ]
 
         # Plot Heikin-Ashi Candles with custom colors and additional ZLSMA lines
@@ -78,7 +78,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         )
 
         # Enable grid with gray lines for visibility
-        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.2, color="gray")
+        # ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.2, color="gray")
 
         # Remove top and right borders (spines)
         ax.spines["top"].set_visible(False)
