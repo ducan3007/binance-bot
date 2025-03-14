@@ -149,8 +149,8 @@ def concatenate_images(image1_path, image2_path, output_path):
 
 
 PARI_MAP = {
-    "5m": [{"tf": "5m", "view": 100, "mode": "heikin_ashi"}, {"tf": "15m", "view": 100, "mode": "kline"}],
-    "15m": [{"tf": "15m", "view": 72, "mode": "heikin_ashi"}, {"tf": "30m", "view": 72, "mode": "kline"}],
+    "5m": [{"tf": "5m", "view": 100, "mode": "heikin_ashi"}, {"tf": "15m", "view": 65, "mode": "kline"}],
+    "15m": [{"tf": "15m", "view": 72, "mode": "heikin_ashi"}, {"tf": "30m", "view": 84, "mode": "kline"}],
     "1h": [{"tf": "1h", "view": 48, "mode": "heikin_ashi"}, {"tf": "4h", "view": 42, "mode": "kline"}],
 }
 
@@ -183,8 +183,8 @@ def get_charts(title, PAIR, TIME_FRAME):
 
 
 if __name__ == "__main__":
-    title = "SOL"
-    PAIR = "SOLUSDT"
-    TIME_FRAME = "15m"
+    title = "BNB"
+    PAIR = "BNBUSDT"
+    TIME_FRAME = "5m"
     get_charts(title, PAIR, TIME_FRAME)
     print("Done")
