@@ -27,12 +27,12 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         width = 11  # You can adjust this base width as needed
         height = 0.657 * width  # Height is 1.5 times the width
 
-        # Create figure and axis with fully #101015 background
-        fig, ax = plt.subplots(figsize=(width, height), facecolor="#101015")
+        # Create figure and axis with fully #181a20 background
+        fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
 
-        # Set entire canvas background to #101015
-        fig.patch.set_facecolor("#101015")
-        ax.set_facecolor("#101015")
+        # Set entire canvas background to #181a20
+        fig.patch.set_facecolor("#181a20")
+        ax.set_facecolor("#181a20")
 
         # Define custom Heikin-Ashi colors
         mc = mpf.make_marketcolors(
@@ -43,11 +43,11 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
             volume="inherit",
         )
 
-        # Apply the custom style with a #101015 background
+        # Apply the custom style with a #181a20 background
         s = mpf.make_mpf_style(
             marketcolors=mc,
-            facecolor="#101015",  # Set background color to #101015
-            edgecolor="#101015",  # Ensure edges blend with the background
+            facecolor="#181a20",  # Set background color to #181a20
+            edgecolor="#181a20",  # Ensure edges blend with the background
         )
 
         # Prepare ZLSMA lines for plotting
@@ -106,7 +106,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ax.tick_params(axis="y", colors="white")
 
         # Save the chart with higher DPI for better quality
-        plt.savefig(image_path, bbox_inches="tight", facecolor="#101015", dpi=400)
+        plt.savefig(image_path, bbox_inches="tight", facecolor="#181a20", dpi=400)
         plt.close(fig)  # Free memory
 
         return image_path
