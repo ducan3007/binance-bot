@@ -25,7 +25,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define width and height where H = 1.5 * W
         width = 11  # You can adjust this base width as needed
-        height = 0.657 * width  # Height is 1.5 times the width
+        height = 0.66 * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #181a20 background
         fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
@@ -183,8 +183,8 @@ def get_charts(title, PAIR, TIME_FRAME):
 
 
 if __name__ == "__main__":
-    title = "BNB"
-    PAIR = "BNBUSDT"
+    title = "BTC"
+    PAIR = "BTCUSDT"
     TIME_FRAME = "5m"
     get_charts(title, PAIR, TIME_FRAME)
     print("Done")
