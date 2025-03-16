@@ -59,7 +59,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(ema_21, color="#5b9cf6", width=0.8, ax=ax),
+            mpf.make_addplot(ema_21, color="#7e57c2", width=0.8, ax=ax),
             mpf.make_addplot(ema_34, color="#3179f5", width=1.0, ax=ax),
             mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1.0, ax=ax),
@@ -90,9 +90,9 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ax.text(
             0.5,
             1.0,
-            f"{title}",
+            f"{title.replace('_', ' ')}",
             transform=ax.transAxes,
-            fontsize=15,
+            fontsize=14,
             fontweight="bold",
             verticalalignment="top",
             horizontalalignment="center",  # Center alignment
@@ -183,8 +183,8 @@ def get_charts(title, PAIR, TIME_FRAME):
 
 
 if __name__ == "__main__":
-    title = "BTC"
-    PAIR = "BTCUSDT"
-    TIME_FRAME = "5m"
+    title = "SOL"
+    PAIR = "SOLUSDT"
+    TIME_FRAME = "15m"
     get_charts(title, PAIR, TIME_FRAME)
     print("Done")

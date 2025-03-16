@@ -25,7 +25,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define width and height where H = 1.5 * W
         width = 11  # You can adjust this base width as needed
-        height = 0.657 * width  # Height is 1.5 times the width
+        height = 0.66 * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #181a20 background
         fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
@@ -59,7 +59,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(ema_21, color="#5b9cf6", width=0.8, ax=ax),
+            mpf.make_addplot(ema_21, color="#7e57c2", width=0.8, ax=ax),
             mpf.make_addplot(ema_34, color="#3179f5", width=1.0, ax=ax),
             mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1.0, ax=ax),
@@ -90,9 +90,9 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ax.text(
             0.5,
             1.0,
-            f"{title}",
+            f"{title.replace('_', ' ')}",
             transform=ax.transAxes,
-            fontsize=15,
+            fontsize=14,
             fontweight="bold",
             verticalalignment="top",
             horizontalalignment="center",  # Center alignment
