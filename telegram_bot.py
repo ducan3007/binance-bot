@@ -258,7 +258,8 @@ def construct_message(message: MessageType1):
     ema_21 = message.ema_cross.get("ema_21_cross")
 
     # replace $ from symbol = #
-    message.symbol = message.symbol.replace("$", "#")
+    if message.symbol is not "$BTC":
+        message.symbol = message.symbol.replace("$", "#")
 
     if ema_35 or ema_21:
         msg = message.symbol + "*"
