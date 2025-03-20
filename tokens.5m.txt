@@ -5,4 +5,3 @@ SOL
 DOGE
 XRP
 ADA
-TRX
