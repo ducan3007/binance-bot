@@ -262,21 +262,21 @@ def construct_message(message: MessageType1):
         message.symbol = message.symbol.replace("$", "#")
 
     if ema_35 or ema_21:
-        msg = message.symbol + "*"
+        msg = message.symbol + " *"
 
     if ema_200 and not ema_35:
-        msg = message.symbol + "* *"
+        msg = message.symbol + " * *"
 
     if (ema_35 or ema_21) and ema_200:
-        msg = message.symbol + "* * *"
+        msg = message.symbol + " * * *"
 
     if not (ema_35 or ema_21) and not ema_200:
         msg = message.symbol
 
     if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m30_normal]:
-        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b>  <code>{message.change}</code>"
+        return f"{message.time} <b>{sub_str}</b>   <b>{msg}</b>  <code>{message.change}</code>"
 
-    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b>"
+    return f"{message.time} <b>{sub_str}</b>   <b>{msg}</b>"
 
 
 def get_image_data(image_path):
