@@ -24,8 +24,8 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ha_candles.dropna(inplace=True)
 
         # Define width and height where H = 1.5 * W
-        width = 11  # You can adjust this base width as needed
-        height = 0.66 * width  # Height is 1.5 times the width
+        width = 10.70  # You can adjust this base width as needed
+        height = 0.72 * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #181a20 background
         fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
@@ -149,7 +149,7 @@ def concatenate_images(image1_path, image2_path, output_path):
 
 
 PARI_MAP = {
-    "5m": [{"tf": "5m", "view": 96, "mode": "heikin_ashi"}, {"tf": "30m", "view": 40, "mode": "kline"}],
+    "5m": [{"tf": "15m", "view": 48, "mode": "kline"}, {"tf": "30m", "view": 36, "mode": "kline"}],
     "15m": [{"tf": "15m", "view": 72, "mode": "heikin_ashi"}, {"tf": "1h", "view": 48, "mode": "kline"}],
     "1h": [{"tf": "1h", "view": 48, "mode": "heikin_ashi"}, {"tf": "4h", "view": 30, "mode": "kline"}],
 }
