@@ -38,7 +38,6 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            justify-content: center;
             align-items: center;
             flex-direction: column; /* Ensure vertical stacking */
         }
@@ -55,12 +54,12 @@
             font-weight: bold;
             color: #ffffff;
             text-align: center;
-            margin-top: 50px; /* Space from top of modal */
+            margin-top: 15px; /* Space from top of modal */
             margin-bottom: 20px; /* Space between text and image */
             font-size: 18px; /* Slightly larger text for visibility */
         }
         #timer {
-            position: absolute;
+            position: fixed; /* Changed from absolute to fixed */
             top: 10px;
             right: 10px;
             font-size: 14px;
