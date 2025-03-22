@@ -14,6 +14,7 @@ from logger import logger
 import random
 from typing import Literal
 import chart
+import os
 
 EPSILON = 1e-9
 
@@ -384,6 +385,12 @@ class EMA:
                 res["ema_21_cross"] = True
         return res
 
+def remove_file(filename):
+    try:
+        os.remove(filename)
+        logger.info(f"Removed Invalid file: {filename}")
+    except OSError:
+        pass
 
 def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
@@ -425,7 +432,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
 
     counter = 1
     hasSentSignal = False
-    lastSentMessage = {"message_id": None, "Time": None, "Direction": None}
+    lastSentMessage = {"message_id": None, "Time": None, "Direction": None, "Image": None}
     _token = TOKEN.ljust(12)
     chandelier_exit_2 = ChandlierExit(size=SUB_SIZE, length=LENGTH, multiplier=MULT, use_close=USE_CLOSE)
 
@@ -533,6 +540,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
                 res = delete_message(__body)
                 if res:
+                    remove_file(lastSentMessage["Image"])
+                    lastSentMessage["Image"] = None
                     lastSentMessage["Counter"] = None
                     lastSentMessage["_Time"] = None
                     lastSentMessage["message_id"] = None
@@ -593,6 +602,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                             lastSentMessage["Counter"] = counter
                             lastSentMessage["_Time"] = _time
                             lastSentMessage["message_id"] = message_id
+                            lastSentMessage["Image"] = image
                             lastSentMessage["Direction"] = data["Direction"][SIZE - 1]
                             hasSentSignal = True
                             logger.info(f"Signal sent: {body} | message_id: {message_id}")
