@@ -142,3 +142,15 @@ async def show_images(request: Request, time_frame: str):
     return templates.TemplateResponse(
         "index.html", {"request": request, "time_frame": time_frame, "image_pairs": image_pairs}
     )
+
+
+@app.delete("/delete_image/{filename}")
+async def delete_image(filename: str):
+    """Endpoint to delete an image from the static folder."""
+    static_dir = "static"
+    file_path = os.path.join(static_dir, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"message": f"Image {filename} deleted successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="Image not found")
