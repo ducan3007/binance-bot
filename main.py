@@ -57,6 +57,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+
 @app.post("/sendMessage")
 def post_send_message(body: MessageType1):
     logger.info(f"Received message: {body}")
@@ -70,6 +71,7 @@ def post_send_message(body: MessageType1):
         message=body,
     )
 
+
 @app.post("/send24hrPriceChange")
 def post_send_24h_price_change(body: MessageType2):
     logger.info(f"Received request to send 24h price change: {body}")
@@ -77,11 +79,13 @@ def post_send_24h_price_change(body: MessageType2):
     token = BOT[body.time_frame]["token"]
     return send_telegram_message(body.message, token=token, chat_id=chat_id, message=body)
 
+
 @app.post("/trigger-send24hrPriceChange")
 def trigger_send_24h_price_change():
     logger.info(f"Triggered 24h price change")
     binance_24hr_tickers()
     logger.info(f"message: Triggered 24h price change V2")
+
 
 @app.post("/deleteMessage")
 def delete_message(body: MessageType3):
@@ -91,8 +95,9 @@ def delete_message(body: MessageType3):
     message_id = body.message_id
     return del_message(token=token, chat_id=chat_id, message_id=message_id)
 
+
 def get_images_by_timeframe(time_frame: str) -> List[dict]:
-    """Get and sort images from static folder based on time_frame prefix."""
+    """Get and sort images from static folder based on time_frame prefix, latest first."""
     static_dir = "static"
     images = []
 
@@ -121,19 +126,19 @@ def get_images_by_timeframe(time_frame: str) -> List[dict]:
                     # Skip files where create_time isn't a valid float
                     continue
 
-    # Sort by create_time_ns
-    images.sort(key=lambda x: x["create_time_ns"])
+    # Sort by create_time_ns in descending order (latest first)
+    images.sort(key=lambda x: x["create_time_ns"], reverse=True)
     return images
+
 
 @app.get("/chart/{time_frame}", response_class=HTMLResponse)
 async def show_images(request: Request, time_frame: str):
     """Endpoint to show images for a given time_frame."""
     images = get_images_by_timeframe(time_frame)
 
-    # Prepare images in pairs for 2-column grid
-    image_pairs = [images[i:i + 2] for i in range(0, len(images), 2)]
+    # Prepare images in triplets for 3-column grid
+    image_pairs = [images[i : i + 3] for i in range(0, len(images), 3)]
 
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request, "time_frame": time_frame, "image_pairs": image_pairs}
+        "index.html", {"request": request, "time_frame": time_frame, "image_pairs": image_pairs}
     )
