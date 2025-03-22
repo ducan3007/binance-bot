@@ -125,7 +125,6 @@ def handle_message_type1(url, payload, files, signal, token, chat_id, message: M
     # Send the new message
     if files:
         response = requests.post(url, data=payload, files=files)
-        delete_file(message.image)
     else:
         response = requests.post(url, data=payload)
     logger.info(signal)
@@ -290,12 +289,6 @@ def get_image_data(image_path):
         logger.error(f"Error reading image: {e}")
         return None
 
-
-def delete_file(file_path):
-    try:
-        os.remove(file_path)
-    except Exception as e:
-        logger.error(f"Error deleting file: {e}")
 
 
 def send_telegram_message(signal, token, chat_id, message=None):
