@@ -49,9 +49,20 @@
         .modal.active {
             display: flex; /* Show when active */
         }
+        /* Timer styles */
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px; /* Small text */
+            color: #ffffff; /* White text */
+            font-family: Arial, sans-serif;
+            z-index: 1100; /* Above modal */
+        }
     </style>
 </head>
 <body>
+    <div id="timer"></div> <!-- Timer element -->
     <div class="grid-container">
         {% for pair in image_pairs %}
             {% for image in pair %}
@@ -81,18 +92,15 @@
             const modalImg = document.getElementById('modalImage');
             modalImg.src = imageSrc;
             modal.classList.add('active');
-            // Push a state to the history to allow back navigation to close modal
             window.history.pushState({ modalOpen: true }, '');
         }
 
-        // Close modal when clicking outside the image
         document.getElementById('imageModal').addEventListener('click', function(event) {
             if (event.target === this) {
                 closeModal();
             }
         });
 
-        // Close modal when pressing Esc key
         document.addEventListener('keydown', function(event) {
             const modal = document.getElementById('imageModal');
             if (event.key === 'Escape' && modal.classList.contains('active')) {
@@ -100,7 +108,6 @@
             }
         });
 
-        // Close modal on browser back navigation (e.g., mouse back button)
         window.addEventListener('popstate', function(event) {
             const modal = document.getElementById('imageModal');
             if (modal.classList.contains('active')) {
@@ -108,7 +115,6 @@
             }
         });
 
-        // Helper function to close modal and clean up history
         function closeModal() {
             const modal = document.getElementById('imageModal');
             modal.classList.remove('active');
@@ -117,10 +123,21 @@
             }
         }
 
-        // Refresh the page every 60 seconds (1 minute)
+        // Refresh the page every 60 seconds
         setInterval(function() {
             window.location.reload();
-        }, 60000); // 60000 milliseconds = 1 minute
+        }, 60000);
+
+        // Update timer every second in 24-hour format
+        function updateTimer() {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0]; // Extracts "HH:MM:SS" in 24-hour format
+            document.getElementById('timer').textContent = timeString;
+            document.getElementById('timer').style.fontSize = '18px'; 
+            document.getElementById('timer').style.fontWeight = 'bold'; 
+        }
+        setInterval(updateTimer, 1000); // Update every second
+        updateTimer(); // Initial call to avoid 1-second delay
     </script>
 </body>
 </html>
