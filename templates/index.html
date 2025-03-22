@@ -40,10 +40,11 @@
             background-color: rgba(0, 0, 0, 0.9);
             justify-content: center;
             align-items: center;
+            flex-direction: column; /* Ensure vertical stacking */
         }
         .modal-content {
             max-width: 90%;
-            max-height: 90%;
+            max-height: 80%; /* Reduced to leave room for text */
             position: relative;
         }
         .modal.active {
@@ -54,7 +55,9 @@
             font-weight: bold;
             color: #ffffff;
             text-align: center;
-            margin-bottom: 10px;
+            margin-top: 50px; /* Space from top of modal */
+            margin-bottom: 20px; /* Space between text and image */
+            font-size: 18px; /* Slightly larger text for visibility */
         }
         #timer {
             position: absolute;
