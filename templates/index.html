@@ -49,6 +49,13 @@
         .modal.active {
             display: flex;
         }
+        .modal-info {
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 10px;
+        }
         #timer {
             position: absolute;
             top: 10px;
@@ -89,7 +96,7 @@
                         {% endif %}
                         {{ image.time1 }} {{ image.title }}
                     </div>
-                    <img src="/static/{{ image.filename }}" alt="{{ image.title }}" onclick="showModal('/static/{{ image.filename }}', '{{ image.filename }}')">
+                    <img src="/static/{{ image.filename }}" alt="{{ image.title }}" onclick="showModal('/static/{{ image.filename }}', '{{ image.filename }}', '{{ image.signal }}', '{{ image.time1 }}', '{{ image.title }}')">
                 </div>
             {% endfor %}
         {% endfor %}
@@ -97,17 +104,32 @@
 
     <div id="imageModal" class="modal">
         <button id="deleteButton" class="delete-button" onclick="deleteImage()">Delete</button>
+        <div id="modalInfo" class="modal-info"></div>
         <img id="modalImage" class="modal-content" src="" alt="Full screen image">
     </div>
 
     <script>
         let currentFilename = '';
 
-        function showModal(imageSrc, filename) {
+        function showModal(imageSrc, filename, signal, time1, title) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            
             modalImg.src = imageSrc;
             currentFilename = filename;
+            
+            // Set the signal emoji
+            let signalEmoji = '';
+            if (signal === 'BUY') {
+                signalEmoji = '🟢';
+            } else if (signal === 'SELL') {
+                signalEmoji = '🔴';
+            }
+            
+            // Display the info above the image
+            modalInfo.textContent = `${signalEmoji} ${time1} ${title}`;
+            
             modal.classList.add('active');
             window.history.pushState({ modalOpen: true }, '');
         }
@@ -162,7 +184,7 @@
 
         setInterval(function() {
             window.location.reload();
-        }, 60000);
+        }, 120000);
 
         function updateTimer() {
             const now = new Date();
