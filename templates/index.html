@@ -11,7 +11,7 @@
         }
         .grid-container {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr; /* 2 columns */
+            grid-template-columns: 1fr 1fr 1fr; /* 3 columns */
             margin: 0 auto;
         }
         .grid-item {
@@ -22,11 +22,32 @@
         .grid-item img {
             max-width: 100%;
             height: auto;
+            cursor: pointer; /* Indicate the image is clickable */
         }
         .image-info {
             font-family: Arial, sans-serif;
             text-align: left; /* Align text to the left */
             font-weight: bold;
+        }
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9); /* Black overlay with opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+        }
+        .modal.active {
+            display: flex; /* Show when active */
         }
     </style>
 </head>
@@ -43,10 +64,59 @@
                         {% endif %}
                         {{ image.time1 }} {{ image.title }}
                     </div>
-                    <img src="/static/{{ image.filename }}" alt="{{ image.title }}">
+                    <img src="/static/{{ image.filename }}" alt="{{ image.title }}" onclick="showModal('/static/{{ image.filename }}')">
                 </div>
             {% endfor %}
         {% endfor %}
     </div>
+
+    <!-- Modal -->
+    <div id="imageModal" class="modal">
+        <img id="modalImage" class="modal-content" src="" alt="Full screen image">
+    </div>
+
+    <script>
+        function showModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = imageSrc;
+            modal.classList.add('active');
+            // Push a state to the history to allow back navigation to close modal
+            window.history.pushState({ modalOpen: true }, '');
+        }
+
+        // Close modal when clicking outside the image
+        document.getElementById('imageModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal when pressing Esc key
+        document.addEventListener('keydown', function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Close modal on browser back navigation (e.g., mouse back button)
+        window.addEventListener('popstate', function(event) {
+            const modal = document.getElementById('imageModal');
+            if (modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Helper function to close modal and clean up history
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            // Only pop history if we added a state (modal was open)
+            if (history.state && history.state.modalOpen) {
+                window.history.back();
+            }
+        }
+    </script>
 </body>
 </html>
