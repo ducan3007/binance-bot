@@ -112,11 +112,15 @@
         function closeModal() {
             const modal = document.getElementById('imageModal');
             modal.classList.remove('active');
-            // Only pop history if we added a state (modal was open)
             if (history.state && history.state.modalOpen) {
                 window.history.back();
             }
         }
+
+        // Refresh the page every 60 seconds (1 minute)
+        setInterval(function() {
+            window.location.reload();
+        }, 60000); // 60000 milliseconds = 1 minute
     </script>
 </body>
 </html>
