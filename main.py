@@ -1,8 +1,12 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from telegram_bot import send_telegram_message, del_message, construct_message, MessageType1, MessageType2, MessageType3
 from logger import logger
 from binance_24hr_tickers import binance_24hr_tickers
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from typing import List
 
 CHAT_ID_1M = os.environ.get("CHAT_ID_1M")
 TOKEN_1M = os.environ.get("TOKEN_1M")
@@ -39,7 +43,7 @@ BOT = {
     "15m": {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
     "30m": {"chat_id": CHAT_ID_15M_V2, "token": TOKEN_15M_V2},
     "30m_normal": {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
-    "15m_normal":  {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
+    "15m_normal": {"chat_id": CHAT_ID_15M, "token": TOKEN_15M},
     "5m_normal": {"chat_id": CHAT_ID_1M, "token": TOKEN_1M},
     "1h": {"chat_id": CHAT_ID_2H, "token": TOKEN_2H},
     "1h_normal": {"chat_id": CHAT_ID_2H, "token": TOKEN_2H},
@@ -49,6 +53,9 @@ BOT = {
 
 app = FastAPI()
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 @app.post("/sendMessage")
 def post_send_message(body: MessageType1):
@@ -63,7 +70,6 @@ def post_send_message(body: MessageType1):
         message=body,
     )
 
-
 @app.post("/send24hrPriceChange")
 def post_send_24h_price_change(body: MessageType2):
     logger.info(f"Received request to send 24h price change: {body}")
@@ -71,13 +77,11 @@ def post_send_24h_price_change(body: MessageType2):
     token = BOT[body.time_frame]["token"]
     return send_telegram_message(body.message, token=token, chat_id=chat_id, message=body)
 
-
 @app.post("/trigger-send24hrPriceChange")
 def trigger_send_24h_price_change():
     logger.info(f"Triggered 24h price change")
     binance_24hr_tickers()
     logger.info(f"message: Triggered 24h price change V2")
-
 
 @app.post("/deleteMessage")
 def delete_message(body: MessageType3):
@@ -86,3 +90,50 @@ def delete_message(body: MessageType3):
     token = BOT[body.time_frame]["token"]
     message_id = body.message_id
     return del_message(token=token, chat_id=chat_id, message_id=message_id)
+
+def get_images_by_timeframe(time_frame: str) -> List[dict]:
+    """Get and sort images from static folder based on time_frame prefix."""
+    static_dir = "static"
+    images = []
+
+    if not os.path.exists(static_dir):
+        return images
+
+    # List all files in static directory
+    for filename in os.listdir(static_dir):
+        if filename.startswith(f"{time_frame}_") and filename.endswith(".png"):
+            # Split filename to extract components
+            parts = filename.split("_")
+            if len(parts) == 5:  # Ensure correct format
+                tf, title, signal, time1, create_time = parts
+                try:
+                    create_time_ns = float(create_time.replace(".png", ""))
+                    images.append(
+                        {
+                            "filename": filename,
+                            "title": title,
+                            "signal": signal,
+                            "time1": time1,
+                            "create_time_ns": create_time_ns,
+                        }
+                    )
+                except ValueError:
+                    # Skip files where create_time isn't a valid float
+                    continue
+
+    # Sort by create_time_ns
+    images.sort(key=lambda x: x["create_time_ns"])
+    return images
+
+@app.get("/chart/{time_frame}", response_class=HTMLResponse)
+async def show_images(request: Request, time_frame: str):
+    """Endpoint to show images for a given time_frame."""
+    images = get_images_by_timeframe(time_frame)
+
+    # Prepare images in pairs for 2-column grid
+    image_pairs = [images[i:i + 2] for i in range(0, len(images), 2)]
+
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "time_frame": time_frame, "image_pairs": image_pairs}
+    )

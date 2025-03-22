@@ -24,8 +24,8 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ha_candles.dropna(inplace=True)
 
         # Define width and height where H = 1.5 * W
-        width = 10.70  # You can adjust this base width as needed
-        height = 0.72 * width  # Height is 1.5 times the width
+        width = 12  # You can adjust this base width as needed
+        height = 0.7 * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #181a20 background
         fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
@@ -86,19 +86,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ax.spines["bottom"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
-        # Change text color to white
-        ax.text(
-            0.5,
-            1.0,
-            f"{title.replace('_', ' ')}",
-            transform=ax.transAxes,
-            fontsize=14,
-            fontweight="bold",
-            verticalalignment="top",
-            horizontalalignment="center",  # Center alignment
-            color="white",  # Change text color to white
-        )
-
+       
         # Set tick labels to white
         ax.xaxis.label.set_color("white")
         ax.yaxis.label.set_color("white")
@@ -115,7 +103,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         return None
 
 
-def concatenate_images(image1_path, image2_path, output_path):
+def concatenate_images(image1_path, image2_path, output_path, direction="right"):
     try:
         # Open the two images
         img1 = Image.open(image1_path)
@@ -125,20 +113,37 @@ def concatenate_images(image1_path, image2_path, output_path):
         width1, height1 = img1.size
         width2, height2 = img2.size
 
-        # Calculate the dimensions of the new image
-        # Width will be sum of both widths
-        # Height will be the maximum height of the two images
-        new_width = width1 + width2
-        new_height = max(height1, height2)
+        # Calculate new dimensions based on direction
+        if direction.lower() == "right":
+            new_width = width1 + width2
+            new_height = max(height1, height2)
+            new_image = Image.new("RGB", (new_width, new_height))
+            new_image.paste(img1, (0, 0))
+            new_image.paste(img2, (width1, 0))
 
-        # Create a new blank image with the calculated dimensions
-        new_image = Image.new("RGB", (new_width, new_height))
+        elif direction.lower() == "left":
+            new_width = width1 + width2
+            new_height = max(height1, height2)
+            new_image = Image.new("RGB", (new_width, new_height))
+            new_image.paste(img2, (0, 0))
+            new_image.paste(img1, (width2, 0))
 
-        # Paste first image at position (0,0)
-        new_image.paste(img1, (0, 0))
+        elif direction.lower() == "top":
+            new_width = max(width1, width2)
+            new_height = height1 + height2
+            new_image = Image.new("RGB", (new_width, new_height))
+            new_image.paste(img2, (0, 0))
+            new_image.paste(img1, (0, height2))
 
-        # Paste second image right next to first image
-        new_image.paste(img2, (width1, 0))
+        elif direction.lower() == "bottom":
+            new_width = max(width1, width2)
+            new_height = height1 + height2
+            new_image = Image.new("RGB", (new_width, new_height))
+            new_image.paste(img1, (0, 0))
+            new_image.paste(img2, (0, height1))
+
+        else:
+            raise ValueError("Direction must be 'top', 'left', 'bottom', or 'right'")
 
         # Save the concatenated image
         new_image.save(output_path)
@@ -149,13 +154,13 @@ def concatenate_images(image1_path, image2_path, output_path):
 
 
 PARI_MAP = {
-    "5m": [{"tf": "15m", "view": 48, "mode": "kline"}, {"tf": "30m", "view": 36, "mode": "kline"}],
+    "5m": [{"tf": "15m", "view": 48, "mode": "kline"}, {"tf": "30m", "view": 30, "mode": "kline"}],
     "15m": [{"tf": "30m", "view": 72, "mode": "heikin_ashi"}, {"tf": "1h", "view": 48, "mode": "kline"}],
     "1h": [{"tf": "1h", "view": 48, "mode": "heikin_ashi"}, {"tf": "4h", "view": 30, "mode": "kline"}],
 }
 
-
-def get_charts(title, PAIR, TIME_FRAME):
+from datetime import datetime
+def get_charts(title, PAIR, TIME_FRAME, signal, time1):
     try:
         tf1 = PARI_MAP[TIME_FRAME][0]
         tf2 = PARI_MAP[TIME_FRAME][1]
@@ -166,12 +171,17 @@ def get_charts(title, PAIR, TIME_FRAME):
         mode1 = tf1["mode"]
         mode2 = tf2["mode"]
 
-        image1 = generate_chart(f"{title}_{tftf1}", PAIR, tftf1, view1, mode1)
-        image2 = generate_chart(f"{title}_{tftf2}", PAIR, tftf2, view2, mode2)
+        image1 = generate_chart(f"{TIME_FRAME}_{title}_{tftf1}", PAIR, tftf1, view1, mode1)
+        image2 = generate_chart(f"{TIME_FRAME}_{title}_{tftf2}", PAIR, tftf2, view2, mode2)
 
         if image1 and image2:
-            output_path = f"{title}_concatenated.png"
-            concatenate_images(image1, image2, output_path)
+            # remove file with prefix
+            prefix = f"static/{TIME_FRAME}_{title}_"
+            os.system(f"rm {prefix}*")
+            # nanoseconds
+            create_time_ns = datetime.now().timestamp()
+            output_path = f"{prefix}{signal}_{time1}_{create_time_ns}.png"
+            concatenate_images(image1, image2, output_path, direction="bottom")
             os.remove(image1)
             os.remove(image2)
             return output_path
@@ -182,8 +192,8 @@ def get_charts(title, PAIR, TIME_FRAME):
 
 
 if __name__ == "__main__":
-    title = "SOL"
-    PAIR = "SOLUSDT"
-    TIME_FRAME = "15m"
-    get_charts(title, PAIR, TIME_FRAME)
+    title = "ADA"
+    PAIR = "ADAUSDT"
+    TIME_FRAME = "5m"
+    get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
     print("Done")
