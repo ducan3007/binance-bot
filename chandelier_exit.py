@@ -584,7 +584,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     sleep_duration = random.uniform(1000, 3000) / 1000
                     logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
                     time.sleep(sleep_duration)
-                    image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                    image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME, signal=signal, time1=_time)
                     body["image"] = image
                     res = send_telegram_message(body)
                     if res:
@@ -624,7 +624,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "change": per,
                     "ema_cross": ema_cross,
                 }
-                image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME)
+                image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME, signal=signal, time1=data["Time1"][SIZE - 1][11:])
                 body["image"] = image
 
                 if MODE == "normal":
