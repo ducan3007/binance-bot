@@ -59,11 +59,11 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(ema_21, color="#7e57c2", width=0.8, ax=ax),
-            mpf.make_addplot(ema_34, color="#2962ff", width=1.2, ax=ax),
-            mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax),
-            mpf.make_addplot(zlsma_34, color="white", width=1.2, ax=ax),
-            mpf.make_addplot(zlsma_50, color="yellow", width=1.2, ax=ax),
+            mpf.make_addplot(ema_21, color="#5b9cf6", width=1.2, ax=ax),
+            mpf.make_addplot(ema_34, color="#2962ff", width=1.5, ax=ax),
+            mpf.make_addplot(ema_50, color="#ab47bc", width=1.5, ax=ax),
+            mpf.make_addplot(zlsma_34, color="white", width=1.5, ax=ax),
+            mpf.make_addplot(zlsma_50, color="yellow", width=1.5, ax=ax),
         ]
 
         # Plot Heikin-Ashi Candles with custom colors and additional ZLSMA lines
