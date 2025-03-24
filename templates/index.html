@@ -45,7 +45,7 @@
         }
         .modal-content {
             max-width: 90%;
-            max-height: 88%; /* Reduced to leave room for text */
+            max-height: 100%; /* Reduced to leave room for text */
             position: relative;
         }
         .modal.active {
@@ -56,9 +56,11 @@
             font-weight: bold;
             color: #ffffff;
             text-align: center;
-            margin-top: 15px; /* Space from top of modal */
+            margin-top: 10px; /* Space from top of modal */
             margin-bottom: 20px; /* Space between text and image */
-            font-size: 18px; /* Slightly larger text for visibility */
+            font-size: 20   px; /* Slightly larger text for visibility */
+            position: absolute;
+            z-index: 11;
         }
         #timer {
             position: fixed; /* Changed from absolute to fixed */
