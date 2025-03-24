@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Images for {{ time_frame }}</title>
     <style>
         body {
@@ -111,6 +113,11 @@
     </div>
 
     <script>
+        // Prevent scroll restoration on history navigation
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+
         let currentFilename = '';
 
         function showModal(imageSrc, filename, signal, time1, title) {
