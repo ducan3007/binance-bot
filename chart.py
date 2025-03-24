@@ -38,8 +38,8 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         mc = mpf.make_marketcolors(
             up="#11aa91",  # Green for bullish candles
             down="#fc3852",  # Red for bearish candles
-            edge="inherit",
-            wick="inherit",
+            edge="inherit",  # Edges inherit candle color
+            wick=(0.7216, 0.7216, 0.7216, 1.0),  # White with 50% opacity (RGBA normalized)
             volume="inherit",
         )
 
@@ -86,7 +86,6 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
         ax.spines["bottom"].set_visible(False)
         ax.spines["left"].set_visible(False)
 
-       
         # Set tick labels to white
         ax.xaxis.label.set_color("white")
         ax.yaxis.label.set_color("white")
@@ -160,6 +159,8 @@ PARI_MAP = {
 }
 
 from datetime import datetime
+
+
 def get_charts(title, PAIR, TIME_FRAME, signal, time1):
     try:
         tf1 = PARI_MAP[TIME_FRAME][0]
