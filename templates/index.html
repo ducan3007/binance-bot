@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Images for {{ time_frame }}</title>
     <style>
+        /* Unchanged CSS */
         body {
             background-color: #181a20;
             color: #e9e9e9;
@@ -41,11 +42,11 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.53);
             align-items: center;
-            flex-direction: column; /* Ensure vertical stacking */
+            flex-direction: column;
         }
         .modal-content {
             max-width: 90%;
-            max-height: 100%; /* Reduced to leave room for text */
+            max-height: 100%;
             position: relative;
         }
         .modal.active {
@@ -56,14 +57,14 @@
             font-weight: bold;
             color: #ffffff;
             text-align: center;
-            margin-top: 10px; /* Space from top of modal */
-            margin-bottom: 20px; /* Space between text and image */
-            font-size: 20   px; /* Slightly larger text for visibility */
+            margin-top: 10px;
+            margin-bottom: 20px;
+            font-size: 20px;
             position: absolute;
             z-index: 11;
         }
         #timer {
-            position: fixed; /* Changed from absolute to fixed */
+            position: fixed;
             top: 10px;
             right: 10px;
             font-size: 14px;
@@ -90,6 +91,7 @@
 </head>
 <body>
     <div id="timer"></div>
+    {% set ns = namespace(index=0) %}
     <div class="grid-container">
         {% for pair in image_pairs %}
             {% for image in pair %}
@@ -102,8 +104,15 @@
                         {% endif %}
                         {{ image.time1 }} {{ image.title }}
                     </div>
-                    <img src="/static/{{ image.filename }}" alt="{{ image.title }}" onclick="showModal('/static/{{ image.filename }}', '{{ image.filename }}', '{{ image.signal }}', '{{ image.time1 }}', '{{ image.title }}')">
+                    <img src="/static/{{ image.filename }}" alt="{{ image.title }}"
+                         data-index="{{ ns.index }}"
+                         data-filename="{{ image.filename }}"
+                         data-signal="{{ image.signal }}"
+                         data-time1="{{ image.time1 }}"
+                         data-title="{{ image.title }}"
+                         onclick="showModal(this)">
                 </div>
+                {% set ns.index = ns.index + 1 %}
             {% endfor %}
         {% endfor %}
     </div>
@@ -115,22 +124,29 @@
     </div>
 
     <script>
-        // Prevent scroll restoration on history navigation
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
         }
 
+        let currentIndex = 0;
         let currentFilename = '';
 
-        function showModal(imageSrc, filename, signal, time1, title) {
+        function showModal(img) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImage');
             const modalInfo = document.getElementById('modalInfo');
             
-            modalImg.src = imageSrc;
-            currentFilename = filename;
+            const src = img.src;
+            const filename = img.dataset.filename;
+            const signal = img.dataset.signal;
+            const time1 = img.dataset.time1;
+            const title = img.dataset.title;
+            const index = parseInt(img.dataset.index);
             
-            // Set the signal emoji
+            modalImg.src = src;
+            currentFilename = filename;
+            currentIndex = index;
+            
             let signalEmoji = '';
             if (signal === 'BUY') {
                 signalEmoji = '🟢';
@@ -138,11 +154,12 @@
                 signalEmoji = '🔴';
             }
             
-            // Display the info above the image
             modalInfo.textContent = `${signalEmoji} ${time1} ${title}`;
             
-            modal.classList.add('active');
-            window.history.pushState({ modalOpen: true }, '');
+            if (!modal.classList.contains('active')) {
+                modal.classList.add('active');
+                window.history.pushState({ modalOpen: true }, '');
+            }
         }
 
         document.getElementById('imageModal').addEventListener('click', function(event) {
@@ -153,8 +170,21 @@
 
         document.addEventListener('keydown', function(event) {
             const modal = document.getElementById('imageModal');
-            if (event.key === 'Escape' && modal.classList.contains('active')) {
-                closeModal();
+            if (modal.classList.contains('active')) {
+                if (event.key === 'Escape') {
+                    closeModal();
+                } else if (event.key === 'ArrowLeft') {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        showImageAtIndex(currentIndex);
+                    }
+                } else if (event.key === 'ArrowRight') {
+                    const totalImages = document.querySelectorAll('.grid-item').length;
+                    if (currentIndex < totalImages - 1) {
+                        currentIndex++;
+                        showImageAtIndex(currentIndex);
+                    }
+                }
             }
         });
 
@@ -171,6 +201,12 @@
             if (history.state && history.state.modalOpen) {
                 window.history.back();
             }
+        }
+
+        function showImageAtIndex(index) {
+            const gridItems = document.querySelectorAll('.grid-item');
+            const img = gridItems[index].querySelector('img');
+            showModal(img);
         }
 
         async function deleteImage() {
