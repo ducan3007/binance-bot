@@ -42,7 +42,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             up="#11aa91",  # Green for bullish candles
             down="#fc3852",  # Red for bearish candles
             edge="inherit",  # Edges inherit candle color
-            wick=wick,  
+            wick=wick,
             volume="inherit",
         )
 
@@ -157,8 +157,8 @@ def concatenate_images(image1_path, image2_path, output_path, direction="right")
 
 PARI_MAP = {
     "5m": [
-        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.75},
-        {"tf": "5m", "view": 36, "mode": "heikin_ashi", "scale": 0.6},
+        {"tf": "15m", "view": 48, "mode": "kline", "scale": 0.7},
+        {"tf": "1h", "view": 36, "mode": "kline", "scale": 0.7},
     ],
     "15m": [
         {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.7},
@@ -209,6 +209,6 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
 if __name__ == "__main__":
     title = "XRP"
     PAIR = "XRPUSDT"
-    TIME_FRAME = "15m"
+    TIME_FRAME = "5m"
     get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
     print("Done")
