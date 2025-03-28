@@ -215,7 +215,7 @@ def fetch_zlsma(PAIR, TIME_FRAME, view, mode):
 
     # Calculate ZLSMA and EMA
     calculate_zlsma(data, "ZLSMA_34", 21, 0)
-    calculate_zlsma(data, "ZLSMA_50", 50, 0)
+    calculate_zlsma(data, "ZLSMA_50", 32, 0)
     calculate_EMA(data, "EMA_21", 21)
     calculate_EMA(data, "EMA_34", 34)
     calculate_EMA(data, "EMA_50", 200)

@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 
-def generate_chart(title, PAIR, TIME_FRAME, view, mode):
+def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
     try:
         image_path = f"{title}.png"
         df = zlma.fetch_zlsma(PAIR, TIME_FRAME, view, mode)
@@ -25,7 +25,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
 
         # Define width and height where H = 1.5 * W
         width = 12  # You can adjust this base width as needed
-        height = 0.7 * width  # Height is 1.5 times the width
+        height = scale * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #181a20 background
         fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
@@ -39,7 +39,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode):
             up="#11aa91",  # Green for bullish candles
             down="#fc3852",  # Red for bearish candles
             edge="inherit",  # Edges inherit candle color
-            wick=(0.7216, 0.7216, 0.7216, 1.0),  # White with 50% opacity (RGBA normalized)
+            wick=(0.7216, 0.7216, 0.7216, 0.80),  # White with 50% opacity (RGBA normalized)
             volume="inherit",
         )
 
@@ -153,9 +153,18 @@ def concatenate_images(image1_path, image2_path, output_path, direction="right")
 
 
 PARI_MAP = {
-    "5m": [{"tf": "15m", "view": 48, "mode": "kline"}, {"tf": "30m", "view": 30, "mode": "kline"}],
-    "15m": [{"tf": "30m", "view": 72, "mode": "heikin_ashi"}, {"tf": "1h", "view": 48, "mode": "kline"}],
-    "1h": [{"tf": "1h", "view": 48, "mode": "heikin_ashi"}, {"tf": "4h", "view": 30, "mode": "kline"}],
+    "5m": [
+        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.75},
+        {"tf": "5m", "view": 36, "mode": "heikin_ashi", "scale": 0.6},
+    ],
+    "15m": [
+        {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.7},
+        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.7},
+    ],
+    "1h": [
+        {"tf": "1h", "view": 48, "mode": "heikin_ashi", "scale": 0.7},
+        {"tf": "4h", "view": 30, "mode": "kline", "scale": 0.7},
+    ],
 }
 
 from datetime import datetime
@@ -171,9 +180,11 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
         view2 = tf2["view"]
         mode1 = tf1["mode"]
         mode2 = tf2["mode"]
+        scale1 = tf1["scale"]
+        scale2 = tf2["scale"]
 
-        image1 = generate_chart(f"{TIME_FRAME}_{title}_{tftf1}", PAIR, tftf1, view1, mode1)
-        image2 = generate_chart(f"{TIME_FRAME}_{title}_{tftf2}", PAIR, tftf2, view2, mode2)
+        image1 = generate_chart(f"{TIME_FRAME}_{title}_{tftf1}", PAIR, tftf1, view1, mode1, scale1)
+        image2 = generate_chart(f"{TIME_FRAME}_{title}_{tftf2}", PAIR, tftf2, view2, mode2, scale2)
 
         if image1 and image2:
             # remove file with prefix
