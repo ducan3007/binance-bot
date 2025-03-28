@@ -35,11 +35,14 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         ax.set_facecolor("#181a20")
 
         # Define custom Heikin-Ashi colors
+        wick = (0.7216, 0.7216, 0.7216, 0.80)
+        if TIME_FRAME == "5m":
+            wick = "inherit"
         mc = mpf.make_marketcolors(
             up="#11aa91",  # Green for bullish candles
             down="#fc3852",  # Red for bearish candles
             edge="inherit",  # Edges inherit candle color
-            wick=(0.7216, 0.7216, 0.7216, 0.80),  # White with 50% opacity (RGBA normalized)
+            wick=wick,  
             volume="inherit",
         )
 
@@ -206,6 +209,6 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
 if __name__ == "__main__":
     title = "XRP"
     PAIR = "XRPUSDT"
-    TIME_FRAME = "5m"
+    TIME_FRAME = "15m"
     get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
     print("Done")
