@@ -158,7 +158,7 @@ def concatenate_images(image1_path, image2_path, output_path, direction="right")
 PARI_MAP = {
     "5m": [
         {"tf": "15m", "view": 48, "mode": "kline", "scale": 0.7},
-        {"tf": "1h", "view": 36, "mode": "kline", "scale": 0.7},
+        {"tf": "30m", "view": 48, "mode": "kline", "scale": 0.7},
     ],
     "15m": [
         {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.7},
