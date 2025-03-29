@@ -7,4 +7,5 @@ __pycache__/
 */.csv
 pinned_messages.txt
 *.log
+*.png
 deploy.sh

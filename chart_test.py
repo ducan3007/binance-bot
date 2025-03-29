@@ -56,14 +56,16 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         # Prepare ZLSMA lines for plotting
         zlsma_34 = df["ZLSMA_34"].dropna()  # White line
         zlsma_50 = df["ZLSMA_50"].dropna()  # Yellow line
+        ema_15 = df["EMA_15"].dropna()  # Light blue line
         ema_21 = df["EMA_21"].dropna()  # Light blue line
         ema_34 = df["EMA_34"].dropna()  # Blue line
         ema_50 = df["EMA_50"].dropna()  # Purple line
 
         # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
-            mpf.make_addplot(ema_21, color="#5b9cf6", width=1.2, ax=ax),
-            mpf.make_addplot(ema_34, color="#2962ff", width=1.5, ax=ax),
+            mpf.make_addplot(ema_15, color="#2962ff", width=0.7, ax=ax),
+            mpf.make_addplot(ema_21, color="#2962ff", width=0.7, ax=ax),
+            mpf.make_addplot(ema_34, color="#3179f5", width=1.5, ax=ax),
             mpf.make_addplot(ema_50, color="#ab47bc", width=1.5, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1.5, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1.5, ax=ax),
@@ -207,8 +209,8 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
 
 
 if __name__ == "__main__":
-    title = "XRP"
-    PAIR = "XRPUSDT"
+    title = "BNB"
+    PAIR = "BNBUSDT"
     TIME_FRAME = "5m"
     get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
     print("Done")
