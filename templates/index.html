@@ -162,6 +162,7 @@
           modal.classList.add('active');
           window.history.pushState({ modalOpen: true }, '');
           document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden'; // Added
         }
 
         modalImg.style.width = 'auto';
@@ -270,6 +271,7 @@
         const modal = document.getElementById('imageModal');
         modal.classList.remove('active');
         document.body.style.overflow = 'auto';
+        document.documentElement.style.overflow = 'auto'; // Added
         if (history.state && history.state.modalOpen) {
           window.history.back();
         }
