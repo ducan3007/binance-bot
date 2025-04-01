@@ -593,10 +593,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
 
-                    if TIME_FRAME == "5m":
-                        if not is_cut_ema(signal, PAIR, "1m"):
-                            logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
-                            continue
+                    # if TIME_FRAME == "5m":
+                        # if not is_cut_ema(signal, PAIR, "1m"):
+                            # logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                            # continue
 
                     body = {
                         "signal": signal,

@@ -42,7 +42,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             up="#11aa91",  # Green for bullish candles
             down="#fc3852",  # Red for bearish candles
             edge="inherit",  # Edges inherit candle color
-            wick=wick,  
+            wick=wick,
             volume="inherit",
         )
 
@@ -66,12 +66,12 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             mpf.make_addplot(ema_15, color="#2962ff", width=0.7, ax=ax),
             mpf.make_addplot(ema_21, color="#2962ff", width=0.7, ax=ax),
             mpf.make_addplot(ema_34, color="#3179f5", width=1.5, ax=ax),
-            mpf.make_addplot(ema_50, color="#ab47bc", width=1.5, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1.5, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1.5, ax=ax),
         ]
-
-        # Plot Heikin-Ashi Candles with custom colors and additional ZLSMA lines
+        if TIME_FRAME != "1h":
+            apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.5, ax=ax))
+            
         mpf.plot(
             ha_candles,
             type="candle",
@@ -159,8 +159,8 @@ def concatenate_images(image1_path, image2_path, output_path, direction="right")
 
 PARI_MAP = {
     "5m": [
-        {"tf": "15m", "view": 48, "mode": "kline", "scale": 0.7},
-        {"tf": "30m", "view": 48, "mode": "kline", "scale": 0.7},
+        {"tf": "5m", "view": 48, "mode": "heikin_ashi", "scale": 0.7},
+        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.7},
     ],
     "15m": [
         {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.7},
