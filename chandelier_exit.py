@@ -396,15 +396,15 @@ def remove_file(filename):
 def is_cut_ema(signal, PAIR, TIME_FRAME):
     ema = EMA(PAIR, TIME_FRAME, "kline", "future", 1000)
     ema.ema_fetch_klines()
-    ema_200 = ema.calculate_ema_200()
+    ema.calculate_ema_200()
     high_of_last_candle = ema.data["High"][-1]
     low_of_last_candle = ema.data["Low"][-1]
 
     if signal == "BUY":
-        if high_of_last_candle > ema_200:
+        if high_of_last_candle > ema.ema_200_value:
             return True
     elif signal == "SELL":
-        if low_of_last_candle < ema_200:
+        if low_of_last_candle < ema.ema_200_value:
             return True
     return False
 
