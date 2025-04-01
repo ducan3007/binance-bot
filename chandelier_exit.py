@@ -392,6 +392,23 @@ def remove_file(filename):
     except OSError:
         pass
 
+
+def is_cut_ema(signal, PAIR, TIME_FRAME):
+    ema = EMA(PAIR, TIME_FRAME, "kline", "future", 1000)
+    ema.ema_fetch_klines()
+    ema_200 = ema.calculate_ema_200()
+    high_of_last_candle = ema.data["High"][-1]
+    low_of_last_candle = ema.data["Low"][-1]
+
+    if signal == "BUY":
+        if high_of_last_candle > ema_200:
+            return True
+    elif signal == "SELL":
+        if low_of_last_candle < ema_200:
+            return True
+    return False
+
+
 def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
     (SIZE, LENGTH, MULT, USE_CLOSE, SUB_SIZE) = (
         CEConfig.SIZE.value,
@@ -576,6 +593,11 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
 
+                    if TIME_FRAME == "5m":
+                        if not is_cut_ema(signal, PAIR, "1m"):
+                            logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                            continue
+
                     body = {
                         "signal": signal,
                         "symbol": f"${TOKEN}",
@@ -634,7 +656,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     "change": per,
                     "ema_cross": ema_cross,
                 }
-                image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME, signal=signal, time1=data["Time1"][SIZE - 1][11:])
+                image = chart.get_charts(
+                    f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME, signal=signal, time1=data["Time1"][SIZE - 1][11:]
+                )
                 body["image"] = image
 
                 if MODE == "normal":
@@ -671,7 +695,7 @@ def pre_send_signal(timestamp, time_frame):
 
     if time_frame == "5m":
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.94
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
