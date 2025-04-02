@@ -394,17 +394,18 @@ def remove_file(filename):
 
 
 def is_cut_ema(signal, PAIR, TIME_FRAME):
-    ema = EMA(PAIR, TIME_FRAME, "kline", "future", 1000)
+    ema = EMA(PAIR, TIME_FRAME, "heikin_ashi", "future", 1000)
     ema.ema_fetch_klines()
     ema.calculate_ema_200()
     high_of_last_candle = ema.data["High"][-1]
     low_of_last_candle = ema.data["Low"][-1]
+    close_of_last_candle = ema.data["Close"][-1]
 
     if signal == "BUY":
-        if high_of_last_candle > ema.ema_200_value:
+        if close_of_last_candle > ema.ema_200_value:
             return True
     elif signal == "SELL":
-        if low_of_last_candle < ema.ema_200_value:
+        if close_of_last_candle < ema.ema_200_value:
             return True
     return False
 
@@ -593,10 +594,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
 
-                    # if TIME_FRAME == "5m":
-                        # if not is_cut_ema(signal, PAIR, "1m"):
-                            # logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
-                            # continue
+                    if TIME_FRAME == "5m":
+                        if not is_cut_ema(signal, PAIR, "1m"):
+                            logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                            continue
 
                     body = {
                         "signal": signal,
