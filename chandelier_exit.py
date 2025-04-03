@@ -594,10 +594,10 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                             logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
                             continue
 
-                    if TIME_FRAME == "5m":
-                        if not is_cut_ema(signal, PAIR, "1m"):
-                            logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
-                            continue
+                    # if TIME_FRAME == "5m":
+                    #     if not is_cut_ema(signal, PAIR, "1m"):
+                    #         logger.info(f"Skip signal: {TOKEN} {TIME_FRAME} {timestamp}")
+                    #         continue
 
                     body = {
                         "signal": signal,
@@ -696,7 +696,7 @@ def pre_send_signal(timestamp, time_frame):
 
     if time_frame == "5m":
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.94
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
