@@ -36,7 +36,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
 
         # Define custom Heikin-Ashi colors
         wick = (0.7216, 0.7216, 0.7216, 0.85)
-        if TIME_FRAME == "5m":
+        if TIME_FRAME == "15m":
             wick = "inherit"
         mc = mpf.make_marketcolors(
             up="#11aa91",  # Green for bullish candles
