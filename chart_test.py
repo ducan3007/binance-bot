@@ -24,7 +24,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         ha_candles.dropna(inplace=True)
 
         # Define width and height where H = 1.5 * W
-        width = 12  # You can adjust this base width as needed
+        width = 13  # You can adjust this base width as needed
         height = scale * width  # Height is 1.5 times the width
 
         # Create figure and axis with fully #181a20 background
@@ -159,16 +159,16 @@ def concatenate_images(image1_path, image2_path, output_path, direction="right")
 
 PARI_MAP = {
     "5m": [
-        {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.7},
-        {"tf": "30m", "view": 72, "mode": "kline", "scale": 0.7},
+        {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
+        {"tf": "30m", "view": 72, "mode": "kline", "scale": 0.633},
     ],
     "15m": [
-        {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.7},
-        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.7},
+        {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.633},
+        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.633},
     ],
     "1h": [
-        {"tf": "1h", "view": 48, "mode": "heikin_ashi", "scale": 0.7},
-        {"tf": "4h", "view": 30, "mode": "kline", "scale": 0.7},
+        {"tf": "1h", "view": 48, "mode": "heikin_ashi", "scale": 0.633},
+        {"tf": "4h", "view": 30, "mode": "kline", "scale": 0.633},
     ],
 }
 
@@ -209,8 +209,8 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
 
 
 if __name__ == "__main__":
-    title = "XRP"
-    PAIR = "XRPUSDT"
-    TIME_FRAME = "5m"
+    title = "ADA"
+    PAIR = "ADAUSDT"
+    TIME_FRAME = "15m"
     get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
     print("Done")
