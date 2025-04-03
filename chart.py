@@ -35,7 +35,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         ax.set_facecolor("#181a20")
 
         # Define custom Heikin-Ashi colors
-        wick = (0.7216, 0.7216, 0.7216, 0.80)
+        wick = (0.7216, 0.7216, 0.7216, 0.85)
         if TIME_FRAME == "5m":
             wick = "inherit"
         mc = mpf.make_marketcolors(
@@ -160,7 +160,7 @@ def concatenate_images(image1_path, image2_path, output_path, direction="right")
 PARI_MAP = {
     "5m": [
         {"tf": "5m", "view": 48, "mode": "heikin_ashi", "scale": 0.7},
-        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.7},
+        {"tf": "30m", "view": 48, "mode": "kline", "scale": 0.7},
     ],
     "15m": [
         {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.7},
