@@ -66,7 +66,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             mpf.make_addplot(ema_15, color="#2962ff", width=0.7, ax=ax),
             mpf.make_addplot(ema_21, color="#2962ff", width=0.7, ax=ax),
             mpf.make_addplot(ema_34, color="#3179f5", width=0.7, ax=ax),
-            mpf.make_addplot(zlsma_34, color="yellow", width=1, ax=ax),
+            mpf.make_addplot(zlsma_34, color="white", width=1, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
         if TIME_FRAME != "1h":
