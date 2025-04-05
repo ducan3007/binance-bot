@@ -1,4 +1,4 @@
-BTC
+DOGE
 ETH
 BNB
 SOL
