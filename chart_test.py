@@ -209,8 +209,8 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
 
 
 if __name__ == "__main__":
-    title = "ADA"
-    PAIR = "ADAUSDT"
-    TIME_FRAME = "15m"
+    title = "XRP"
+    PAIR = "XRPUSDT"
+    TIME_FRAME = "5m"
     get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
     print("Done")
