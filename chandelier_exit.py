@@ -566,7 +566,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                     lastSentMessage["Direction"] = None
 
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
-                if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
+                if not hasSentSignal:
                     logger.info(f"Pre send signal: {TOKEN} {TIME_FRAME} {timestamp}")
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
