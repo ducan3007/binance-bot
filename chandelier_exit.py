@@ -544,26 +544,26 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
             """
             Pre send telegram message before candle close
             """
-            if (
-                hasSentSignal is False
-                and lastSentMessage["message_id"] is not None
-                and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
-                and lastSentMessage["Counter"] == counter - 1
-            ):
-                if MODE == "normal":
-                    __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
-                else:
-                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
+            # if (
+            #     hasSentSignal is False
+            #     and lastSentMessage["message_id"] is not None
+            #     and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
+            #     and lastSentMessage["Counter"] == counter - 1
+            # ):
+            #     if MODE == "normal":
+            #         __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
+            #     else:
+            #         __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
 
-                logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
-                res = delete_message(__body)
-                if res:
-                    remove_file(lastSentMessage["Image"])
-                    lastSentMessage["Image"] = None
-                    lastSentMessage["Counter"] = None
-                    lastSentMessage["_Time"] = None
-                    lastSentMessage["message_id"] = None
-                    lastSentMessage["Direction"] = None
+            #     logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
+            #     res = delete_message(__body)
+            #     if res:
+            #         remove_file(lastSentMessage["Image"])
+            #         lastSentMessage["Image"] = None
+            #         lastSentMessage["Counter"] = None
+            #         lastSentMessage["_Time"] = None
+            #         lastSentMessage["message_id"] = None
+            #         lastSentMessage["Direction"] = None
 
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
                 if not hasSentSignal:
