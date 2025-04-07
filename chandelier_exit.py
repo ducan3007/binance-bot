@@ -385,6 +385,7 @@ class EMA:
                 res["ema_21_cross"] = True
         return res
 
+
 def remove_file(filename):
     try:
         os.remove(filename)
@@ -487,7 +488,6 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
 
-
         print(f"Time: {counter} {MULT} {kline_helper.weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
         if timestamp == data_temp_dict["Time"][1]:
@@ -544,29 +544,29 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
             """
             Pre send telegram message before candle close
             """
-            # if (
-            #     hasSentSignal is False
-            #     and lastSentMessage["message_id"] is not None
-            #     and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
-            #     and lastSentMessage["Counter"] == counter - 1
-            # ):
-            #     if MODE == "normal":
-            #         __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
-            #     else:
-            #         __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
+            if (
+                hasSentSignal is False
+                and lastSentMessage["message_id"] is not None
+                and lastSentMessage["Direction"] != data["Direction"][SIZE - 1]
+                and lastSentMessage["Counter"] == counter - 1
+            ):
+                if MODE == "normal":
+                    __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
+                else:
+                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
 
-            #     logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
-            #     res = delete_message(__body)
-            #     if res:
-            #         remove_file(lastSentMessage["Image"])
-            #         lastSentMessage["Image"] = None
-            #         lastSentMessage["Counter"] = None
-            #         lastSentMessage["_Time"] = None
-            #         lastSentMessage["message_id"] = None
-            #         lastSentMessage["Direction"] = None
+                logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
+                res = delete_message(__body)
+                if res:
+                    remove_file(lastSentMessage["Image"])
+                    lastSentMessage["Image"] = None
+                    lastSentMessage["Counter"] = None
+                    lastSentMessage["_Time"] = None
+                    lastSentMessage["message_id"] = None
+                    lastSentMessage["Direction"] = None
 
             if data["Direction"][SIZE - 1] != data["Direction"][SIZE - 2]:
-                if not hasSentSignal:
+                if not hasSentSignal and pre_send_signal(timestamp, TIME_FRAME):
                     logger.info(f"Pre send signal: {TOKEN} {TIME_FRAME} {timestamp}")
                     signal = "SELL" if data["Direction"][SIZE - 1] == -1 else "BUY"
                     close_p = data["Close_p"][SIZE - 1]
@@ -696,7 +696,7 @@ def pre_send_signal(timestamp, time_frame):
 
     if time_frame == "5m":
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 1
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
