@@ -11,57 +11,52 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
     try:
         image_path = f"{title}.png"
         df = zlma.fetch_zlsma(PAIR, TIME_FRAME, view, mode)
-        df.loc[:, "Time1"] = pd.to_datetime(df["Time1"])  # Should already be datetime64[ns]
+        df.loc[:, "Time1"] = pd.to_datetime(df["Time1"])  # Ensure Time1 is datetime
 
-        # Set index for mplfinance without triggering inference warning
+        # Set index for mplfinance
         df.set_index("Time1", inplace=True, drop=True)
 
-        # Prepare data for plotting
+        # Prepare Heikin-Ashi data for plotting
         ha_candles = df[["Open", "High", "Low", "Close"]].copy()
         ha_candles = ha_candles.rename(columns={"Open": "open", "High": "high", "Low": "low", "Close": "close"})
-
-        # ✅ Drop NaN rows to prevent plotting errors
         ha_candles.dropna(inplace=True)
 
-        # Define width and height where H = 1.5 * W
-        width = 13  # You can adjust this base width as needed
-        height = scale * width  # Height is 1.5 times the width
+        # Define figure dimensions
+        width = 13
+        height = scale * width
 
-        # Create figure and axis with fully #181a20 background
+        # Create figure and axis with custom background
         fig, ax = plt.subplots(figsize=(width, height), facecolor="#181a20")
-
-        # Set entire canvas background to #181a20
         fig.patch.set_facecolor("#181a20")
         ax.set_facecolor("#181a20")
 
-        # Define custom Heikin-Ashi colors
+        # Define custom market colors
         wick = (0.7216, 0.7216, 0.7216, 0.78)
         if TIME_FRAME == "15m":
             wick = "inherit"
         mc = mpf.make_marketcolors(
-            up="#11aa91",  # Green for bullish candles
-            down="#fc3852",  # Red for bearish candles
-            edge="inherit",  # Edges inherit candle color
+            up="#11aa91",  # Green
+            down="#fc3852",  # Red
+            edge="inherit",
             wick=wick,
             volume="inherit",
         )
 
-        # Apply the custom style with a #181a20 background
+        # Apply custom style
         s = mpf.make_mpf_style(
             marketcolors=mc,
-            facecolor="#181a20",  # Set background color to #181a20
-            edgecolor="#181a20",  # Ensure edges blend with the background
+            facecolor="#181a20",
+            edgecolor="#181a20",
         )
 
-        # Prepare ZLSMA lines for plotting
-        zlsma_34 = df["ZLSMA_34"].dropna()  # White line
-        zlsma_50 = df["ZLSMA_50"].dropna()  # Yellow line
-        ema_15 = df["EMA_15"].dropna()  # Light blue line
-        ema_21 = df["EMA_21"].dropna()  # Light blue line
-        ema_34 = df["EMA_34"].dropna()  # Blue line
-        ema_50 = df["EMA_50"].dropna()  # Purple line
+        # Prepare additional plots (ZLSMA and EMA lines)
+        zlsma_34 = df["ZLSMA_34"].dropna()
+        zlsma_50 = df["ZLSMA_50"].dropna()
+        ema_15 = df["EMA_15"].dropna()
+        ema_21 = df["EMA_21"].dropna()
+        ema_34 = df["EMA_34"].dropna()
+        ema_50 = df["EMA_50"].dropna()
 
-        # Define additional plots for ZLSMA lines, explicitly passing the axis (ax)
         apds = [
             mpf.make_addplot(ema_15, color="#2962ff", width=0.7, ax=ax),
             mpf.make_addplot(ema_21, color="#2962ff", width=0.7, ax=ax),
@@ -69,37 +64,56 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             mpf.make_addplot(zlsma_34, color="white", width=1, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
-        if TIME_FRAME != "1h":
-            apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax)),
-            
+        if TIME_FRAME != "1h" and TIME_FRAME != "30m":
+            apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax))
+
+        # Plot Heikin-Ashi candles
         mpf.plot(
             ha_candles,
             type="candle",
-            style=s,  # Apply custom styling
+            style=s,
             ax=ax,
             datetime_format="%H:%M",
             xrotation=0,
-            addplot=apds,  # Add ZLSMA lines
+            addplot=apds,
         )
 
-        # Enable grid with gray lines for visibility
-        # ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.2, color="gray")
+        # Custom coloring based on previous close
+        closes = ha_candles["close"].values
+        green = "#11aa91"
+        red = "#fc3852"
+        # First candle defaults to green (no previous close); others based on condition
+        colors = [green if i == 0 else (green if closes[i] > closes[i - 1] else red) for i in range(len(closes))]
 
-        # Remove top and right borders (spines)
+        # Update wick colors (LineCollection)
+
+        if TIME_FRAME == "15m":
+            wick_collection = ax.collections[0]  # Wicks are the first collection
+            wick_collection.set_colors(colors)
+
+        border_collection = ax.collections[1]  # Bodies are the second collection
+        border_collection.set_edgecolors(colors)
+        border_collection.set_facecolors(colors)
+
+        # Update candle body colors (Rectangle patches)
+        for patch, color in zip(ax.patches, colors):
+            patch.set_facecolor(color)
+            patch.set_edgecolor(color)
+
+        # Customize plot appearance
+        # ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.2, color="gray")  # Uncomment if grid is desired
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["bottom"].set_visible(False)
         ax.spines["left"].set_visible(False)
-
-        # Set tick labels to white
         ax.xaxis.label.set_color("white")
         ax.yaxis.label.set_color("white")
         ax.tick_params(axis="x", colors="white")
         ax.tick_params(axis="y", colors="white")
 
-        # Save the chart with higher DPI for better quality
+        # Save the chart
         plt.savefig(image_path, bbox_inches="tight", facecolor="#181a20", dpi=400)
-        plt.close(fig)  # Free memory
+        plt.close(fig)
 
         return image_path
     except Exception as e:
