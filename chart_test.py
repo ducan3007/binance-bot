@@ -64,7 +64,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             mpf.make_addplot(zlsma_34, color="white", width=1, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
-        if TIME_FRAME != "1h" and TIME_FRAME != "30m":
+        if TIME_FRAME != "1h":
             apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax))
 
         # Plot Heikin-Ashi candles
