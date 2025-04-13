@@ -1,3 +1,4 @@
+BTC
 DOGE
 ETH
 BNB
