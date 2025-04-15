@@ -385,7 +385,6 @@ class EMA:
                 res["ema_21_cross"] = True
         return res
 
-
 def remove_file(filename):
     try:
         os.remove(filename)
@@ -487,6 +486,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
         )
 
         _per = cal_change(data_temp_dict["Close_p"][1], data_temp_dict["Close_p"][0])
+
 
         print(f"Time: {counter} {MULT} {kline_helper.weight['m1']} {_token}  {_per} {data_temp_dict['Time1'][1]}")
 
