@@ -344,6 +344,7 @@ class EMA:
             self.calculate_ema()
 
         if self.ema_200_value is None or self.ema_35_value is None or self.ema_21_value is None:
+            logger.error(f"EMA values are still None, {self.TIME_FRAME} {self.PAIR} {self.timestamp}")
             return res
 
         def is_greater(a, b):
@@ -640,6 +641,7 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 pre_pre_close_price = data["Close_p"][SIZE - 3]
                 per = _cal_change(pre_close_price, pre_pre_close_price)
                 ema.calculate_ema()
+                logger.info(f"Case 2: {TOKEN} {TIME_FRAME} {timestamp}")
                 ema_cross = ema.check_cross(
                     TIME_FRAME,
                     data["Open"][SIZE - 1],
@@ -696,7 +698,7 @@ def pre_send_signal(timestamp, time_frame):
 
     if time_frame == "5m":
         ts = int(time.time())
-        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.93
+        return ts >= timestamp + TIME_FRAME_MS[time_frame] * 0.94
 
     if time_frame in TIME_FRAME_MS:
         ts = int(time.time())
