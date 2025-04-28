@@ -125,6 +125,8 @@ def handle_message_type1(url, payload, files, signal, token, chat_id, message: M
     # Send the new message
     if files:
         response = requests.post(url, data=payload, files=files)
+        if message.time_frame in [TimeFrame.m5]:
+            remove_file(message.image)
     else:
         response = requests.post(url, data=payload)
     logger.info(signal)
@@ -148,6 +150,15 @@ def handle_message_type1(url, payload, files, signal, token, chat_id, message: M
         logger.info(f"Failed to send message: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         return False
 
+def remove_file(file_path):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"File removed: {file_path}")
+        else:
+            logger.info(f"File not found: {file_path}")
+    except Exception as e:
+        logger.error(f"Error removing file: {e}")
 
 def handle_message_type2(url, payload, signal, token, chat_id, message: MessageType2):
     symbol = "$DAILY_REPORT"

@@ -5,7 +5,7 @@ from logger import logger
 import zlma
 from PIL import Image
 import os
-
+from datetime import datetime
 
 def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
     try:
@@ -121,61 +121,41 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         logger.error(f"Error generating chart: {e}")
         return None
 
-
-def concatenate_images(image1_path, image2_path, output_path, direction="right"):
+def concatenate_images(image_paths, output_path, direction="vertical"):
     try:
-        # Open the two images
-        img1 = Image.open(image1_path)
-        img2 = Image.open(image2_path)
+        images = [Image.open(path) for path in image_paths]
+        if not images:
+            raise ValueError("No images provided for concatenation")
 
-        # Get dimensions of both images
-        width1, height1 = img1.size
-        width2, height2 = img2.size
-
-        # Calculate new dimensions based on direction
-        if direction.lower() == "right":
-            new_width = width1 + width2
-            new_height = max(height1, height2)
-            new_image = Image.new("RGB", (new_width, new_height))
-            new_image.paste(img1, (0, 0))
-            new_image.paste(img2, (width1, 0))
-
-        elif direction.lower() == "left":
-            new_width = width1 + width2
-            new_height = max(height1, height2)
-            new_image = Image.new("RGB", (new_width, new_height))
-            new_image.paste(img2, (0, 0))
-            new_image.paste(img1, (width2, 0))
-
-        elif direction.lower() == "top":
-            new_width = max(width1, width2)
-            new_height = height1 + height2
-            new_image = Image.new("RGB", (new_width, new_height))
-            new_image.paste(img2, (0, 0))
-            new_image.paste(img1, (0, height2))
-
-        elif direction.lower() == "bottom":
-            new_width = max(width1, width2)
-            new_height = height1 + height2
-            new_image = Image.new("RGB", (new_width, new_height))
-            new_image.paste(img1, (0, 0))
-            new_image.paste(img2, (0, height1))
-
+        if direction.lower() == "vertical":
+            max_width = max(img.width for img in images)
+            total_height = sum(img.height for img in images)
+            new_image = Image.new("RGB", (max_width, total_height), color="#181a20")
+            y_offset = 0
+            for img in images:
+                new_image.paste(img, (0, y_offset))
+                y_offset += img.height
+        elif direction.lower() == "horizontal":
+            total_width = sum(img.width for img in images)
+            max_height = max(img.height for img in images)
+            new_image = Image.new("RGB", (total_width, max_height), color="#181a20")
+            x_offset = 0
+            for img in images:
+                new_image.paste(img, (x_offset, 0))
+                x_offset += img.width
         else:
-            raise ValueError("Direction must be 'top', 'left', 'bottom', or 'right'")
+            raise ValueError("Direction must be 'vertical' or 'horizontal'")
 
-        # Save the concatenated image
         new_image.save(output_path)
         print(f"Images successfully concatenated and saved as {output_path}")
-
     except Exception as e:
         print(f"An error occurred: {str(e)}")
-
 
 PARI_MAP = {
     "5m": [
         {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
         {"tf": "30m", "view": 70, "mode": "kline", "scale": 0.633},
+        {"tf": "1h", "view": 40, "mode": "kline", "scale": 0.633},
     ],
     "15m": [
         {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.633},
@@ -187,45 +167,47 @@ PARI_MAP = {
     ],
 }
 
-from datetime import datetime
-
-
 def get_charts(title, PAIR, TIME_FRAME, signal, time1):
     try:
-        tf1 = PARI_MAP[TIME_FRAME][0]
-        tf2 = PARI_MAP[TIME_FRAME][1]
-        tftf1 = tf1["tf"]
-        tftf2 = tf2["tf"]
-        view1 = tf1["view"]
-        view2 = tf2["view"]
-        mode1 = tf1["mode"]
-        mode2 = tf2["mode"]
-        scale1 = tf1["scale"]
-        scale2 = tf2["scale"]
+        items = PARI_MAP[TIME_FRAME]
+        image_paths = []
 
-        image1 = generate_chart(f"{TIME_FRAME}_{title}_{tftf1}", PAIR, tftf1, view1, mode1, scale1)
-        image2 = generate_chart(f"{TIME_FRAME}_{title}_{tftf2}", PAIR, tftf2, view2, mode2, scale2)
+        for item in items:
+            tf = item["tf"]
+            view = item["view"]
+            mode = item["mode"]
+            scale = item["scale"]
+            chart_title = f"{TIME_FRAME}_{title}_{tf}"
+            image_path = generate_chart(chart_title, PAIR, tf, view, mode, scale)
+            if image_path:
+                image_paths.append(image_path)
 
-        if image1 and image2:
-            # remove file with prefix
+        if image_paths:
+            create_time_ns = datetime.now().timestamp()
+
+            if TIME_FRAME == "5m" and len(image_paths) >= 2:
+                prefix_temp = f"static_temp/{TIME_FRAME}_{title}_"
+                os.system(f"rm {prefix_temp}*")  # Clean up previous files
+                output_path_temp = f"{prefix_temp}{signal}_{time1}_{create_time_ns}.png"
+                concatenate_images(image_paths[:2], output_path_temp, direction="vertical")
+
             prefix = f"static/{TIME_FRAME}_{title}_"
             os.system(f"rm {prefix}*")
-            # nanoseconds
-            create_time_ns = datetime.now().timestamp()
             output_path = f"{prefix}{signal}_{time1}_{create_time_ns}.png"
-            concatenate_images(image1, image2, output_path, direction="bottom")
-            os.remove(image1)
-            os.remove(image2)
-            return output_path
+            concatenate_images(image_paths, output_path, direction="vertical")
 
+            for path in image_paths:
+                os.remove(path)
+
+            if TIME_FRAME == "5m":
+                return output_path_temp
+
+            return output_path
+        return None
     except Exception as e:
         logger.error(f"Error getting charts: {e}")
         return None
 
-
 if __name__ == "__main__":
-    title = "ETH"
-    PAIR = "ETHUSDT"
-    TIME_FRAME = "5m"
-    get_charts(title, PAIR, TIME_FRAME, "BUY", "10:15")
-    print("Done")
+    output = get_charts("BNB", "BNBUSDT", "15m", "BUY", "10:15")
+    print(f"Output path: {output}")
