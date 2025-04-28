@@ -159,20 +159,31 @@
         if (!modal.classList.contains('active')) {
           modal.classList.add('active');
           window.history.pushState({ modalOpen: true }, '');
-          // No overflow: hidden here
         }
 
         modalImg.style.width = 'auto';
         modalImg.style.height = 'auto';
         modalImg.style.maxWidth = '100vw';
         modalImg.style.maxHeight = '100vh';
-        modalImg.dataset.isZoomed = 'false';
 
         setTimeout(() => {
           const initialWidth = modalImg.clientWidth;
           const initialHeight = modalImg.clientHeight;
-          modalImg.dataset.initialWidth = initialWidth;
-          modalImg.dataset.initialHeight = initialHeight;
+          const zoomFactor = 1.5;
+
+          modalImg.style.width = `${initialWidth * zoomFactor}px`;
+          modalImg.style.height = `${initialHeight * zoomFactor}px`;
+          modalImg.style.maxWidth = 'none';
+          modalImg.style.maxHeight = 'none';
+
+          const imageContainer = document.querySelector('.image-container');
+          const scrollLeft = (modalImg.clientWidth - imageContainer.clientWidth) / 2;
+          const scrollTop = (modalImg.clientHeight - imageContainer.clientHeight) / 2;
+          imageContainer.scrollLeft = scrollLeft;
+          imageContainer.scrollTop = scrollTop;
+
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
         }, 0);
       }
 
@@ -192,44 +203,6 @@
         .getElementById('modalImage')
         .addEventListener('click', function (event) {
           event.stopPropagation();
-          const imageContainer = document.querySelector('.image-container');
-          if (this.dataset.isZoomed === 'false') {
-            const initialWidth = parseFloat(this.dataset.initialWidth);
-            const initialHeight = parseFloat(this.dataset.initialHeight);
-            const offsetX = event.offsetX;
-            const offsetY = event.offsetY;
-            const zoomFactor = 1.5;
-
-            this.style.width = `${initialWidth * zoomFactor}px`;
-            this.style.height = `${initialHeight * zoomFactor}px`;
-            this.style.maxWidth = 'none';
-            this.style.maxHeight = 'none';
-
-            const scrollLeft =
-              offsetX * zoomFactor - imageContainer.clientWidth / 2;
-            const scrollTop =
-              offsetY * zoomFactor - imageContainer.clientHeight / 2;
-            imageContainer.scrollLeft = scrollLeft;
-            imageContainer.scrollTop = scrollTop;
-
-            this.dataset.isZoomed = 'true';
-
-            // Lock background scroll when zoomed
-            document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflow = 'hidden';
-          } else {
-            this.style.width = 'auto';
-            this.style.height = 'auto';
-            this.style.maxWidth = '100vw';
-            this.style.maxHeight = '100vh';
-            imageContainer.scrollLeft = 0;
-            imageContainer.scrollTop = 0;
-            this.dataset.isZoomed = 'false';
-
-            // Restore background scroll when unzoomed
-            document.body.style.overflow = 'auto';
-            document.documentElement.style.overflow = 'auto';
-          }
         });
 
       document
