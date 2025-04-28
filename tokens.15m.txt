@@ -5,4 +5,3 @@ BNB
 SOL
 XRP
 ADA
-LINK
