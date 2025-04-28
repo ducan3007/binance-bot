@@ -178,9 +178,8 @@
 
           const imageContainer = document.querySelector('.image-container');
           const scrollLeft = (modalImg.clientWidth - imageContainer.clientWidth) / 2;
-          const scrollTop = (modalImg.clientHeight - imageContainer.clientHeight) / 2;
           imageContainer.scrollLeft = scrollLeft;
-          imageContainer.scrollTop = scrollTop;
+          imageContainer.scrollTop = 0; // Modified to reset scroll bar to top
 
           document.body.style.overflow = 'hidden';
           document.documentElement.style.overflow = 'hidden';
