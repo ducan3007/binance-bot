@@ -15,9 +15,12 @@
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         margin: 0 auto;
+        gap: 1px; /* Thin border effect */
+        background-color: #333; /* Border color */
       }
       .grid-item {
         text-align: center;
+        background-color: #181a20; /* Matches body background */
       }
       .grid-item img {
         max-width: 100%;
@@ -177,7 +180,8 @@
           modalImg.style.maxHeight = 'none';
 
           const imageContainer = document.querySelector('.image-container');
-          const scrollLeft = (modalImg.clientWidth - imageContainer.clientWidth) / 2;
+          const scrollLeft =
+            (modalImg.clientWidth - imageContainer.clientWidth) / 2;
           imageContainer.scrollLeft = scrollLeft;
           imageContainer.scrollTop = 0; // Modified to reset scroll bar to top
 
