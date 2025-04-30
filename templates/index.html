@@ -31,6 +31,10 @@
         font-family: Arial, sans-serif;
         text-align: left;
         font-weight: bold;
+        color: #ffffff; /* Set default color to white for signal emoji and title */
+      }
+      .image-info .time {
+        color: #8774e1; /* Specific color for the time part */
       }
       .modal {
         display: none;
@@ -63,10 +67,13 @@
         transform: translateX(-50%);
         font-family: Arial, sans-serif;
         font-weight: bold;
-        color: #ffffff;
+        color: #ffffff; /* Ensures title is white */
         text-align: center;
         font-size: 20px;
         z-index: 11;
+      }
+      .modal-info .time {
+        color: #8774e1; /* Specific color for the time part in modal */
       }
       #timer {
         position: fixed;
@@ -92,7 +99,6 @@
       .delete-button:hover {
         background-color: #cc0000;
       }
-
       .underscore {
         text-decoration: underline;
         text-underline-offset: 5px;
@@ -109,7 +115,9 @@
           class="image-info{% if image.title == 'BTC' %} underscore{% endif %}"
         >
           {% if image.signal == "BUY" %} 🟢 {% elif image.signal == "SELL" %} 🔴
-          {% endif %} {{ image.time1 }} {{ image.title }}
+          {% endif %}
+          <span class="time">{{ image.time1 }}</span>
+          {{ image.title }}
         </div>
         <img
           src="/static/{{ image.filename }}"
@@ -169,7 +177,8 @@
           signalEmoji = '🔴';
         }
 
-        modalInfo.textContent = `${signalEmoji} ${time1} ${title}`;
+        // Use innerHTML to apply styles with spans
+        modalInfo.innerHTML = `${signalEmoji} <span class="time">${time1}</span> ${title}`;
 
         if (!modal.classList.contains('active')) {
           modal.classList.add('active');
