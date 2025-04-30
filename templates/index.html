@@ -92,41 +92,40 @@
       .delete-button:hover {
         background-color: #cc0000;
       }
+
+      .underscore {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
     <div id="timer"></div>
     {% set ns = namespace(index=0) %}
     <div class="grid-container">
-      {% for pair in image_pairs %}
-        {% for image in pair %}
-          <div class="grid-item">
-            <div class="image-info">
-              {% if image.signal == "BUY" %} 🟢 {% elif image.signal == "SELL" %} 🔴 {% endif %}
-              {{ image.time1 }} {{ image.title }}
-            </div>
-            <img
-              src="/static/{{ image.filename }}"
-              alt="{{ image.title }}"
-              data-index="{{ ns.index }}"
-              data-filename="{{ image.filename }}"
-              data-signal="{{ image.signal }}"
-              data-time1="{{ image.time1 }}"
-              data-title="{{ image.title }}"
-              onclick="showModal(this)"
-            />
-          </div>
-          {% set ns.index = ns.index + 1 %}
-        {% endfor %}
-      {% endfor %}
-      {% set total_images = ns.index %}
-      {% if total_images < 8 %}
-        {% set placeholders = 8 - total_images %}
-      {% else %}
-        {% set placeholders = (4 - (total_images % 4)) % 4 %}
-      {% endif %}
-      {% for i in range(placeholders) %}
-        <div class="grid-item"></div>
+      {% for pair in image_pairs %} {% for image in pair %}
+      <div class="grid-item">
+        <div
+          class="image-info{% if image.title == 'BTC' %} underscore{% endif %}"
+        >
+          {% if image.signal == "BUY" %} 🟢 {% elif image.signal == "SELL" %} 🔴
+          {% endif %} {{ image.time1 }} {{ image.title }}
+        </div>
+        <img
+          src="/static/{{ image.filename }}"
+          alt="{{ image.title }}"
+          data-index="{{ ns.index }}"
+          data-filename="{{ image.filename }}"
+          data-signal="{{ image.signal }}"
+          data-time1="{{ image.time1 }}"
+          data-title="{{ image.title }}"
+          onclick="showModal(this)"
+        />
+      </div>
+      {% set ns.index = ns.index + 1 %} {% endfor %} {% endfor %} {% set
+      total_images = ns.index %} {% if total_images < 8 %} {% set placeholders =
+      8 - total_images %} {% else %} {% set placeholders = (4 - (total_images %
+      4)) % 4 %} {% endif %} {% for i in range(placeholders) %}
+      <div class="grid-item"></div>
       {% endfor %}
     </div>
 
