@@ -15,12 +15,12 @@
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
         margin: 0 auto;
-        gap: 1px; /* Thin border effect */
-        background-color: #a4a1a1; /* Border color */
+        gap: 1px;
+        background-color: #a4a1a1;
       }
       .grid-item {
         text-align: center;
-        background-color: #181a20; /* Matches body background */
+        background-color: #181a20;
       }
       .grid-item img {
         max-width: 100%;
@@ -71,7 +71,7 @@
       #timer {
         position: fixed;
         top: 10px;
-        right: 30px; /* Moved from 10px to 30px */
+        right: 30px;
         font-size: 14px;
         color: #ffffff;
         font-family: Arial, sans-serif;
@@ -98,24 +98,36 @@
     <div id="timer"></div>
     {% set ns = namespace(index=0) %}
     <div class="grid-container">
-      {% for pair in image_pairs %} {% for image in pair %}
-      <div class="grid-item">
-        <div class="image-info">
-          {% if image.signal == "BUY" %} 🟢 {% elif image.signal == "SELL" %} 🔴
-          {% endif %} {{ image.time1 }} {{ image.title }}
-        </div>
-        <img
-          src="/static/{{ image.filename }}"
-          alt="{{ image.title }}"
-          data-index="{{ ns.index }}"
-          data-filename="{{ image.filename }}"
-          data-signal="{{ image.signal }}"
-          data-time1="{{ image.time1 }}"
-          data-title="{{ image.title }}"
-          onclick="showModal(this)"
-        />
-      </div>
-      {% set ns.index = ns.index + 1 %} {% endfor %} {% endfor %}
+      {% for pair in image_pairs %}
+        {% for image in pair %}
+          <div class="grid-item">
+            <div class="image-info">
+              {% if image.signal == "BUY" %} 🟢 {% elif image.signal == "SELL" %} 🔴 {% endif %}
+              {{ image.time1 }} {{ image.title }}
+            </div>
+            <img
+              src="/static/{{ image.filename }}"
+              alt="{{ image.title }}"
+              data-index="{{ ns.index }}"
+              data-filename="{{ image.filename }}"
+              data-signal="{{ image.signal }}"
+              data-time1="{{ image.time1 }}"
+              data-title="{{ image.title }}"
+              onclick="showModal(this)"
+            />
+          </div>
+          {% set ns.index = ns.index + 1 %}
+        {% endfor %}
+      {% endfor %}
+      {% set total_images = ns.index %}
+      {% if total_images < 8 %}
+        {% set placeholders = 8 - total_images %}
+      {% else %}
+        {% set placeholders = (4 - (total_images % 4)) % 4 %}
+      {% endif %}
+      {% for i in range(placeholders) %}
+        <div class="grid-item"></div>
+      {% endfor %}
     </div>
 
     <div id="imageModal" class="modal">
@@ -183,8 +195,7 @@
           const scrollLeft =
             (modalImg.clientWidth - imageContainer.clientWidth) / 2;
           imageContainer.scrollLeft = scrollLeft;
-          imageContainer.scrollTop = 0; // Modified to reset scroll bar to top
-
+          imageContainer.scrollTop = 0;
           document.body.style.overflow = 'hidden';
           document.documentElement.style.overflow = 'hidden';
         }, 0);
@@ -232,8 +243,8 @@
               showImageAtIndex(currentIndex);
             }
           } else if (event.key === 'ArrowRight') {
-            const totalImages = document.querySelectorAll('.grid-item').length;
-            if (currentIndex < totalImages - 1) {
+            const imageItems = document.querySelectorAll('.grid-item img');
+            if (currentIndex < imageItems.length - 1) {
               currentIndex++;
               showImageAtIndex(currentIndex);
             }
@@ -259,9 +270,11 @@
       }
 
       function showImageAtIndex(index) {
-        const gridItems = document.querySelectorAll('.grid-item');
-        const img = gridItems[index].querySelector('img');
-        showModal(img);
+        const imageItems = document.querySelectorAll('.grid-item img');
+        if (index >= 0 && index < imageItems.length) {
+          const img = imageItems[index];
+          showModal(img);
+        }
       }
 
       async function deleteImage() {
