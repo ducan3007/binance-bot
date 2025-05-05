@@ -284,9 +284,9 @@ def construct_message(message: MessageType1):
         msg = message.symbol
 
     if message.time_frame in [TimeFrame.h4, TimeFrame.h2, TimeFrame.h1, TimeFrame.m30_normal]:
-        return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b>  <code>{message.change}</code>"
+        return f" <b>{sub_str}</b>  <b>{message.time}</b>  <b>{msg}</b>  <code>{message.change}</code>"
 
-    return f"<b>{sub_str}</b> <b>{message.time}</b>  <b>{msg}</b>"
+    return f" <b>{sub_str}</b>  <b>{message.time}</b>  <b>{msg}</b>"
 
 
 def get_image_data(image_path):
