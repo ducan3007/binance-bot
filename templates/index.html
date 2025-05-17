@@ -123,6 +123,7 @@
       .right {
         right: 10px;
       }
+    
     </style>
   </head>
   <body>
@@ -181,7 +182,6 @@
         const modalImg = document.getElementById('modalImage');
         const modalInfo = document.getElementById('modalInfo');
 
-        // Get image data
         const src = img.src;
         const filename = img.dataset.filename;
         const signal = img.dataset.signal;
@@ -189,42 +189,47 @@
         const title = img.dataset.title;
         const index = parseInt(img.dataset.index);
 
-        // Set modal content
         modalImg.src = src;
         currentFilename = filename;
         currentIndex = index;
 
-        // Set signal emoji and modal info
         let signalEmoji = '';
         if (signal === 'BUY') {
           signalEmoji = '🟢';
         } else if (signal === 'SELL') {
           signalEmoji = '🔴';
         }
+
         modalInfo.innerHTML = `${signalEmoji} <span class="time">${time1}</span> ${title}`;
 
-        // Activate modal
         if (!modal.classList.contains('active')) {
           modal.classList.add('active');
           window.history.pushState({ modalOpen: true }, '');
         }
 
-        // Apply zoomed styles immediately
-        const zoomFactor = 1.7; // Adjust this value as needed
-        modalImg.style.width = `${img.naturalWidth * zoomFactor}px`;
-        modalImg.style.height = `${img.naturalHeight * zoomFactor}px`;
-        modalImg.style.maxWidth = 'none';
-        modalImg.style.maxHeight = 'none';
+        modalImg.style.width = 'auto';
+        modalImg.style.height = 'auto';
+        modalImg.style.maxWidth = '100vw';
+        modalImg.style.maxHeight = '100vh';
 
-        // Center the image in the container
-        const imageContainer = document.querySelector('.image-container');
-        imageContainer.scrollLeft =
-          (modalImg.clientWidth - imageContainer.clientWidth) / 2;
-        imageContainer.scrollTop = 0;
+        setTimeout(() => {
+          const initialWidth = modalImg.clientWidth;
+          const initialHeight = modalImg.clientHeight;
+          const zoomFactor = 1.7;
 
-        // Prevent scrolling on the body
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
+          modalImg.style.width = `${initialWidth * zoomFactor}px`;
+          modalImg.style.height = `${initialHeight * zoomFactor}px`;
+          modalImg.style.maxWidth = 'none';
+          modalImg.style.maxHeight = 'none';
+
+          const imageContainer = document.querySelector('.image-container');
+          const scrollLeft =
+            (modalImg.clientWidth - imageContainer.clientWidth) / 2;
+          imageContainer.scrollLeft = scrollLeft;
+          imageContainer.scrollTop = 0;
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
+        }, 0);
       }
 
       document
@@ -261,7 +266,7 @@
       const prevButton = document.getElementById('prevButton');
       const nextButton = document.getElementById('nextButton');
 
-      prevButton.addEventListener('click', function (event) {
+      prevButton.addEventListener('click', function(event) {
         event.stopPropagation();
         if (currentIndex > 0) {
           currentIndex--;
@@ -269,7 +274,7 @@
         }
       });
 
-      nextButton.addEventListener('click', function (event) {
+      nextButton.addEventListener('click', function(event) {
         event.stopPropagation();
         const imageItems = document.querySelectorAll('.grid-item img');
         if (currentIndex < imageItems.length - 1) {
