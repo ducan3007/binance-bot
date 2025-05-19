@@ -75,8 +75,8 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             mpf.make_addplot(ema_15_green, color="#11aa91", width=0.7, ax=ax),
             mpf.make_addplot(ema_21_red, color="#fc3852", width=0.7, ax=ax),
             mpf.make_addplot(ema_21_green, color="#11aa91", width=0.7, ax=ax),
-            mpf.make_addplot(ema_34_red, color="#fc3852", width=0.85, ax=ax),
-            mpf.make_addplot(ema_34_green, color="#11aa91", width=0.85, ax=ax),
+            mpf.make_addplot(ema_34_red, color="#fc3852", width=0.8, ax=ax),
+            mpf.make_addplot(ema_34_green, color="#11aa91", width=0.8, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
