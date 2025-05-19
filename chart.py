@@ -6,6 +6,7 @@ import zlma
 from PIL import Image
 import os
 from datetime import datetime
+import numpy as np
 
 def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
     try:
@@ -16,7 +17,21 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         # Set index for mplfinance
         df.set_index("Time1", inplace=True, drop=True)
 
-        # Prepare Heikin-Ashi data for plotting
+        # Define the condition for coloring EMA lines
+        condition = df["EMA_15"] < df["EMA_34"]
+
+        # Create segmented series for each EMA line
+        # Red where EMA_15 < EMA_34, NaN elsewhere
+        ema_15_red = df["EMA_15"].where(condition, other=np.nan)
+        ema_21_red = df["EMA_21"].where(condition, other=np.nan)
+        ema_34_red = df["EMA_34"].where(condition, other=np.nan)
+
+        # Green where EMA_15 >= EMA_34, NaN elsewhere
+        ema_15_green = df["EMA_15"].where(~condition, other=np.nan)
+        ema_21_green = df["EMA_21"].where(~condition, other=np.nan)
+        ema_34_green = df["EMA_34"].where(~condition, other=np.nan)
+
+        # Prepare Heikin-Ashi candlestick data
         ha_candles = df[["Open", "High", "Low", "Close"]].copy()
         ha_candles = ha_candles.rename(columns={"Open": "open", "High": "high", "Low": "low", "Close": "close"})
         ha_candles.dropna(inplace=True)
@@ -52,22 +67,25 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         # Prepare additional plots (ZLSMA and EMA lines)
         zlsma_34 = df["ZLSMA_34"].dropna()
         zlsma_50 = df["ZLSMA_50"].dropna()
-        ema_15 = df["EMA_15"].dropna()
-        ema_21 = df["EMA_21"].dropna()
-        ema_34 = df["EMA_34"].dropna()
-        ema_50 = df["EMA_50"].dropna()
+        ema_50 = df["EMA_50"].dropna() if "EMA_50" in df.columns else None
 
+        # List of additional plots
         apds = [
-            mpf.make_addplot(ema_15, color="#2962ff", width=0.7, ax=ax),
-            mpf.make_addplot(ema_21, color="#2962ff", width=0.7, ax=ax),
-            mpf.make_addplot(ema_34, color="#3179f5", width=0.7, ax=ax),
+            mpf.make_addplot(ema_15_red, color="#fc3852", width=0.7, ax=ax),
+            mpf.make_addplot(ema_15_green, color="#11aa91", width=0.7, ax=ax),
+            mpf.make_addplot(ema_21_red, color="#fc3852", width=0.7, ax=ax),
+            mpf.make_addplot(ema_21_green, color="#11aa91", width=0.7, ax=ax),
+            mpf.make_addplot(ema_34_red, color="#fc3852", width=0.85, ax=ax),
+            mpf.make_addplot(ema_34_green, color="#11aa91", width=0.85, ax=ax),
             mpf.make_addplot(zlsma_34, color="white", width=1, ax=ax),
             mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
-        if TIME_FRAME != "1h":
+
+        # Add EMA_50 if timeframe is not 1h
+        if TIME_FRAME != "1h" and ema_50 is not None:
             apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax))
 
-        # Plot Heikin-Ashi candles
+        # Plot the candlestick chart
         mpf.plot(
             ha_candles,
             type="candle",
@@ -78,36 +96,32 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             addplot=apds,
         )
 
-        # Custom coloring based on previous close
+        # Custom coloring for candlesticks based on close price
         closes = ha_candles["close"].values
         green = "#11aa91"
         red = "#fc3852"
-        # First candle defaults to green (no previous close); others based on condition
+        # First candle is green; others depend on previous close
         colors = [green if i == 0 else (green if closes[i] > closes[i - 1] else red) for i in range(len(closes))]
 
-        # Update wick colors (LineCollection)
-
+        # Update wick colors for 15m timeframe
         if TIME_FRAME == "15m":
-            wick_collection = ax.collections[0]  # Wicks are the first collection
+            wick_collection = ax.collections[0]  # Wicks
             wick_collection.set_colors(colors)
 
-        border_collection = ax.collections[1]  # Bodies are the second collection
+        # Update candle body and border colors
+        border_collection = ax.collections[1]  # Bodies
         border_collection.set_edgecolors(colors)
         border_collection.set_facecolors(colors)
 
-        # Update candle body colors (Rectangle patches)
         for patch, color in zip(ax.patches, colors):
             patch.set_facecolor(color)
             patch.set_edgecolor(color)
 
-        # Customize plot appearance
-        # ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.2, color="gray")  # Uncomment if grid is desired
+        # Customize chart appearance
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         ax.spines["bottom"].set_visible(False)
         ax.spines["left"].set_visible(False)
-        ax.xaxis.label.set_color("white")
-        ax.yaxis.label.set_color("white")
         ax.tick_params(axis="x", colors="white")
         ax.tick_params(axis="y", colors="white")
 
