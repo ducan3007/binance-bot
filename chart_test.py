@@ -105,7 +105,7 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         colors = [green if i == 0 else (green if closes[i] > closes[i - 1] else red) for i in range(len(closes))]
 
         # Update wick colors for 15m timeframe
-        if TIME_FRAME == "15m":
+        if TIME_FRAME == "15m" or TIME_FRAME == "5m":
             wick_collection = ax.collections[0]  # Wicks
             wick_collection.set_colors(colors)
 
