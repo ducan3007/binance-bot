@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 import numpy as np
 
+
 def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
     try:
         image_path = f"{title}.png"
@@ -134,66 +135,103 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
         logger.error(f"Error generating chart: {e}")
         return None
 
-def concatenate_images(image_paths, output_path, direction="vertical"):
+
+def concatenate_images_list(images, direction="horizontal"):
+    """Concatenate a list of images either horizontally or vertically and return the result."""
+    if not images:
+        raise ValueError("No images provided for concatenation")
+
+    if direction.lower() == "horizontal":
+        total_width = sum(img.width for img in images)
+        max_height = max(img.height for img in images)
+        new_image = Image.new("RGB", (total_width, max_height), color="#181a20")
+        x_offset = 0
+        for img in images:
+            new_image.paste(img, (x_offset, 0))
+            x_offset += img.width
+    elif direction.lower() == "vertical":
+        max_width = max(img.width for img in images)
+        total_height = sum(img.height for img in images)
+        new_image = Image.new("RGB", (max_width, total_height), color="#181a20")
+        y_offset = 0
+        for img in images:
+            new_image.paste(img, (0, y_offset))
+            y_offset += img.height
+    else:
+        raise ValueError("Direction must be 'vertical' or 'horizontal'")
+
+    return new_image
+
+
+def concatenate_images_2d(image_paths_2d, output_path):
+    """Concatenate images from a 2D array: horizontally within rows, then vertically across rows."""
     try:
-        images = [Image.open(path) for path in image_paths]
-        if not images:
-            raise ValueError("No images provided for concatenation")
+        # Step 1: Process each row by concatenating images horizontally
+        row_images = []
+        for row in image_paths_2d:
+            if not row:  # Skip empty rows
+                continue
+            # Open all images in the current row
+            images = [Image.open(path) for path in row]
+            if not images:  # Skip if no valid images in row
+                continue
+            # Concatenate images in this row horizontally
+            row_image = concatenate_images_list(images, direction="horizontal")
+            row_images.append(row_image)
 
-        if direction.lower() == "vertical":
-            max_width = max(img.width for img in images)
-            total_height = sum(img.height for img in images)
-            new_image = Image.new("RGB", (max_width, total_height), color="#181a20")
-            y_offset = 0
-            for img in images:
-                new_image.paste(img, (0, y_offset))
-                y_offset += img.height
-        elif direction.lower() == "horizontal":
-            total_width = sum(img.width for img in images)
-            max_height = max(img.height for img in images)
-            new_image = Image.new("RGB", (total_width, max_height), color="#181a20")
-            x_offset = 0
-            for img in images:
-                new_image.paste(img, (x_offset, 0))
-                x_offset += img.width
-        else:
-            raise ValueError("Direction must be 'vertical' or 'horizontal'")
+        # Check if there are any row images to concatenate
+        if not row_images:
+            raise ValueError("No images to concatenate")
 
-        new_image.save(output_path)
+        # Step 2: Concatenate all row images vertically
+        final_image = concatenate_images_list(row_images, direction="vertical")
+
+        # Save the final image to the specified output path
+        final_image.save(output_path)
         print(f"Images successfully concatenated and saved as {output_path}")
+
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 
+
 PARI_MAP = {
     "5m": [
-        {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
-        {"tf": "30m", "view": 70, "mode": "kline", "scale": 0.633},
-        {"tf": "1h", "view": 40, "mode": "kline", "scale": 0.633},
+        [
+            {"tf": "5m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
+            {"tf": "30m", "view": 70, "mode": "kline", "scale": 0.633},
+        ],
+        [
+            {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
+            {"tf": "1h", "view": 40, "mode": "kline", "scale": 0.633},
+        ],
     ],
     "15m": [
-        {"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.633},
-        {"tf": "1h", "view": 48, "mode": "kline", "scale": 0.633},
+        [{"tf": "30m", "view": 72, "mode": "heikin_ashi", "scale": 0.633}],
+        [{"tf": "1h", "view": 48, "mode": "kline", "scale": 0.633}],
     ],
     "1h": [
-        {"tf": "1h", "view": 48, "mode": "heikin_ashi", "scale": 0.633},
-        {"tf": "4h", "view": 30, "mode": "kline", "scale": 0.633},
+        [{"tf": "1h", "view": 48, "mode": "heikin_ashi", "scale": 0.633}],
+        [{"tf": "4h", "view": 30, "mode": "kline", "scale": 0.633}],
     ],
 }
+
 
 def get_charts(title, PAIR, TIME_FRAME, signal, time1):
     try:
         items = PARI_MAP[TIME_FRAME]
         image_paths = []
-
-        for item in items:
-            tf = item["tf"]
-            view = item["view"]
-            mode = item["mode"]
-            scale = item["scale"]
-            chart_title = f"{TIME_FRAME}_{title}_{tf}"
-            image_path = generate_chart(chart_title, PAIR, tf, view, mode, scale)
-            if image_path:
-                image_paths.append(image_path)
+        for sublist in items:
+            row_paths = []
+            for item in sublist:
+                tf = item["tf"]
+                view = item["view"]
+                mode = item["mode"]
+                scale = item["scale"]
+                chart_title = f"{TIME_FRAME}_{title}_{tf}"
+                image_path = generate_chart(chart_title, PAIR, tf, view, mode, scale)
+                if image_path:
+                    row_paths.append(image_path)
+            image_paths.append(row_paths)
 
         if image_paths:
             create_time_ns = datetime.now().timestamp()
@@ -202,15 +240,18 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
                 prefix_temp = f"static_temp/{TIME_FRAME}_{title}_"
                 os.system(f"rm {prefix_temp}*")  # Clean up previous files
                 output_path_temp = f"{prefix_temp}{signal}_{time1}_{create_time_ns}.png"
-                concatenate_images(image_paths[:2], output_path_temp, direction="vertical")
+                concatenate_images_2d([[image_paths[0][0]],[image_paths[1][0]]], output_path_temp)
 
             prefix = f"static/{TIME_FRAME}_{title}_"
             os.system(f"rm {prefix}*")
             output_path = f"{prefix}{signal}_{time1}_{create_time_ns}.png"
-            concatenate_images(image_paths, output_path, direction="vertical")
+            concatenate_images_2d(image_paths, output_path)
 
             for path in image_paths:
-                os.remove(path)
+                for img_path in path:
+                    if os.path.exists(img_path):
+                        print(f"Removing temporary image: {img_path}")
+                        os.remove(img_path)
 
             if TIME_FRAME == "5m":
                 return output_path_temp
