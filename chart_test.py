@@ -198,11 +198,11 @@ PARI_MAP = {
     "5m": [
         [
             {"tf": "5m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
-            {"tf": "30m", "view": 70, "mode": "kline", "scale": 0.633},
+            {"tf": "15m", "view": 30, "mode": "heikin_ashi", "scale": 0.633},
         ],
         [
-            {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
-            {"tf": "1h", "view": 40, "mode": "kline", "scale": 0.633},
+            {"tf": "30m", "view": 20, "mode": "kline", "scale": 0.633},
+            {"tf": "1h", "view": 20, "mode": "kline", "scale": 0.633},
         ],
     ],
     "15m": [
