@@ -92,8 +92,9 @@ def delete_message(body: MessageType3):
     logger.info(f"Received request to delete message: {body}")
     chat_id = BOT[body.time_frame]["chat_id"]
     token = BOT[body.time_frame]["token"]
-    message_id = body.message_id
-    return del_message(token=token, chat_id=chat_id, message_id=message_id)
+    for id in body.message_id:
+        logger.info(f"Deleting message with ID: {id}")
+        del_message(token=token, chat_id=chat_id, message_id=id)
 
 
 def get_images_by_timeframe(time_frame: str) -> List[dict]:

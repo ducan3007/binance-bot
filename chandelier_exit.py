@@ -373,11 +373,16 @@ class EMA:
 # --- Utility Functions ---
 
 
-def remove_file(filename: str) -> None:
+def remove_file(filename) -> None:
     """Safely removes a file if it exists."""
     try:
-        os.remove(filename)
-        logger.info(f"Removed invalid file: {filename}")
+        if isinstance(filename, list):
+            for fname in filename:
+                if os.path.exists(fname):
+                    os.remove(fname)
+        elif os.path.exists(filename):
+            if os.path.exists(filename):
+                os.remove(filename)
     except OSError:
         pass
 
@@ -567,7 +572,7 @@ def main(
                 logger.info(f"Deleting invalid message: Token: {token} {last_sent_message}")
                 body_for_delete = {
                     "time_frame": f"{time_frame}{'_normal' if mode == 'normal' else ''}",
-                    "message_id": str(last_sent_message["message_id"]),
+                    "message_id": last_sent_message["message_id"],
                 }
                 if delete_telegram_message(body_for_delete):
                     remove_file(last_sent_message["Image"])

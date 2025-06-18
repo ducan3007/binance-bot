@@ -1,9 +1,10 @@
+import json
 import time
 from enum import Enum
 import requests
 from logger import logger
-from pydantic import BaseModel, Field
-from typing import Any
+from pydantic import BaseModel, Field 
+from typing import Any, List
 import os
 
 Signals = {
@@ -38,7 +39,7 @@ class MessageType1(BaseModel):
     time: str = Field(..., example="14:45")
     price: float = Field(..., example=150000)
     change: str = Field(..., example="+2.5%")
-    image: str = Field(..., example="DOGE.png")
+    image: List[str] = Field(..., example=["DOGE1.png", "DOGE2.png"])
     ema_cross: dict[str, Any] = Field(..., example={"ema_200_cross": True, "ema_35_cross": False})
 
 
@@ -49,7 +50,7 @@ class MessageType2(BaseModel):
 
 class MessageType3(BaseModel):
     time_frame: TimeFrame
-    message_id: str
+    message_id: List[int] = Field(..., example=[123456789])
 
 
 def last_pinned_message_to_file(message_id, symbol, time_frame):
@@ -94,6 +95,20 @@ def get_message_id(symbol, time_frame):
                     return existing_message_id
     return None
 
+def remove_file(filename):
+    try:
+        if isinstance(filename, list):
+            for fname in filename:
+                if os.path.exists(fname):
+                    logger.info(f"Removing file: {fname}")
+                    os.remove(fname)
+        elif os.path.exists(filename):
+            if os.path.exists(filename):
+                logger.info(f"Removing file: {filename}")
+                os.remove(filename)
+    except OSError:
+        logger.error(f"Error removing file: {filename}")
+        pass
 
 def handle_message_type1(url, payload, files, signal, token, chat_id, message: MessageType1):
     # Unpin the last pinned message first if necessary
@@ -133,32 +148,23 @@ def handle_message_type1(url, payload, files, signal, token, chat_id, message: M
     logger.info(f"Response type1: {response.json()}")
 
     if response.json().get("ok"):
-        message_id = response.json()["result"]["message_id"]
+        messages_ids = []
 
-        # Pin the new message
-        if is_pin:
-            pin_unpin_telegram_message(
-                token, chat_id, message_id, message.symbol, message.signal, message.time_frame.value
-            )
-            logger.info(f"Pinned new message: {message.symbol} {message.signal} {message.time_frame}")
+        if response.json().get("result"):
+            if isinstance(response.json().get("result"), dict):
+                messages_ids.append(response.json()["result"]["message_id"])
+            elif isinstance(response.json().get("result"), list):
+                for res in response.json().get("result", []):
+                        messages_ids.append(res["message_id"])
 
         logger.info(
-            f"Message sent type1 successfully, message_id: {message_id} | {message.symbol} {message.signal} {message.time_frame} {message.time}"
+            f"Message sent type1 successfully, message_id: {messages_ids} | {message.symbol} {message.signal} {message.time_frame} {message.time}"
         )
-        return message_id
+        return messages_ids
     else:
         logger.info(f"Failed to send message: {message.symbol} {message.signal} {message.time_frame} {message.time}")
         return False
 
-def remove_file(file_path):
-    try:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            logger.info(f"File removed: {file_path}")
-        else:
-            logger.info(f"File not found: {file_path}")
-    except Exception as e:
-        logger.error(f"Error removing file: {e}")
 
 def handle_message_type2(url, payload, signal, token, chat_id, message: MessageType2):
     symbol = "$DAILY_REPORT"
@@ -301,18 +307,41 @@ def get_image_data(image_path):
         return None
 
 
-
 def send_telegram_message(signal, token, chat_id, message=None):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {"chat_id": chat_id, "text": signal, "parse_mode": "HTML"}
     if isinstance(message, MessageType1):
-        image_data = get_image_data(message.image)
-        if image_data:
-            payload = {"chat_id": chat_id, "caption": signal, "parse_mode": "HTML"}
-            files = {"photo": image_data}
-            url = f"https://api.telegram.org/bot{token}/sendPhoto"
-        else:
+        if len(message.image) == 0:
             files = None
+        elif len(message.image) == 1:
+            image_data = get_image_data(message.image[0])
+            if image_data:
+                payload = {"chat_id": chat_id, "caption": signal, "parse_mode": "HTML"}
+                files = {"photo": image_data}
+                url = f"https://api.telegram.org/bot{token}/sendPhoto"
+            else:
+                files = None
+        else:
+            media = []
+            files = {}
+            for i, image_path in enumerate(message.image):
+                image_data = get_image_data(image_path)
+                if image_data:
+                    file_key = f"photo{i}"
+                    media_item = {
+                        "type": "photo",
+                        "media": f"attach://{file_key}",
+                        "caption": signal if i == 0 else ""
+                    }
+                    if i == 0:
+                        media_item["parse_mode"] = "HTML"
+                    media.append(media_item)
+                    files[file_key] = image_data
+            if media:
+                url = f"https://api.telegram.org/bot{token}/sendMediaGroup"
+                payload = {"chat_id": chat_id, "media": json.dumps(media)}
+            else:
+                files = None
         ack = handle_message_type1(url, payload, files, signal, token, chat_id, message)
         return {
             "status": "success" if ack else "failed",
@@ -327,7 +356,7 @@ def send_telegram_message(signal, token, chat_id, message=None):
 
 def del_message(token, chat_id, message_id):
     url = f"https://api.telegram.org/bot{token}/deleteMessage"
-    payload = {"chat_id": chat_id, "message_id": message_id}
+    payload = {"chat_id": chat_id, "message_id": str(message_id)}
 
     try:
         response = requests.post(url, data=payload)

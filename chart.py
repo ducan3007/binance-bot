@@ -198,11 +198,11 @@ PARI_MAP = {
     "5m": [
         [
             {"tf": "5m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
-            {"tf": "15m", "view": 30, "mode": "heikin_ashi", "scale": 0.633},
+            {"tf": "30m", "view": 60, "mode": "kline", "scale": 0.633},
         ],
         [
-            {"tf": "30m", "view": 20, "mode": "kline", "scale": 0.633},
-            {"tf": "1h", "view": 20, "mode": "kline", "scale": 0.633},
+            {"tf": "15m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
+            {"tf": "1h", "view": 30, "mode": "kline", "scale": 0.633},
         ],
     ],
     "15m": [
@@ -240,7 +240,9 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
                 prefix_temp = f"static_temp/{TIME_FRAME}_{title}_"
                 os.system(f"rm {prefix_temp}*")  # Clean up previous files
                 output_path_temp = f"{prefix_temp}{signal}_{time1}_{create_time_ns}.png"
+                output_path_temp2 = f"{prefix_temp}{signal}_{time1}_{create_time_ns}_2.png"
                 concatenate_images_2d([[image_paths[0][0]], [image_paths[1][0]]], output_path_temp)
+                concatenate_images_2d([[image_paths[0][1]], [image_paths[1][1]]], output_path_temp2)
 
             prefix = f"static/{TIME_FRAME}_{title}_"
             os.system(f"rm {prefix}*")
@@ -254,9 +256,9 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
                         os.remove(img_path)
 
             if TIME_FRAME == "5m":
-                return output_path_temp
+                return [output_path_temp, output_path_temp2]
 
-            return output_path
+            return [output_path]
         return None
     except Exception as e:
         logger.error(f"Error getting charts: {e}")
