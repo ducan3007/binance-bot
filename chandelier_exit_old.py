@@ -38,7 +38,7 @@ TOKEN_SHORTCUT = {
     "1000FLOKI": "FLOKI",
     "1000SHIB": "SHIB",
     "1MBABYDOGE": "BABYDOGE",
-    "BTCDOM": "BTCD",
+    "BTCDOM": "DOM",
 }
 
 TIME_FRAME_MS = {
@@ -386,10 +386,16 @@ class EMA:
                 res["ema_21_cross"] = True
         return res
 
-def remove_file(filename):
+def remove_file(filename) -> None:
+    """Safely removes a file if it exists."""
     try:
-        os.remove(filename)
-        logger.info(f"Removed Invalid file: {filename}")
+        if isinstance(filename, list):
+            for fname in filename:
+                if os.path.exists(fname):
+                    os.remove(fname)
+        elif os.path.exists(filename):
+            if os.path.exists(filename):
+                os.remove(filename)
     except OSError:
         pass
 
@@ -552,9 +558,9 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                 and lastSentMessage["Counter"] == counter - 1
             ):
                 if MODE == "normal":
-                    __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": str(lastSentMessage["message_id"])}
+                    __body = {"time_frame": f"{TIME_FRAME}_normal", "message_id": lastSentMessage["message_id"]}
                 else:
-                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": str(lastSentMessage["message_id"])}
+                    __body = {"time_frame": f"{TIME_FRAME}", "message_id": lastSentMessage["message_id"]}
 
                 logger.info(f"Delete invalid message: Token: {TOKEN} {lastSentMessage}")
                 res = delete_message(__body)
@@ -613,8 +619,8 @@ def main(data, TOKEN, TIME_FRAME, PAIR, VERSION, TIME_SLEEP, MODE, EXCHANGE):
                         body["time_frame"] = f"{TIME_FRAME}_normal"
                     if VERSION:
                         body["time_frame"] = f"{body['time_frame']}_{VERSION}"
-                    # Randomly wait 1-3 seconds
-                    sleep_duration = random.uniform(1000, 3000) / 1000
+                    # Randomly wait 1-2 seconds
+                    sleep_duration = random.uniform(1000, 2000) / 1000
                     logger.info(f"Sleeping for {sleep_duration} seconds {time_frame} {timestamp}")
                     time.sleep(sleep_duration)
                     image = chart.get_charts(f"{TOKEN}", PAIR=PAIR, TIME_FRAME=TIME_FRAME, signal=signal, time1=_time)
