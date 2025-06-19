@@ -13,17 +13,17 @@
       }
       .grid-container {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr; /* Single column */
         margin: 0 auto;
         gap: 1px;
         background-color: #acacac;
       }
       .grid-item {
-        text-align: center;
+        text-align: left;
         background-color: #181a20;
       }
       .grid-item img {
-        max-width: 100%;
+        max-width: 90%;
         height: auto;
         cursor: pointer;
       }
@@ -58,8 +58,8 @@
       #modalImage {
         display: block;
         margin: auto;
-        max-width: 100vw; /* Adjusted to fit viewport */
-        max-height: 100vh; /* Adjusted to fit viewport */
+        max-width: 100vw;
+        max-height: 100vh;
       }
       .modal-info {
         position: absolute;
@@ -124,6 +124,32 @@
       .right {
         right: 10px;
       }
+      /* Styles for the image list */
+      #image-list {
+        position: fixed;
+        top: 50px;
+        right: 10px;
+        max-height: 80vh;
+        overflow-y: auto;
+        background-color: #18191f;
+        padding: 0px;
+        border-radius: 5px;
+      }
+      #image-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      #image-list li {
+        padding: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        color: #ffffff;
+        font-family: Arial, sans-serif;
+      }
+      #image-list li:hover {
+        background-color: #3a3a3a;
+      }
     </style>
   </head>
   <body>
@@ -132,7 +158,7 @@
     <div class="grid-container">
       {% for pair in image_pairs %}
         {% for image in pair %}
-          <div class="grid-item">
+          <div class="grid-item" id="grid-item-{{ ns.index }}">
             <div class="image-info{% if image.title == 'BTC' %} underscore{% endif %}">
               {% if image.signal == "BUY" %} 🟢 {% elif image.signal == "SELL" %} 🔴 {% endif %}
               <span class="time">{{ image.time1 }}</span>
@@ -152,15 +178,11 @@
           {% set ns.index = ns.index + 1 %}
         {% endfor %}
       {% endfor %}
-      {% set total_images = ns.index %}
-      {% if total_images < 4 %}
-        {% set placeholders = 4 - total_images %}
-      {% else %}
-        {% set placeholders = (2 - (total_images % 2)) % 2 %}
-      {% endif %}
-      {% for i in range(placeholders) %}
-        <div class="grid-item"></div>
-      {% endfor %}
+    </div>
+
+    <!-- Image list container -->
+    <div id="image-list">
+      <ul id="image-list-ul"></ul>
     </div>
 
     <div id="imageModal" class="modal">
@@ -342,6 +364,33 @@
       }
       setInterval(updateTimer, 1000);
       updateTimer();
+
+      // Populate the image list and add click handlers
+      document.addEventListener('DOMContentLoaded', function() {
+        const imageListUl = document.getElementById('image-list-ul');
+        const images = document.querySelectorAll('.grid-item img');
+        images.forEach((img, index) => {
+          const li = document.createElement('li');
+          li.setAttribute('data-target', `grid-item-${index}`);
+          const signal = img.dataset.signal;
+          const time = img.dataset.time1;
+          const title = img.dataset.title;
+          let signalEmoji = '';
+          if (signal === 'BUY') {
+            signalEmoji = '🟢';
+          } else if (signal === 'SELL') {
+            signalEmoji = '🔴';
+          }
+          li.innerHTML = `${signalEmoji} <span class="time">${time}</span> ${title}`;
+          li.addEventListener('click', function() {
+            const targetElement = document.getElementById(`grid-item-${index}`);
+            if (targetElement) {
+              targetElement.scrollIntoView({ behavior: 'smooth' });
+            }
+          });
+          imageListUl.appendChild(li);
+        });
+      });
     </script>
   </body>
 </html>
