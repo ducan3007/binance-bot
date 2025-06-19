@@ -147,8 +147,8 @@
         color: #ffffff;
         font-family: Arial, sans-serif;
       }
-      #image-list li:hover {
-        background-color: #3a3a3a;
+      #image-list li.highlighted {
+        background-color: #4a4a4a;
       }
     </style>
   </head>
@@ -203,6 +203,15 @@
       let currentIndex = 0;
       let currentFilename = '';
 
+      function highlightListItem(index) {
+        const listItems = document.querySelectorAll('#image-list li');
+        listItems.forEach(li => li.classList.remove('highlighted'));
+        const targetLi = document.querySelector(`#image-list li[data-target="grid-item-${index}"]`);
+        if (targetLi) {
+          targetLi.classList.add('highlighted');
+        }
+      }
+
       function showModal(img) {
         const modal = document.getElementById('imageModal');
         const modalImg = document.getElementById('modalImage');
@@ -234,18 +243,18 @@
           window.history.pushState({ modalOpen: true }, '');
         }
 
-        // Set image to fit viewport without zooming
         modalImg.style.width = 'auto';
         modalImg.style.height = 'auto';
         modalImg.style.maxWidth = '88vw';
         modalImg.style.maxHeight = '100vh';
 
-        // Reset scroll position
         imageContainer.scrollLeft = 0;
         imageContainer.scrollTop = 0;
 
         document.body.style.overflow = 'hidden';
         document.documentElement.style.overflow = 'hidden';
+
+        highlightListItem(index);
       }
 
       document.getElementById('imageModal').addEventListener('click', function(event) {
@@ -365,7 +374,6 @@
       setInterval(updateTimer, 1000);
       updateTimer();
 
-      // Populate the image list and add click handlers
       document.addEventListener('DOMContentLoaded', function() {
         const imageListUl = document.getElementById('image-list-ul');
         const images = document.querySelectorAll('.grid-item img');
@@ -390,6 +398,31 @@
           });
           imageListUl.appendChild(li);
         });
+
+        const observer = new IntersectionObserver((entries) => {
+          const modal = document.getElementById('imageModal');
+          if (modal.classList.contains('active')) {
+            return;
+          }
+          let maxRatio = 0;
+          let maxIndex = -1;
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const index = parseInt(entry.target.id.split('-')[2]);
+              const ratio = entry.intersectionRatio;
+              if (ratio > maxRatio) {
+                maxRatio = ratio;
+                maxIndex = index;
+              }
+            }
+          });
+          if (maxIndex >= 0) {
+            highlightListItem(maxIndex);
+          }
+        }, { threshold: [0.1, 0.5, 0.9] });
+
+        const gridItems = document.querySelectorAll('.grid-item');
+        gridItems.forEach(item => observer.observe(item));
       });
     </script>
   </body>
