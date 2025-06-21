@@ -289,7 +289,6 @@ def send_telegram_message(body: Dict) -> Dict:
 
 # --- Core Strategy Logic ---
 
-
 def main(
     data: Dict, token: str, time_frame: str, pair: str, version: str, time_sleep: int, mode: str, exchange: str
 ) -> None:
@@ -302,11 +301,10 @@ def main(
     ema_handler = EMA(pair=pair, time_frame="1h", mode="normal", exchange=exchange, size=1000)
     ema_handler.fetch_klines()
 
-    # --- State Management Change ---
-    # - has_signaled_this_hour = False
-    # - last_signal_hour = -1
-    # + Use the timestamp of the last signaled candle as the state
-    last_signaled_timestamp = 0
+    # --- Correct State Management ---
+    # This variable tracks the integer hour (0-23) for which a signal has been sent.
+    # We initialize to -1 to ensure the first check runs.
+    last_signaled_hour = -1
 
     short_token = TOKEN_SHORTCUT.get(token, token)
     token_for_log = token.ljust(12)
@@ -314,20 +312,24 @@ def main(
     # --- Main Loop ---
     while True:
         now = datetime.utcnow()
-        current_hour_for_log = now.hour  # For logging purposes only
 
-        # --- Remove the old hourly reset logic ---
-        # - if now.hour != last_signal_hour:
-        # -     has_signaled_this_hour = False
-        # -     last_signal_hour = now.hour
+        # --- High-Level State Check ---
+        # If the current hour is the same as the one we last signaled for,
+        # we do nothing and wait for the next hour.
+        if now.hour == last_signaled_hour:
+            print(
+                f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Signal already sent for hour {now.hour:02d}. Waiting..."
+            )
+            time.sleep(time_sleep)
+            continue # Skip to the next loop iteration
 
+        # If a new hour has started, we reset our state to allow a new signal.
+        # This is implicitly handled by `last_signaled_hour` not matching `now.hour`.
         print(
-            # - f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {last_signal_hour:02d}:55..."
-            # + More accurate logging
-            f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {current_hour_for_log:02d}:55..."
+            f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {now.hour:02d}:55..."
         )
 
-        # We only need to check during the signaling window
+        # Only proceed to check for signals in the last 5 minutes of the hour.
         if now.minute >= 55:
             try:
                 latest_klines = kline_helper.fetch_klines(binance_spot, pair, "1h", 2)
@@ -337,18 +339,12 @@ def main(
                     time.sleep(time_sleep)
                     continue
 
-                current_candle = latest_klines[-1]
-                open_time = int(current_candle[0])
-
-                # + This is the new, robust check.
-                # + If we have already signaled for this candle's open_time, skip.
-                if open_time == last_signaled_timestamp:
-                    time.sleep(time_sleep)
-                    continue
-
+                # The rest of the logic is the same as before
                 prev_closed_candle = latest_klines[-2]
                 prev_close_price = float(prev_closed_candle[4])
 
+                current_candle = latest_klines[-1]
+                open_time = int(current_candle[0])
                 open_price = float(current_candle[1])
                 high_price = float(current_candle[2])
                 low_price = float(current_candle[3])
@@ -390,9 +386,9 @@ def main(
 
                     res = send_telegram_message(body)
                     if res and res.get("message_id"):
-                        # + Update the state with the timestamp of the candle we just signaled on.
-                        last_signaled_timestamp = open_time
-                        logger.info(f"Signal sent for {pair}: {body} | message_id: {res.get('message_id')}")
+                        # --- CRITICAL: Update state upon successful send ---
+                        last_signaled_hour = now.hour
+                        logger.info(f"Signal sent for {pair} for hour {now.hour}. Locking until next hour. | message_id: {res.get('message_id')}")
                     else:
                         logger.error(f"Failed to send signal for {pair}: {body}")
                         remove_file(image_path)
@@ -401,8 +397,7 @@ def main(
                 logger.error(f"[{token}] Error in signal generation loop: {traceback.format_exc()}")
 
         time.sleep(time_sleep)
-
-
+        
 def run_strategy(token: str, time_frame: str, pair: str, version: str, time_sleep: int, mode: str, exchange: str):
     while True:
         try:
