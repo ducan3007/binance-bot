@@ -392,7 +392,6 @@ def main(
                         # to prevent any further signals for it.
                         last_signaled_candle_timestamp = open_time
                         logger.info(f"Signal sent successfully for {pair} | message_id: {res.get('message_id')}. Locking candle {open_time}.")
-                        remove_file(image_path)
                     else:
                         logger.error(f"Failed to send Telegram message for {pair}. Will retry on next loop.")
 
