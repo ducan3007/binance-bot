@@ -102,7 +102,6 @@ def post_send_message_v2(body: MessageType1):
             return {
                 "status": "Already processed",
                 "key": unique_key,
-                "status": "failed",
                 "message_id": False,
             }
 
