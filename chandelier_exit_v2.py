@@ -369,7 +369,7 @@ def main(
                     percent_change = format_price_change(current_price, prev_close_price)
                     signal_time = datetime.fromtimestamp(open_time / 1000 + 3600).strftime("%H:%M")
 
-                    time.sleep(random.uniform(1.0, 5.0))
+                    time.sleep(random.uniform(5.0, 15.0))
                     image_path = chart.get_charts(
                         f"{short_token}", PAIR=pair, TIME_FRAME=time_frame, signal=signal, time1=signal_time
                     )
