@@ -302,8 +302,11 @@ def main(
     ema_handler = EMA(pair=pair, time_frame="1h", mode="normal", exchange=exchange, size=1000)
     ema_handler.fetch_klines()
 
-    has_signaled_this_hour = False
-    last_signal_hour = -1
+    # --- State Management Change ---
+    # - has_signaled_this_hour = False
+    # - last_signal_hour = -1
+    # + Use the timestamp of the last signaled candle as the state
+    last_signaled_timestamp = 0
 
     short_token = TOKEN_SHORTCUT.get(token, token)
     token_for_log = token.ljust(12)
@@ -311,16 +314,21 @@ def main(
     # --- Main Loop ---
     while True:
         now = datetime.utcnow()
+        current_hour_for_log = now.hour  # For logging purposes only
 
-        if now.hour != last_signal_hour:
-            has_signaled_this_hour = False
-            last_signal_hour = now.hour
+        # --- Remove the old hourly reset logic ---
+        # - if now.hour != last_signal_hour:
+        # -     has_signaled_this_hour = False
+        # -     last_signal_hour = now.hour
 
         print(
-            f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {last_signal_hour:02d}:55..."
+            # - f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {last_signal_hour:02d}:55..."
+            # + More accurate logging
+            f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {current_hour_for_log:02d}:55..."
         )
 
-        if (now.minute >= 55 and now.minute <=59) and not has_signaled_this_hour:
+        # We only need to check during the signaling window
+        if now.minute >= 55:
             try:
                 latest_klines = kline_helper.fetch_klines(binance_spot, pair, "1h", 2)
 
@@ -329,11 +337,18 @@ def main(
                     time.sleep(time_sleep)
                     continue
 
+                current_candle = latest_klines[-1]
+                open_time = int(current_candle[0])
+
+                # + This is the new, robust check.
+                # + If we have already signaled for this candle's open_time, skip.
+                if open_time == last_signaled_timestamp:
+                    time.sleep(time_sleep)
+                    continue
+
                 prev_closed_candle = latest_klines[-2]
                 prev_close_price = float(prev_closed_candle[4])
 
-                current_candle = latest_klines[-1]
-                open_time = int(current_candle[0])
                 open_price = float(current_candle[1])
                 high_price = float(current_candle[2])
                 low_price = float(current_candle[3])
@@ -375,7 +390,8 @@ def main(
 
                     res = send_telegram_message(body)
                     if res and res.get("message_id"):
-                        has_signaled_this_hour = True
+                        # + Update the state with the timestamp of the candle we just signaled on.
+                        last_signaled_timestamp = open_time
                         logger.info(f"Signal sent for {pair}: {body} | message_id: {res.get('message_id')}")
                     else:
                         logger.error(f"Failed to send signal for {pair}: {body}")
