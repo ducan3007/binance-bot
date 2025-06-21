@@ -287,7 +287,6 @@ def send_telegram_message(body: Dict) -> Dict:
     return res if res.get("status") == "success" else None
 
 
-# --- Core Strategy Logic ---
 def main(
     data: Dict, token: str, time_frame: str, pair: str, version: str, time_sleep: int, mode: str, exchange: str
 ) -> None:
@@ -300,7 +299,11 @@ def main(
     ema_handler = EMA(pair=pair, time_frame="1h", mode="normal", exchange=exchange, size=1000)
     ema_handler.fetch_klines()
 
-    last_signaled_hour = -1
+    # --- CORRECT STATE MANAGEMENT ---
+    # This tracks the OPENING TIMESTAMP of the last candle for which a signal was successfully sent.
+    # A timestamp is a unique identifier for a candle, preventing duplicates.
+    # We initialize to 0.
+    last_signaled_candle_timestamp = 0
 
     short_token = TOKEN_SHORTCUT.get(token, token)
     token_for_log = token.ljust(12)
@@ -308,14 +311,7 @@ def main(
     # --- Main Loop ---
     while True:
         now = datetime.utcnow()
-
-        if now.hour == last_signaled_hour:
-            print(
-                f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Signal attempt already made for hour {now.hour:02d}. Waiting..."
-            )
-            time.sleep(time_sleep)
-            continue
-
+        
         print(
             f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {now.hour:02d}:55..."
         )
@@ -329,11 +325,25 @@ def main(
                     time.sleep(time_sleep)
                     continue
 
+                current_candle = latest_klines[-1]
+                open_time = int(current_candle[0])
+
+                # --- THE CRITICAL CHECK ---
+                # Have we already sent a signal for THIS EXACT candle?
+                # If the current candle's open time matches our last recorded timestamp,
+                # it means a signal was already sent successfully. We must skip.
+                if open_time == last_signaled_candle_timestamp:
+                    # Log this for clarity, then skip the rest of the loop.
+                    if now.second < time_sleep: # Log only once per loop to avoid spam
+                        logger.info(f"Signal for candle {open_time} already sent for {pair}. Waiting for next hour.")
+                    time.sleep(time_sleep)
+                    continue
+
+                # --- If we are here, it means this is a new candle we haven't processed yet. ---
+
                 prev_closed_candle = latest_klines[-2]
                 prev_close_price = float(prev_closed_candle[4])
 
-                current_candle = latest_klines[-1]
-                open_time = int(current_candle[0])
                 open_price = float(current_candle[1])
                 high_price = float(current_candle[2])
                 low_price = float(current_candle[3])
@@ -346,12 +356,10 @@ def main(
                     signal = "SELL"
 
                 if signal:
-                    # --- CRITICAL FIX: LOCK THE HOUR IMMEDIATELY ---
-                    # This prevents re-evaluation and flipping signals on subsequent loops within the same hour.
-                    logger.info(f"Signal condition met for {pair}: {signal}. Locking for hour {now.hour}.")
-                    last_signaled_hour = now.hour
-
-                    # Now, attempt to process and send the signal just once.
+                    logger.info(f"Signal condition met for {pair}: {signal} (O:{open_price}, C:{current_price}). Processing...")
+                    
+                    # All processing happens here. If any step fails, the `last_signaled_candle_timestamp`
+                    # will NOT be updated, allowing a retry on the next loop.
                     ema_handler.update_klines(None)
                     ema_handler.calculate_all_emas()
                     ema_cross = ema_handler.check_cross(
@@ -379,18 +387,17 @@ def main(
 
                     res = send_telegram_message(body)
                     if res and res.get("message_id"):
-                        logger.info(f"Signal sent successfully for {pair} | message_id: {res.get('message_id')}")
+                        # --- LOCK ON SUCCESS ---
+                        # The message was sent successfully. We now lock this candle's timestamp
+                        # to prevent any further signals for it.
+                        last_signaled_candle_timestamp = open_time
+                        logger.info(f"Signal sent successfully for {pair} | message_id: {res.get('message_id')}. Locking candle {open_time}.")
                     else:
-                        logger.error(
-                            f"Failed to send Telegram message for {pair}. The hour is locked, no retry will occur."
-                        )
+                        logger.error(f"Failed to send Telegram message for {pair}. Will retry on next loop.")
                         remove_file(image_path)
 
             except Exception:
-                # The hour is already locked, so it won't retry. We just log the failure.
-                logger.error(
-                    f"[{token}] Error during signal processing/sending: {traceback.format_exc()}. The hour is locked, no retry will occur."
-                )
+                logger.error(f"[{token}] Unhandled error in signal processing loop: {traceback.format_exc()}. Will retry.")
 
         time.sleep(time_sleep)
 
