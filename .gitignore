@@ -9,3 +9,4 @@ pinned_messages.txt
 *.log
 *.png
 deploy.sh
+signal_state.json

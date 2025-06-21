@@ -1,12 +1,17 @@
+import json
 import os
+import threading
+from pathlib import Path
+from typing import List
+
 from fastapi import FastAPI, Request
-from telegram_bot import send_telegram_message, del_message, construct_message, MessageType1, MessageType2, MessageType3
-from logger import logger
-from binance_24hr_tickers import binance_24hr_tickers
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from typing import List
+
+from binance_24hr_tickers import binance_24hr_tickers
+from logger import logger
+from telegram_bot import MessageType1, MessageType2, MessageType3, construct_message, del_message, send_telegram_message
 
 CHAT_ID_1M = os.environ.get("CHAT_ID_1M")
 TOKEN_1M = os.environ.get("TOKEN_1M")
@@ -56,6 +61,82 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+
+STATE_FILE = Path("signal_state.json")
+state_lock = threading.Lock()
+
+def read_state_from_file() -> dict:
+    if not STATE_FILE.exists():
+        return {}
+    try:
+        with open(STATE_FILE, "r") as f:
+            content = f.read()
+            if not content:
+                return {}
+            return json.loads(content)
+    except (json.JSONDecodeError, IOError) as e:
+        logger.error(f"Could not read or parse state file {STATE_FILE}: {e}. Treating as empty state.")
+        return {}
+
+
+def write_state_to_file(state: dict):
+    try:
+        with open(STATE_FILE, "w") as f:
+            json.dump(state, f, indent=2)
+    except IOError as e:
+        logger.error(f"Could not write to state file {STATE_FILE}: {e}")
+
+
+@app.post("/v2/sendMessage")
+def post_send_message(body: MessageType1):
+    unique_key = f"{body.signal}-{body.symbol}-{body.time_frame}-{body.time}"
+    symbol_key = body.symbol.strip("$")
+
+    with state_lock:
+        current_state = read_state_from_file()
+        last_sent_key = current_state.get(symbol_key)
+
+        if last_sent_key == unique_key:
+            logger.warning(f"Duplicate signal blocked. Key: '{unique_key}' for Symbol: {symbol_key}")
+            return {
+                "status": "Already processed",
+                "key": unique_key,
+                "status": "success",
+                "message_id": True,
+            }
+
+        logger.info(f"New signal received. Processing key: '{unique_key}'")
+        try:
+            signal = construct_message(body)
+            chat_id = BOT[body.time_frame]["chat_id"]
+            token = BOT[body.time_frame]["token"]
+
+            response = send_telegram_message(
+                signal,
+                token=token,
+                chat_id=chat_id,
+                message=body,
+            )
+
+            if response and response.get("message_id"):
+                current_state[symbol_key] = unique_key
+                write_state_to_file(current_state)
+                logger.info(f"Message sent for '{symbol_key}'. State file updated with key: '{unique_key}'.")
+                return response
+            else:
+                logger.error(f"Telegram send failed for key: '{unique_key}'. State NOT updated, allowing retry.")
+                return {
+                    "status": "failed",
+                    "message_id": False,
+                }
+
+        except Exception as e:
+            logger.error(f"Error processing key '{unique_key}': {e}. State not updated.")
+            return {
+                "status": "failed",
+                "message_id": False,
+            }
 
 
 @app.post("/sendMessage")

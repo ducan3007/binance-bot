@@ -7,7 +7,7 @@ import time
 import traceback
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Any, Literal
+from typing import Any, Dict, List, Literal
 
 import pandas as pd
 import requests
@@ -283,7 +283,7 @@ def send_telegram_api_request(endpoint: str, body: Dict) -> Dict:
 
 
 def send_telegram_message(body: Dict) -> Dict:
-    res = send_telegram_api_request("sendMessage", body)
+    res = send_telegram_api_request("v2/sendMessage", body)
     return res if res.get("status") == "success" else None
 
 
