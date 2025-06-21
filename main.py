@@ -102,8 +102,8 @@ def post_send_message_v2(body: MessageType1):
             return {
                 "status": "Already processed",
                 "key": unique_key,
-                "status": "success",
-                "message_id": True,
+                "status": "failed",
+                "message_id": False,
             }
 
         logger.info(f"New signal received. Processing key: '{unique_key}'")
