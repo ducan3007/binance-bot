@@ -288,7 +288,6 @@ def send_telegram_message(body: Dict) -> Dict:
 
 
 # --- Core Strategy Logic ---
-
 def main(
     data: Dict, token: str, time_frame: str, pair: str, version: str, time_sleep: int, mode: str, exchange: str
 ) -> None:
@@ -301,9 +300,6 @@ def main(
     ema_handler = EMA(pair=pair, time_frame="1h", mode="normal", exchange=exchange, size=1000)
     ema_handler.fetch_klines()
 
-    # --- Correct State Management ---
-    # This variable tracks the integer hour (0-23) for which a signal has been sent.
-    # We initialize to -1 to ensure the first check runs.
     last_signaled_hour = -1
 
     short_token = TOKEN_SHORTCUT.get(token, token)
@@ -313,23 +309,17 @@ def main(
     while True:
         now = datetime.utcnow()
 
-        # --- High-Level State Check ---
-        # If the current hour is the same as the one we last signaled for,
-        # we do nothing and wait for the next hour.
         if now.hour == last_signaled_hour:
             print(
-                f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Signal already sent for hour {now.hour:02d}. Waiting..."
+                f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Signal attempt already made for hour {now.hour:02d}. Waiting..."
             )
             time.sleep(time_sleep)
-            continue # Skip to the next loop iteration
+            continue
 
-        # If a new hour has started, we reset our state to allow a new signal.
-        # This is implicitly handled by `last_signaled_hour` not matching `now.hour`.
         print(
             f"Time: {now.strftime('%H:%M:%S')} W:{kline_helper.weight['m1']} {token_for_log} Waiting for {now.hour:02d}:55..."
         )
 
-        # Only proceed to check for signals in the last 5 minutes of the hour.
         if now.minute >= 55:
             try:
                 latest_klines = kline_helper.fetch_klines(binance_spot, pair, "1h", 2)
@@ -339,7 +329,6 @@ def main(
                     time.sleep(time_sleep)
                     continue
 
-                # The rest of the logic is the same as before
                 prev_closed_candle = latest_klines[-2]
                 prev_close_price = float(prev_closed_candle[4])
 
@@ -357,8 +346,12 @@ def main(
                     signal = "SELL"
 
                 if signal:
-                    logger.info(f"Signal condition met for {pair}: {signal} (O:{open_price}, C:{current_price})")
+                    # --- CRITICAL FIX: LOCK THE HOUR IMMEDIATELY ---
+                    # This prevents re-evaluation and flipping signals on subsequent loops within the same hour.
+                    logger.info(f"Signal condition met for {pair}: {signal}. Locking for hour {now.hour}.")
+                    last_signaled_hour = now.hour
 
+                    # Now, attempt to process and send the signal just once.
                     ema_handler.update_klines(None)
                     ema_handler.calculate_all_emas()
                     ema_cross = ema_handler.check_cross(
@@ -386,18 +379,22 @@ def main(
 
                     res = send_telegram_message(body)
                     if res and res.get("message_id"):
-                        # --- CRITICAL: Update state upon successful send ---
-                        last_signaled_hour = now.hour
-                        logger.info(f"Signal sent for {pair} for hour {now.hour}. Locking until next hour. | message_id: {res.get('message_id')}")
+                        logger.info(f"Signal sent successfully for {pair} | message_id: {res.get('message_id')}")
                     else:
-                        logger.error(f"Failed to send signal for {pair}: {body}")
+                        logger.error(
+                            f"Failed to send Telegram message for {pair}. The hour is locked, no retry will occur."
+                        )
                         remove_file(image_path)
 
             except Exception:
-                logger.error(f"[{token}] Error in signal generation loop: {traceback.format_exc()}")
+                # The hour is already locked, so it won't retry. We just log the failure.
+                logger.error(
+                    f"[{token}] Error during signal processing/sending: {traceback.format_exc()}. The hour is locked, no retry will occur."
+                )
 
         time.sleep(time_sleep)
-        
+
+
 def run_strategy(token: str, time_frame: str, pair: str, version: str, time_sleep: int, mode: str, exchange: str):
     while True:
         try:
