@@ -90,7 +90,7 @@ def write_state_to_file(state: dict):
 
 @app.post("/v2/sendMessage")
 def post_send_message_v2(body: MessageType1):
-    unique_key = f"{body.signal}-{body.symbol}-{body.time_frame}-{body.time}"
+    unique_key = f"{body.symbol}-{body.time_frame}-{body.time}"
     symbol_key = body.symbol.strip("$")
 
     with state_lock:
