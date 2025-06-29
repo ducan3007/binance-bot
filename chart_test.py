@@ -82,9 +82,10 @@ def generate_chart(title, PAIR, TIME_FRAME, view, mode, scale=0.7):
             mpf.make_addplot(zlsma_50, color="yellow", width=1, ax=ax),
         ]
 
-        # Add EMA_50 if timeframe is not 1h
-        if TIME_FRAME != "1h" and ema_50 is not None:
-            apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax))
+        # # Add EMA_50 if timeframe is not 1h
+        # if TIME_FRAME != "1h" and ema_50 is not None:
+        #     print(f"Adding EMA_50 for {TIME_FRAME}")
+        #     apds.append(mpf.make_addplot(ema_50, color="#ab47bc", width=1.2, ax=ax))
 
         # Plot the candlestick chart
         mpf.plot(
@@ -202,7 +203,7 @@ PARI_MAP = {
         [
             # {"tf": "5m", "view": 60, "mode": "heikin_ashi", "scale": 0.633},
             # {"tf": "15m", "view": 70, "mode": "heikin_ashi", "scale": 0.633},
-            {"tf": "30m", "view": 48, "mode": "kline", "scale": 0.633},
+            {"tf": "4h", "view": 48, "mode": "kline", "scale": 0.633},
         ],
     ],
     "15m": [
@@ -267,10 +268,10 @@ def get_charts(title, PAIR, TIME_FRAME, signal, time1):
 
 if __name__ == "__main__":
     output = get_charts("ADA", "ADAUSDT", "5m", "BUY", "10:15")
-    output = get_charts("BTC", "BTCUSDT", "5m", "BUY", "10:15")
-    output = get_charts("ETH", "ETHUSDT", "5m", "BUY", "10:15")
-    output = get_charts("XRP", "XRPUSDT", "5m", "BUY", "10:15")
-    output = get_charts("BNB", "BNBUSDT", "5m", "BUY", "10:15")
-    output = get_charts("SOL", "SOLUSDT", "5m", "BUY", "10:15")
-    output = get_charts("DOGE", "DOGEUSDT", "5m", "BUY", "10:15")
+    # output = get_charts("BTC", "BTCUSDT", "5m", "BUY", "10:15")
+    # output = get_charts("ETH", "ETHUSDT", "5m", "BUY", "10:15")
+    # output = get_charts("XRP", "XRPUSDT", "5m", "BUY", "10:15")
+    # output = get_charts("BNB", "BNBUSDT", "5m", "BUY", "10:15")
+    # output = get_charts("SOL", "SOLUSDT", "5m", "BUY", "10:15")
+    # output = get_charts("DOGE", "DOGEUSDT", "5m", "BUY", "10:15")
     print(f"Output path: {output}")
