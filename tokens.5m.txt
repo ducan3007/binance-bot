@@ -1,7 +1,6 @@
 BTC
 DOGE
 ETH
-BNB
 SOL
 XRP
 ADA
